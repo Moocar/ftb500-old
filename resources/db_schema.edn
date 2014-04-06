@@ -1,0 +1,200 @@
+[
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Player
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :player/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "A player's name"
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Card
+
+ ;; Suit
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.suit/name
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/spades]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/hearts]
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.suit/color
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.color/red]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.color/black]
+
+ ;; Rank
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card/rank
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/four]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/five]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/six]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/seven]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/eight]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/nine]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/ten]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/jack]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/queen]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/king]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/ace]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank/joker]
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Bidding
+
+ ;; Name/Scoring
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/name
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/pass]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/misere]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/open-misere]
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/score
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;; Player bids
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.bid/bid
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.bid/player
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Game
+
+ ;; Seat
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.seat/position
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.seat/player
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.seat/cards
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/seat
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+
+ ;; Trick Plays
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :trick.play/player
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :trick.play/card
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :trick.play/order
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;; Trick
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.trick/play
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.trick/number
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;; Game
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.first-player
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.winning-bid
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.kitty/cards
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+]
