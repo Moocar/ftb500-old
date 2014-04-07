@@ -1,5 +1,7 @@
 (ns me.moocar.ftb500.game2
   (:require [com.stuartsierra.component :as component]
+            [clojure.pprint :refer [print-table]]
+            [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
             [datomic.api :as d]))
@@ -14,15 +16,6 @@
               (d/db (:conn db))
               num-players)
          (map first))))
-
-(defn print-card
-  [games ent-id]
-  (let [db (d/db (:conn (:db games)))
-        entity (d/entity db ent-id)
-        rank-name (name (:card/rank entity))
-        suit (:card/suit entity)]
-    (str rank-name " " (when suit
-                         (name (:card.suit/name suit))))))
 
 (defn make-seat
   [game-id index card-ids]
@@ -46,12 +39,13 @@
              hands)
      [[:db/add game-id :game/name game-name]])))
 
-(defn new-game
-  "Should create a deck, shuffle it, deal it to a number of seats, save all that to the DB against `game-name`"
+(defn new-game!
+  "Should create a deck, shuffle it, deal it to a number of seats,
+  save all that to the DB against `game-name`"
   [games game-name num-players]
   (let [db (:db games)
         game-id (d/tempid :db.part/user)
-        deck (get-stock-deck-card-ids games num-players)
+        deck (shuffle (get-stock-deck-card-ids games num-players))
         {:keys [hands kitty]} (deck/partition-hands deck)
         data (make-game game-name hands kitty)]
     (d/transact (:conn db)
@@ -65,12 +59,24 @@
               db)
          (map first))))
 
+(defn format-seats
+  [seats]
+  (with-out-str
+    (print-table
+     (map (fn [seat]
+            {:position (:game.seat/position seat)
+             :cards (card/format-line-short (:game.seat/cards seat))})
+          seats))))
+
 (defn print-game
   [games ent-id]
   (let [db (d/db (:conn (:db games)))
         entity (d/entity db ent-id)
         game-name (:game/name entity)]
-    (str "Game [" game-name "] with " (count (:game/seat entity)) " players")))
+    (format "Game: %s\nHands%sKitty: %s"
+            game-name
+            (format-seats (:game/seat entity))
+            (card/format-line-short (:game.kitty/cards entity)))))
 
 (defrecord Games [db])
 
