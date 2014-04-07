@@ -36,12 +36,6 @@
 
  ;; Rank
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :card/rank
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db.install/_attribute :db.part/db}
-
  [:db/add #db/id[:db.part/user] :db/ident :card.rank/four]
  [:db/add #db/id[:db.part/user] :db/ident :card.rank/five]
  [:db/add #db/id[:db.part/user] :db/ident :card.rank/six]
@@ -54,6 +48,35 @@
  [:db/add #db/id[:db.part/user] :db/ident :card.rank/king]
  [:db/add #db/id[:db.part/user] :db/ident :card.rank/ace]
  [:db/add #db/id[:db.part/user] :db/ident :card.rank/joker]
+
+ ;; Card
+
+  {:db/id #db/id[:db.part/db]
+  :db/ident :card/suit
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card/rank
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Deck
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :deck/num-players
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :deck/cards
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
 
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
  ;; ## Bidding
@@ -135,12 +158,6 @@
  {:db/id #db/id[:db.part/db]
   :db/ident :game.seat/cards
   :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db.install/_attribute :db.part/db}
-
- {:db/id #db/id[:db.part/db]
-  :db/ident :game/seat
-  :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db.install/_attribute :db.part/db}
 
@@ -181,13 +198,26 @@
  ;; Game
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game.first-player
+  :db/ident :game/seat
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/first-player
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game.winning-bid
+  :db/ident :game/name
+  :db/unique :db.unique/identity
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/winning-bid
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}

@@ -1,0 +1,209 @@
+[
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Suits
+
+ {:db/id #db/id[:db.part/user -1000001]
+  :card.suit/name :card.suit.name/spades
+  :card.suit/color :card.suit.color/black}
+ {:db/id #db/id[:db.part/user -1000002]
+  :card.suit/name :card.suit.name/clubs
+  :card.suit/color :card.suit.color/black}
+ {:db/id #db/id[:db.part/user -1000003]
+  :card.suit/name :card.suit.name/diamonds
+  :card.suit/color :card.suit.color/red}
+ {:db/id #db/id[:db.part/user -1000004]
+  :card.suit/name :card.suit.name/hearts
+  :card.suit/color :card.suit.color/red}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Cards
+
+ {:db/id #db/id[:db.part/user -1000005]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/four}
+ {:db/id #db/id[:db.part/user -1000006]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/five}
+ {:db/id #db/id[:db.part/user -1000007]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/six}
+ {:db/id #db/id[:db.part/user -1000008]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/seven}
+ {:db/id #db/id[:db.part/user -1000009]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/eight}
+ {:db/id #db/id[:db.part/user -1000010]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/nine}
+ {:db/id #db/id[:db.part/user -1000011]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/ten}
+ {:db/id #db/id[:db.part/user -1000012]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/jack}
+ {:db/id #db/id[:db.part/user -1000013]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/queen}
+ {:db/id #db/id[:db.part/user -1000014]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/king}
+ {:db/id #db/id[:db.part/user -1000015]
+  :card/suit #db/id[:db.part/user -1000001]
+  :card/rank :card.rank/ace}
+
+ {:db/id #db/id[:db.part/user -1000016]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/four}
+ {:db/id #db/id[:db.part/user -1000017]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/five}
+ {:db/id #db/id[:db.part/user -1000018]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/six}
+ {:db/id #db/id[:db.part/user -1000019]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/seven}
+ {:db/id #db/id[:db.part/user -1000020]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/eight}
+ {:db/id #db/id[:db.part/user -1000021]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/nine}
+ {:db/id #db/id[:db.part/user -1000022]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/ten}
+ {:db/id #db/id[:db.part/user -1000023]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/jack}
+ {:db/id #db/id[:db.part/user -1000024]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/queen}
+ {:db/id #db/id[:db.part/user -1000025]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/king}
+ {:db/id #db/id[:db.part/user -1000026]
+  :card/suit #db/id[:db.part/user -1000002]
+  :card/rank :card.rank/ace}
+
+ {:db/id #db/id[:db.part/user -1000027]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/four}
+ {:db/id #db/id[:db.part/user -1000028]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/five}
+ {:db/id #db/id[:db.part/user -1000029]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/six}
+ {:db/id #db/id[:db.part/user -1000030]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/seven}
+ {:db/id #db/id[:db.part/user -1000031]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/eight}
+ {:db/id #db/id[:db.part/user -1000032]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/nine}
+ {:db/id #db/id[:db.part/user -1000033]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/ten}
+ {:db/id #db/id[:db.part/user -1000034]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/jack}
+ {:db/id #db/id[:db.part/user -1000035]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/queen}
+ {:db/id #db/id[:db.part/user -1000036]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/king}
+ {:db/id #db/id[:db.part/user -1000037]
+  :card/suit #db/id[:db.part/user -1000003]
+  :card/rank :card.rank/ace}
+
+ {:db/id #db/id[:db.part/user -1000038]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/four}
+ {:db/id #db/id[:db.part/user -1000039]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/five}
+ {:db/id #db/id[:db.part/user -1000040]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/six}
+ {:db/id #db/id[:db.part/user -1000041]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/seven}
+ {:db/id #db/id[:db.part/user -1000042]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/eight}
+ {:db/id #db/id[:db.part/user -1000043]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/nine}
+ {:db/id #db/id[:db.part/user -1000044]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/ten}
+ {:db/id #db/id[:db.part/user -1000045]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/jack}
+ {:db/id #db/id[:db.part/user -1000046]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/queen}
+ {:db/id #db/id[:db.part/user -1000047]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/king}
+ {:db/id #db/id[:db.part/user -1000048]
+  :card/suit #db/id[:db.part/user -1000004]
+  :card/rank :card.rank/ace}
+
+ {:db/id #db/id[:db.part/user -1000049]
+  :card/rank :card.rank/joker}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## 4 Player Deck
+
+ [:db/add #db/id[:db.part/user -1000050] :deck/num-players 4]
+
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000006]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000007]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000008]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000009]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000010]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000011]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000012]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000013]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000014]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000015]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000017]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000018]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000019]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000020]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000021]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000022]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000023]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000024]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000025]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000026]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000027]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000028]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000029]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000030]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000031]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000032]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000033]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000034]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000035]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000036]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000037]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000038]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000039]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000040]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000041]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000042]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000043]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000044]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000045]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000046]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000047]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000048]]
+ [:db/add #db/id[:db.part/user -1000050] :deck/cards #db/id[:db.part/user -1000049]]
+ ]

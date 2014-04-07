@@ -1,9 +1,15 @@
-(ns ftb500.db
+(ns me.moocar.ftb500.db
   (:require [clojure.edn :as edn]
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [datomic.api :as d])
   (:import [java.io PushbackReader]))
+
+(def ^:private mem-uri
+  "datomic:mem://ftb500")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Setup/Teardown
 
 (defn transact-resource
   [conn resource-name]
@@ -18,20 +24,30 @@
 (defn ref-data-exists?
   [conn]
   (let [db (d/db conn)]
-    (some? (d/q '[:find ?e
-                  :where [?e :bid/name :bid.name/pass]]
-                db))))
+    (not (empty? (d/q '[:find ?e
+                        :where [?e :card/rank :card.rank/four]]
+                      db)))))
 
 (defn ensure-ref-data
   [conn]
   (when-not (ref-data-exists? conn)
-    (transact-resource conn "ref_data.edn")))
+    (println "Adding reference data")
+    (transact-resource conn "ref_data.edn")
+    (transact-resource conn "ref_cards.edn")))
+
+(defn del-db
+  []
+  (d/delete-database mem-uri))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Component
 
 (defrecord DatomicDatabase [uri]
   component/Lifecycle
   (start [this]
     ;; Ensure database created
-    (d/create-database uri)
+    (when (d/create-database uri)
+      (println "Created database" uri))
     (let [conn (d/connect uri)]
       (ensure-schema conn)
       (ensure-ref-data conn)
@@ -41,4 +57,4 @@
 
 (defn new-datomic-database
   []
-  (->DatomicDatabase "datomic:mem://ftp500"))
+  (->DatomicDatabase mem-uri))

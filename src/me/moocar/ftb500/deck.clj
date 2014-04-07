@@ -1,4 +1,4 @@
-(ns ftp500.deck
+(ns me.moocar.ftb500.deck
   (:require [clojure.core.async :refer [>! <! put!]]
             [clojure.set :as set]))
 

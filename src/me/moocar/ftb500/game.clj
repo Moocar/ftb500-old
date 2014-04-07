@@ -1,6 +1,6 @@
-(ns ftp500.game
+(ns me.moocar.ftb500.game
   (:require [clojure.core.async :refer [go >! <! put! chan]]
-            [ftp500.deck :as deck]))
+            [me.moocar.ftb500.deck :as deck]))
 
 (defrecord Game [first-player])
 
