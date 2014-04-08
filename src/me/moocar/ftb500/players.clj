@@ -13,18 +13,18 @@
   {:pre [players (string? player-name)]}
   (let [conn (:conn (:db players))
         player-id (d/tempid :db.part/user)
-        result (d/transact conn
-                           [[:db/add player-id :player/name player-name]])]
-    (d/resolve-tempid (d/db conn) (:tempids @result) player-id)))
+        result @(d/transact conn
+                            [[:db/add player-id :player/name player-name]])]
+    (d/resolve-tempid (d/db conn) (:tempids result) player-id)))
 
 (defn add-players!
   [players player-names]
   {:pre [players (sequential? player-names)]}
   (let [conn (:conn (:db players))]
-    (d/transact conn
-                (map #(vector :db/add (d/tempid :db.part/user)
-                              :player/name %)
-                     player-names))))
+    @(d/transact conn
+                 (map #(vector :db/add (d/tempid :db.part/user)
+                               :player/name %)
+                      player-names))))
 
 (defn find-all-ids
   [db]

@@ -14,8 +14,8 @@
 (defn transact-resource
   [conn resource-name]
   (with-open [reader (PushbackReader. (jio/reader (jio/resource resource-name)))]
-    (d/transact conn (edn/read {:readers {'db/id datomic.db/id-literal}}
-                               reader))))
+    @(d/transact conn (edn/read {:readers {'db/id datomic.db/id-literal}}
+                                reader))))
 
 (defn ensure-schema
   [conn]

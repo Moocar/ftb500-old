@@ -133,7 +133,7 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game.bid/player
+  :db/ident :game.bid/seat
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
@@ -164,7 +164,7 @@
  ;; Trick Plays
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :trick.play/player
+  :db/ident :trick.play/seat
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
@@ -198,13 +198,13 @@
  ;; Game
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game/seat
+  :db/ident :game/seats
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game/first-player
+  :db/ident :game/first-seat
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}

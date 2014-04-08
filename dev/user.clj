@@ -5,6 +5,7 @@
             [clojure.tools.namespace.repl :refer [refresh]]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
+            [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
             [me.moocar.ftb500.game :as game]
@@ -34,6 +35,12 @@
   (def p (:players system))
   (def g (:games system))
   :ready)
+
+(defn pg
+  "Prints the latest game to console"
+  []
+  (games/print-game g
+                    (first (games/get-game-ids (d/db (:conn (:db g)))))))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."

@@ -18,7 +18,7 @@
   :bid/name :bid.name/six-hearts
   :bid/score 100}
  {:db/id #db/id[:db.part/user -1000006]
-  :bid/name :bid.name/six-no-trumps
+  :bid/name :bid.name/six-no-trump
   :bid/score 120}
 
  {:db/id #db/id[:db.part/user -1000007]
@@ -34,7 +34,7 @@
   :bid/name :bid.name/seven-hearts
   :bid/score 200}
  {:db/id #db/id[:db.part/user -1000011]
-  :bid/name :bid.name/seven-no-trumps
+  :bid/name :bid.name/seven-no-trump
   :bid/score 220}
 
  {:db/id #db/id[:db.part/user -1000012]
@@ -50,7 +50,7 @@
   :bid/name :bid.name/eight-hearts
   :bid/score 300}
  {:db/id #db/id[:db.part/user -1000016]
-  :bid/name :bid.name/eight-no-trumps
+  :bid/name :bid.name/eight-no-trump
   :bid/score 320}
 
  {:db/id #db/id[:db.part/user -1000017]
@@ -66,10 +66,10 @@
   :bid/name :bid.name/nine-hearts
   :bid/score 400}
  {:db/id #db/id[:db.part/user -1000021]
-  :bid/name :bid.name/nine-no-trumps
+  :bid/name :bid.name/nine-no-trump
   :bid/score 420}
 
- {:db/id #db/id[:db.part/user -1000012]
+ {:db/id #db/id[:db.part/user -1000022]
   :bid/name :bid.name/ten-spades
   :bid/score 440}
  {:db/id #db/id[:db.part/user -1000023]
@@ -82,7 +82,7 @@
   :bid/name :bid.name/ten-hearts
   :bid/score 500}
  {:db/id #db/id[:db.part/user -1000026]
-  :bid/name :bid.name/ten-no-trumps
+  :bid/name :bid.name/ten-no-trump
   :bid/score 520}
 
  {:db/id #db/id[:db.part/user -1000027]
@@ -95,7 +95,7 @@
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
  ;; ## Decks
 
- {:db/id #db/id[:db.part/user -1000001]
+ {:db/id #db/id[:db.part/user -1000029]
   :deck/num-players 4
   :bid/score 0}
 

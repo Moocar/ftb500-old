@@ -8,5 +8,5 @@
   []
   (component/system-map
    :db (db/new-datomic-database)
-   :games (games/new-games)
+   :games (games/new-games-component)
    :players (players/new-players-component)))
