@@ -22,14 +22,15 @@
    "joker" \B})
 
 (defn format-short
+  "Formats a card as a short string. E.g 10C or 2H"
   [card]
   (let [rank-name (name (:card/rank card))
         suit (:card/suit card)]
-    (str (get short-rank-strings
-              rank-name)
-         (when suit
+    (str (format "%2s"(get short-rank-strings rank-name))
+         (if suit
            (get short-suit-strings
-                (name (:card.suit/name suit)))))))
+                (name (:card.suit/name suit)))
+           " "))))
 
 (defn format-line-short
   [cards]

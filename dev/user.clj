@@ -4,10 +4,12 @@
             [clojure.pprint :refer [pprint]]
             [clojure.tools.namespace.repl :refer [refresh]]
             [com.stuartsierra.component :as component]
+            [datomic.api :as d]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
             [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.game2 :as game2]
+            [me.moocar.ftb500.games :as games]
+            [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.system :as system]))
 
 (def system nil)
@@ -29,6 +31,8 @@
   []
   (init)
   (start)
+  (def p (:players system))
+  (def g (:games system))
   :ready)
 
 (defn reset
