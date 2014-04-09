@@ -32,23 +32,45 @@
               (pass-bid? %))
         current-bids))
 
+(defn score-too-low?
+  [current-bids bid-type]
+  (< (:bid/score bid-type)
+     (reduce max
+             0
+             (map (comp :bid/score :game.bid/bid)
+                  current-bids))))
+
 #_(defn get-passed-seat-ids
   [bids]
   (map (comp :db/id :game.bid/seat)
        (filter pass-bid? bids)))
 
-#_(defn next-seat
-  [db game-id seat-id]
-  {:pre [db (number? game-id) (number? seat-id)]}
-  (-> '[:find ?position
-        :in $ ?game-id ?seat-id
-        :where [?game-id :game.seat]])
+(defn get-next-seat
+  [game-seats seat]
+  {:pre [game-seats seat]}
+  (let [next-seat-position (mod (inc (:game.seat/position seat)) (count game-seats))]
+    (->> game-seats
+         (filter #(= next-seat-position (:game.seat/position %)))
+         (first))))
+
+(defn find-next-seat
+  [db seat-id]
+  {:pre [db (number? seat-id)]}
   (let [seat (d/entity db seat-id)
-        seat-position (:game.seat)]
-    ))
+        game (first (:game/_seats seat))
+        seats (:game/seats game)]
+    (get-next-seat seats seat)))
 
 #_(defn not-your-go?
   [db current-bids seat-id]
+  (let [seat (d/entity db seat-id)
+        game (first (:game/_seats seat))
+        seats (:game/seats game)]
+   (loop [next-seat (find-next-seat db (:db/id (last current-bids)))]
+     (if (= (:db/id next-seat) seat-id)
+       false
+       (if (passed-already? current-bids next-seat)
+         (recur (get-next-seat db ))))))
   (let [passed-seat-ids (get-passed-seat-ids current-bids)
         last-seat-id (last-seat db seat-id)
         reverse-bids (reverse current-bids)
@@ -62,12 +84,19 @@
   (first ()))
 
 (defn not-valid-bid?
-  [db game-id seat-id bid-type-id]
-  (let [current-bids (:game/bids (d/entity db game-id))]
-    (cond (passed-already? current-bids seat-id)
-          "You've passed already"
+ [db game-id seat-id bid-type]
+ (let [current-bids (:game/bids (d/entity db game-id))]
+   (and (> (count current-bids) 0)
+       (cond (passed-already? current-bids seat-id)
+             "You've passed already"
 
-          #_(not-your-do? db current-bids seat-id))))
+             (pass-bid? {:game.bid/bid bid-type})
+             false
+
+             (score-too-low? current-bids bid-type)
+             "Bid too low"
+
+             #_(not-your-go? db current-bids seat-id)))))
 
 (defn add!
   [games game-id seat-id bid-name]
@@ -75,8 +104,9 @@
   (let [conn (:conn (:db games))
         db (d/db conn)
         bid-type-id (find-bid-id db bid-name)
+        bid-type (d/entity db bid-type-id)
         current-bids (sort-by :db/id (:game/bids (d/entity db game-id)))]
-    (when-let [error (not-valid-bid? db game-id seat-id bid-type-id)]
+    (when-let [error (not-valid-bid? db game-id seat-id bid-type)]
       (throw (ex-info error
                       {:seat seat-id
                        :bid-type-name bid-name})))
