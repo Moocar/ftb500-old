@@ -77,15 +77,22 @@
        (not-your-go? current-bids seat)
        "It's not your go!")))
 
+(defn get-bids
+  [game]
+  (sort-by :db/id (:game/bids game)))
+
 (def finished?
   (memoize
    (fn [bids num-players]
      {:pre [(sequential? bids)]}
      (= (dec num-players) (count (filter pass-bid? bids))))))
 
-(defn get-current-bids
-  [game]
-  (sort-by :db/id (:game/bids game)))
+(defn winning-bid
+  [bids]
+  (->> bids
+       (reverse)
+       (remove pass-bid?)
+       (first)))
 
 (defn add!
   [games game-id seat bid-name]
@@ -95,7 +102,7 @@
         bid-type-id (find-bid-id db bid-name)
         bid-type (d/entity db bid-type-id)
         game (d/entity db game-id)
-        current-bids (get-current-bids game)]
+        current-bids (get-bids game)]
     (when-let [error (not-valid-bid? current-bids seat bid-type)]
       (throw (ex-info error
                       {:seat (:game.seat/position seat)

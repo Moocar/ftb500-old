@@ -111,6 +111,12 @@
        (print-table)
        (with-out-str)))
 
+(defn format-kitty-exchanged?
+  [game]
+  (if (kitty/exchanged? game)
+    "Kitty Exchanged\n"
+    ""))
+
 (defn print-game
   [games game-id]
   {:pre [games (number? game-id)]}
@@ -118,12 +124,13 @@
         game (d/entity db game-id)
         game-name (:game/name game)]
     (println
-     (format "%s (%s)%sKitty: %s\nBidding:%s"
+     (format "%s (%s)%sKitty: %s\nBidding:%s%s"
              game-name
              game-id
              (format-seats (:game/seats game))
              (card/format-line-short (:game.kitty/cards game))
-             (format-bids (:game/bids game))))))
+             (format-bids (:game/bids game))
+             (format-kitty-exchanged? game)))))
 
 (defrecord Games [mode db players]
   component/Lifecycle
@@ -134,6 +141,7 @@
         (when (empty? (get-game-ids db))
           (println "Adding new game")
           (let [game-id (new-game! this "Game 1" 4)
+                game (d/entity (d/db conn) game-id)
                 player-ids (players/find-all-ids db)
                 seats (->> (:game/seats (d/entity (d/db conn) game-id))
                            (sort-by :db/id))]
@@ -152,8 +160,8 @@
             (bids/add! this game-id (nth seats 1) :eight-hearts)
             (bids/add! this game-id (nth seats 3) :pass)
 
-            (let [seat (d/entity (d/db conn) (:db/id (first seats)))]
-              (kitty/exchange! this seat (take 3 (:game.seat/cards seat))))))))
+            (let [winning-seat (d/entity (d/db conn) (:db/id (nth seats 1)))]
+              (kitty/exchange! this winning-seat (take 3 (:game.seat/cards winning-seat))))))))
     this)
   (stop [this]
     this))
