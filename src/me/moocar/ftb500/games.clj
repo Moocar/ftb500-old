@@ -134,15 +134,25 @@
           (println "Adding new game")
           (let [game-id (new-game! this "Game 1" 4)
                 player-ids (players/find-all-ids db)
-                seat-ids (sort (map :db/id (:game/seats (d/entity (d/db conn) game-id))))]
+                seats (->> (:game/seats (d/entity (d/db conn) game-id))
+                           (sort-by :db/id))]
             (assert game-id)
             (assert (not (empty? player-ids)))
             (doall
              (map-indexed #(join-game! this game-id %1 %2)
                           player-ids))
-            (bids/add! this game-id (first seat-ids) :six-clubs)
-            (bids/add! this game-id (second seat-ids) :seven-hearts)
-            (bids/add! this game-id (nth seat-ids 2) :pass)))))
+
+            ;; Bids
+            (bids/add! this game-id (first seats) :six-clubs)
+            (bids/add! this game-id (second seats) :seven-hearts)
+            (bids/add! this game-id (nth seats 2) :pass)
+            (bids/add! this game-id (nth seats 3) :eight-clubs)
+            (bids/add! this game-id (nth seats 0) :pass)
+            (bids/add! this game-id (nth seats 1) :eight-hearts)
+
+            ;; Winning Bid
+
+            ))))
     this)
   (stop [this]
     this))
