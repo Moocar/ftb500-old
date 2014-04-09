@@ -5,6 +5,7 @@
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
+            [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
             [datomic.api :as d]))
 
@@ -149,10 +150,10 @@
             (bids/add! this game-id (nth seats 3) :eight-clubs)
             (bids/add! this game-id (nth seats 0) :pass)
             (bids/add! this game-id (nth seats 1) :eight-hearts)
+            (bids/add! this game-id (nth seats 3) :pass)
 
-            ;; Winning Bid
-
-            ))))
+            (let [seat (d/entity (d/db conn) (:db/id (first seats)))]
+              (kitty/exchange! this seat (take 3 (:game.seat/cards seat))))))))
     this)
   (stop [this]
     this))

@@ -42,7 +42,8 @@
 (defn get-next-seat
   [game-seats seat]
   {:pre [game-seats seat]}
-  (let [next-seat-position (mod (inc (:game.seat/position seat)) (count game-seats))]
+  (let [next-seat-position (mod (inc (:game.seat/position seat))
+                                (count game-seats))]
     (->> game-seats
          (filter #(= next-seat-position (:game.seat/position %)))
          (first))))
@@ -60,18 +61,31 @@
 
 (defn not-valid-bid?
  [current-bids seat bid-type]
+ {:pre [(sequential? current-bids) seat bid-type]}
  (and (> (count current-bids) 0)
-      (cond (passed-already? current-bids seat)
-            "You've passed already"
+      (cond
 
-            (pass-bid? {:game.bid/bid bid-type})
-            false
+       (passed-already? current-bids seat)
+       "You've passed already"
 
-            (score-too-low? current-bids bid-type)
-            "Bid too low"
+       (pass-bid? {:game.bid/bid bid-type})
+       false
 
-            (not-your-go? current-bids seat)
-            "It's not your go!")))
+       (score-too-low? current-bids bid-type)
+       "Bid too low"
+
+       (not-your-go? current-bids seat)
+       "It's not your go!")))
+
+(def finished?
+  (memoize
+   (fn [bids num-players]
+     {:pre [(sequential? bids)]}
+     (= (dec num-players) (count (filter pass-bid? bids))))))
+
+(defn get-current-bids
+  [game]
+  (sort-by :db/id (:game/bids game)))
 
 (defn add!
   [games game-id seat bid-name]
@@ -81,7 +95,7 @@
         bid-type-id (find-bid-id db bid-name)
         bid-type (d/entity db bid-type-id)
         game (d/entity db game-id)
-        current-bids (sort-by :db/id (:game/bids game))]
+        current-bids (get-current-bids game)]
     (when-let [error (not-valid-bid? current-bids seat bid-type)]
       (throw (ex-info error
                       {:seat (:game.seat/position seat)
