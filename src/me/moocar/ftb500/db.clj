@@ -25,15 +25,15 @@
   [conn]
   (let [db (d/db conn)]
     (not (empty? (d/q '[:find ?e
-                        :where [?e :card/rank :card.rank/four]]
+                        :where [?e :card.rank/name :card.rank.name/four]]
                       db)))))
 
 (defn ensure-ref-data
   [conn]
   (when-not (ref-data-exists? conn)
     (println "Adding reference data")
-    (transact-resource conn "ref_data.edn")
-    (transact-resource conn "ref_cards.edn")))
+    (transact-resource conn "ref_cards.edn")
+    (transact-resource conn "ref_data.edn")))
 
 (defn del-db
   []

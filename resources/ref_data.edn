@@ -91,13 +91,4 @@
  {:db/id #db/id[:db.part/user -1000028]
   :bid/name :bid.name/open-misere
   :bid/score 500}
-
- ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- ;; ## Decks
-
- {:db/id #db/id[:db.part/user -1000029]
-  :deck/num-players 4
-  :bid/score 0}
-
-
  ]

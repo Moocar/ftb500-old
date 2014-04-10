@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.bids
   (:require [clojure.pprint :refer [print-table]]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [me.moocar.ftb500.seats :as seats]))
 
 (defn dbg-bid-table
   [db]
@@ -39,24 +40,15 @@
              (map (comp :bid/score :game.bid/bid)
                   current-bids))))
 
-(defn get-next-seat
-  [game-seats seat]
-  {:pre [game-seats seat]}
-  (let [next-seat-position (mod (inc (:game.seat/position seat))
-                                (count game-seats))]
-    (->> game-seats
-         (filter #(= next-seat-position (:game.seat/position %)))
-         (first))))
-
 (defn not-your-go?
   [current-bids seat]
   (let [game (first (:game/_seats seat))
         game-seats (:game/seats game)]
-   (loop [next-seat (get-next-seat game-seats (:game.bid/seat (last current-bids)))]
+   (loop [next-seat (seats/next game-seats (:game.bid/seat (last current-bids)))]
      (if (= next-seat seat)
        false
        (if (passed-already? current-bids next-seat)
-         (recur (get-next-seat game-seats next-seat))
+         (recur (seats/next game-seats next-seat))
          true)))))
 
 (defn not-valid-bid?
@@ -95,13 +87,12 @@
        (first)))
 
 (defn add!
-  [games game-id seat bid-name]
-  {:pre [games (number? game-id) seat (keyword? bid-name)]}
+  [games game seat bid-name]
+  {:pre [games game seat (keyword? bid-name)]}
   (let [conn (:conn (:db games))
         db (d/db conn)
         bid-type-id (find-bid-id db bid-name)
         bid-type (d/entity db bid-type-id)
-        game (d/entity db game-id)
         current-bids (get-bids game)]
     (when-let [error (not-valid-bid? current-bids seat bid-type)]
       (throw (ex-info error
@@ -111,6 +102,6 @@
           tx [{:db/id bid-id
                :game.bid/bid bid-type-id
                :game.bid/seat (:db/id seat)}
-              {:db/id game-id
+              {:db/id (:db/id game)
                :game/bids bid-id}]]
       @(d/transact conn tx))))

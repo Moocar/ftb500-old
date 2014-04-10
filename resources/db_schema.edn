@@ -36,18 +36,32 @@
 
  ;; Rank
 
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/four]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/five]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/six]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/seven]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/eight]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/nine]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/ten]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/jack]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/queen]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/king]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/ace]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank/joker]
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.rank/no-trumps-order
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.rank/name
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/two]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/three]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/four]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/five]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/six]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/seven]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/eight]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/nine]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/ten]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/jack]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/queen]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/king]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/ace]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/joker]
 
  ;; Card
 
@@ -184,7 +198,7 @@
  ;; Trick
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game.trick/play
+  :db/ident :game.trick/plays
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db.install/_attribute :db.part/db}
@@ -217,12 +231,6 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game/winning-bid
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db.install/_attribute :db.part/db}
-
- {:db/id #db/id[:db.part/db]
   :db/ident :game.kitty/cards
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
@@ -230,6 +238,12 @@
 
  {:db/id #db/id[:db.part/db]
   :db/ident :game/bids
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/tricks
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db.install/_attribute :db.part/db}

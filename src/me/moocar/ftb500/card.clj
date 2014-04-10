@@ -1,6 +1,9 @@
 (ns me.moocar.ftb500.card
   (:require [clojure.string :as string]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Formatting
+
 (def short-suit-strings
   {"spades"   \u2660
    "clubs"    \u2663
@@ -24,7 +27,7 @@
 (defn format-short
   "Formats a card as a short string. E.g 10C or 2H"
   [card]
-  (let [rank-name (name (:card/rank card))
+  (let [rank-name (name (:card.rank/name (:card/rank card)))
         suit (:card/suit card)]
     (str (format "%2s"(get short-rank-strings rank-name))
          (if suit
