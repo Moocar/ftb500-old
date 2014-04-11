@@ -10,23 +10,21 @@
             [me.moocar.ftb500.tricks :as tricks]
             [datomic.api :as d]))
 
-(defn get-stock-deck-card-ids
-  [games num-players]
-  (let [db (:db games)]
-    (->> (d/q '[:find ?cards
-                :in $ ?num-players
-                :where [?deck :deck/cards ?cards]
-                [?deck :deck/num-players ?num-players]]
-              (d/db (:conn db))
-              num-players)
-         (map first))))
+(defn find-deck
+  [db num-players]
+  (-> '[:find ?deck
+        :in $ ?num-players
+        :where [?deck :deck/num-players ?num-players]]
+      (d/q db num-players)
+      ffirst
+      (->> (d/entity db))))
 
 (defn make-seat
   [game-id index card-ids]
   (let [seat-id (d/tempid :db.part/user)]
     (concat
      (map #(hash-map :db/id seat-id
-                     :game.seat/cards %)
+                     :game.seat/cards (:db/id %))
           card-ids)
      [{:db/id seat-id
        :game.seat/position index}
@@ -34,28 +32,30 @@
        :game/seats seat-id}])))
 
 (defn make-game
-  [game-id game-name hands kitty]
+  [game-id deck game-name hands kitty]
   (concat
    (map #(hash-map :db/id game-id
-                   :game.kitty/cards %)
+                   :game.kitty/cards (:db/id %))
         kitty)
    (mapcat #(make-seat game-id %1 %2)
            (range)
            hands)
    [{:db/id game-id
-     :game/name game-name}]))
+     :game/name game-name
+     :game/deck (:db/id deck)}]))
 
 (defn new-game!
   "Should create a deck, shuffle it, deal it to a number of seats,
   save all that to the DB against `game-name`"
   [games game-name num-players]
   {:pre [games (string? game-name) (number? num-players)]}
-  (let [db (:db games)
-        conn (:conn db)
+  (let [conn (:conn (:db games))
+        db (d/db conn)
         game-id (d/tempid :db.part/user)
-        deck (shuffle (get-stock-deck-card-ids games num-players))
-        {:keys [hands kitty]} (deck/partition-hands deck)
-        data (make-game game-id game-name hands kitty)
+        deck (find-deck db num-players)
+        deck-cards (shuffle (:deck/cards deck))
+        {:keys [hands kitty]} (deck/partition-hands deck-cards)
+        data (make-game game-id deck game-name hands kitty)
         result @(d/transact conn data)]
     (d/resolve-tempid (d/db conn) (:tempids result) game-id)))
 
@@ -164,11 +164,14 @@
             (let [winning-seat (d/entity (d/db conn) (:db/id (nth seats 1)))
                   cards-to-exchange (take 3 (:game.seat/cards winning-seat))]
               (kitty/exchange! this (d/entity (d/db conn) (:db/id winning-seat)) cards-to-exchange)
-              (tricks/add! this
+              (tricks/add-play! this
                            (d/entity (d/db conn) (:db/id (second seats)))
                            (nth (vec (:game.seat/cards winning-seat)) 3))
-
-              )))))
+              (let [game (d/entity (d/db conn) (:db/id game))
+                    winning-suit (:bid/suit (:game.bid/bid (bids/winning-bid (:game/bids game))))
+                    trump-order (tricks/trump-order (d/db conn)
+                                                    (:game/deck game)
+                                                    winning-suit)]))))))
     this)
   (stop [this]
     this))

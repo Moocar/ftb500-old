@@ -212,24 +212,12 @@
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :trick.play/order
-  :db/valueType :db.type/long
-  :db/cardinality :db.cardinality/one
-  :db.install/_attribute :db.part/db}
-
  ;; Trick
 
  {:db/id #db/id[:db.part/db]
   :db/ident :game.trick/plays
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
-  :db.install/_attribute :db.part/db}
-
- {:db/id #db/id[:db.part/db]
-  :db/ident :game.trick/number
-  :db/valueType :db.type/long
-  :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
  ;; Game
