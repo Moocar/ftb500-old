@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.seats
-  (:refer-clojure :exclude [next=]))
+  (:refer-clojure :exclude [next]))
 
 (defn next
   [game-seats seat]

@@ -108,33 +108,56 @@
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-clubs]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-diamonds]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-no-trumps]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-spades]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-clubs]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-diamonds]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-no-trumps]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-spades]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-clubs]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-diamonds]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-no-trumps]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-spades]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-clubs]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-diamonds]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-no-trumps]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-spades]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-clubs]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-diamonds]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-no-trump]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-no-trumps]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/misere]
  [:db/add #db/id[:db.part/user] :db/ident :bid.name/open-misere]
 
  {:db/id #db/id[:db.part/db]
+  :db/ident :bid/contract-style
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/misere]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/open-misere]
+
+ {:db/id #db/id[:db.part/db]
   :db/ident :bid/score
   :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/rank
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/suit
+  :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
@@ -210,6 +233,12 @@
   :db.install/_attribute :db.part/db}
 
  ;; Game
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/deck
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
   :db/ident :game/seats

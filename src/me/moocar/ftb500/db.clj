@@ -32,8 +32,7 @@
   [conn]
   (when-not (ref-data-exists? conn)
     (println "Adding reference data")
-    (transact-resource conn "ref_cards.edn")
-    (transact-resource conn "ref_data.edn")))
+    (transact-resource conn "ref_cards.edn")))
 
 (defn del-db
   []
