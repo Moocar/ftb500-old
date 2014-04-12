@@ -2,7 +2,8 @@
   (:require [clojure.pprint :refer [print-table]]
             [clojure.string :as string]
             [com.stuartsierra.component :as component]
-            [datomic.api :as d]))
+            [datomic.api :as d])
+  (:refer-clojure :exclude [find]))
 
 (def ref-player-names
   #{"Soap" "Eddy" "Bacon" "Winston" "Big Chris" "Barry the Baptist"
@@ -77,4 +78,5 @@
                  [{:db/id (d/tempid :db.part/user)
                    :player/id player-ext-id
                    :player/name player-name}])
-    {:player-id player-ext-id}))
+    {:status 200
+     :body {:player-id player-ext-id}}))
