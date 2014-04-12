@@ -3,6 +3,13 @@
  ;; ## Player
 
  {:db/id #db/id[:db.part/db]
+  :db/ident :player/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/doc "A player's name"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
   :db/ident :player/name
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
@@ -178,6 +185,14 @@
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
  ;; ## Game
 
+ ;; Team
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.team/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
  ;; Seat
 
  {:db/id #db/id[:db.part/db]
@@ -196,6 +211,12 @@
   :db/ident :game.seat/cards
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.seat/team
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
  ;; Trick Plays
@@ -223,6 +244,12 @@
  ;; Game
 
  {:db/id #db/id[:db.part/db]
+  :db/ident :game/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
   :db/ident :game/deck
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
@@ -237,13 +264,6 @@
  {:db/id #db/id[:db.part/db]
   :db/ident :game/first-seat
   :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db.install/_attribute :db.part/db}
-
- {:db/id #db/id[:db.part/db]
-  :db/ident :game/name
-  :db/unique :db.unique/identity
-  :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 

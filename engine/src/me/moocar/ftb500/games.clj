@@ -48,10 +48,9 @@
 (defn new-game!
   "Should create a deck, shuffle it, deal it to a number of seats,
   save all that to the DB against `game-name`"
-  [games game-name num-players]
-  {:pre [games (string? game-name) (number? num-players)]}
-  (let [conn (:conn (:db games))
-        db (d/db conn)
+  [conn num-players]
+  {:pre [conn (number? num-players)]}
+  (let [db (d/db conn)
         game-id (d/tempid :db.part/user)
         deck (find-deck db num-players)
         deck-cards (shuffle (:deck/cards deck))
@@ -183,7 +182,7 @@
             db (d/db conn)]
         (when (empty? (get-game-ids db))
           (println "Adding new game")
-          (let [game-id (new-game! this "Game 1" 4)
+          (let [game-id (new-game! conn 4)
                 game (d/entity (d/db conn) game-id)
                 player-ids (players/find-all-ids db)
                 seats (->> (:game/seats (d/entity (d/db conn) game-id))

@@ -9,13 +9,12 @@
     "Rory Breaker" "Traffic Warden" "Lenny" "JD"})
 
 (defn add!
-  [players player-name]
-  {:pre [players (string? player-name)]}
-  (let [conn (:conn (:db players))
-        player-id (d/tempid :db.part/user)
-        result @(d/transact conn
-                            [[:db/add player-id :player/name player-name]])]
-    (d/resolve-tempid (d/db conn) (:tempids result) player-id)))
+  [conn player-ext-id player-name]
+  {:pre [players (string? player-name) player-ext-id]}
+  (d/transact conn
+              [{:db/id (d/tempid :db.part/user)
+                :player/id player-ext-id
+                :player/name player-name}]))
 
 (defn add-players!
   [players player-names]
@@ -47,6 +46,15 @@
        (->> player-ids
             (map #(select-keys (d/entity db %) [:db/id :player/name]))
             (print-table)))))
+
+(defn find
+  [db player-ext-id]
+  (when-let [player-id (-> '[:find ?player
+                             :in $ ?player-id
+                             :where [?player :player/id ?player-id]]
+                           (d/q db player-ext-id)
+                           ffirst)]
+    (d/entity db player-id)))
 
 (defrecord Players [mode db]
   component/Lifecycle
