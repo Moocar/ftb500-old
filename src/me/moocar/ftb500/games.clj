@@ -194,8 +194,8 @@
               (let [game (d/entity (d/db conn) (:db/id game))
                     winning-suit (:bid/suit (:game.bid/bid
                                              (bids/winning-bid (:game/bids game))))
-                    next-seat (d/entity (d/db conn) (:db/id (second seats)))
-                    next-card (nth (vec (:game.seat/cards winning-seat)) 3)]
+                    next-seat (d/entity (d/db conn) (:db/id (nth seats 2)))
+                    next-card (nth (vec (:game.seat/cards (nth seats 2))) 0)]
                 (tricks/add-play! this next-seat next-card)))))))
     this)
   (stop [this]

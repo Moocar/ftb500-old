@@ -108,6 +108,11 @@
         last-seat (:trick.play/seat (last plays))]
     (not= seat (seats/next game-seats last-seat))))
 
+(defn dont-own-card?
+  [seat card]
+  (let [seat-cards (:game.seat/cards seat)]
+    (not (contains? seat-cards card))))
+
 (defn add-play!
   [this seat card]
   (let [conn (:conn (:db this))
@@ -139,6 +144,9 @@
         (if (not-your-go? (get-plays last-trick) seat)
           (throw (ex-info "Not your go (mid trick)"
                           {}))
-          (let [last-winner (calc-winner contract last-trick)]
-            (println "last winner"))))
+          (if (dont-own-card? seat card)
+            (throw (ex-info "You don't own this card"
+                            {}))
+            (let [last-winner (calc-winner contract last-trick)]
+              (println "last winner")))))
       )))
