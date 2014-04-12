@@ -1,15 +1,24 @@
 (ns me.moocar.ftb500.http.handler
-  (:require [com.stuartsierra.component :as component]))
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as jio]
+            [com.stuartsierra.component :as component]
+            [me.moocar.ftb500.handlers :as engine-handler]
+            [ring.middleware.params :as params]))
 
-(defn default-handler
-  [request]
-  {:status 404
-   :body {:msg "No Service Found"}})
+(def handler-lookup
+  {[:post :create-player] :create-player})
 
 (defn make-handler
   [component]
-  (fn [request]
-    (default-handler request)))
+  (let [{:keys [engine-handler]} component]
+    (fn [request]
+      (let [{:keys [uri request-method body]} request
+            action-name (subs uri 1)
+            action (get handler-lookup [request-method (keyword action-name)])
+            args (edn/read-string (slurp (jio/reader body)))
+            new-request {:action action
+                         :args args}]
+        (engine-handler/handle-request engine-handler new-request)))))
 
 (defn wrap-catch-error
   [this handler]
@@ -30,7 +39,7 @@
           (update-in [:body] pr-str)
           (update-in [:headers] assoc "Content-Type" "application/edn")))))
 
-(defrecord HandlerComponent []
+(defrecord HandlerComponent [engine-handler]
   component/Lifecycle
   (start [this]
     (assoc this
@@ -42,4 +51,5 @@
 
 (defn new-handler
   [config]
-  (map->HandlerComponent {}))
+  (component/using (map->HandlerComponent {})
+    [:engine-handler]))

@@ -1,37 +1,33 @@
 (ns me.moocar.ftb500.handlers
-  (:require [datomic.api :as d]
-            [me.moocar.ftb500.log :as log]
+  (:require [com.stuartsierra.component :as component]
             [me.moocar.ftb500.players :as players]))
 
-(defn create-player
-  [this request]
-  (let [conn (d/db (:conn (:db this)))
-        player-name (:player-name request)
-        player-ext-id (d/squuid)]
-    (assert (string? player-name))
-    @(players/add! conn player-ext-id player-name)
-    {:status :success
-     :body {:player-id player-ext-id}}))
+(defn not-found-handler
+  [_ request]
+  {:status 404
+   :body {:msg "No Service Found"}})
 
-(defn make-action-handler-lookup
+(defn make-handler-lookup
   []
-  {:create-player create-player})
-
-(defn find-player-id
-  [db player-id]
-  (or (players/find player-id)
-      (throw (ex-info "Player not found" {:player-id player-id}))))
+  {:create-player players/add!})
 
 (defn handle-request
-  [this request]
-  (let [action-handler-lookup (:action-handler-lookup this)
-        {:keys [action args player-id]} request
-        db (d/db (:conn (:db this)))]
-    (log/log (:log this) {:request request})
-    (let [response ((get action-handler-lookup action)
-                    this
-                    (assoc request
-                      :player player))]
-      (log/log (:log this) {:response response}))))
+  [component request]
+  (let [conn (:conn (:datomic component))
+        handler-lookup (:handler-lookup component)
+        {:keys [action args]} request
+        handler-fn (get handler-lookup action not-found-handler)]
+    (handler-fn conn args)))
 
-(defrecord Handler [action-handler-lookup])
+(defrecord HandlerComponent [datomic]
+  component/Lifecycle
+  (start [this]
+    (assoc this
+      :handler-lookup (make-handler-lookup)))
+  (stop [this]
+    this))
+
+(defn new-handler-component
+  []
+  (component/using (map->HandlerComponent {})
+    [:datomic]))

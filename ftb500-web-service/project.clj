@@ -7,6 +7,6 @@
                  [com.stuartsierra/component "0.2.1"]
                  [ring/ring-core "1.2.2"]
                  [ring/ring-jetty-adapter "1.2.2"]
-                 #_[me.moocar/ftb500 "0.1.0-SNAPSHOT"]]
+                 [me.moocar/ftb500 "0.1.0-SNAPSHOT"]]
   :profiles {:dev {:source-paths ["dev"]
                    :dependencies [[org.clojure/tools.namespace "0.2.4"]]}})

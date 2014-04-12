@@ -33,7 +33,7 @@
        :game/seats seat-id}])))
 
 (defn make-game
-  [game-id deck game-name hands kitty]
+  [game-id deck hands kitty]
   (concat
    (map #(hash-map :db/id game-id
                    :game.kitty/cards (:db/id %))
@@ -42,7 +42,6 @@
            (range)
            hands)
    [{:db/id game-id
-     :game/name game-name
      :game/deck (:db/id deck)}]))
 
 (defn new-game!
@@ -55,7 +54,7 @@
         deck (find-deck db num-players)
         deck-cards (shuffle (:deck/cards deck))
         {:keys [hands kitty]} (deck/partition-hands deck-cards)
-        data (make-game game-id deck game-name hands kitty)
+        data (make-game game-id deck hands kitty)
         result @(d/transact conn data)]
     (d/resolve-tempid (d/db conn) (:tempids result) game-id)))
 
@@ -144,11 +143,9 @@
   [games game-id]
   {:pre [games (number? game-id)]}
   (let [db (d/db (:conn (:db games)))
-        game (d/entity db game-id)
-        game-name (:game/name game)]
+        game (d/entity db game-id)]
     (println
-     (format "%s (%s)%sKitty: %s\nBidding:%s%s%s"
-             game-name
+     (format "%s%sKitty: %s\nBidding:%s%s%s"
              game-id
              (format-seats (:game/seats game))
              (card/format-line-short (:game.kitty/cards game))

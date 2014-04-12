@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.players
   (:require [clojure.pprint :refer [print-table]]
+            [clojure.string :as string]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]))
 
@@ -7,14 +8,6 @@
   #{"Soap" "Eddy" "Bacon" "Winston" "Big Chris" "Barry the Baptist"
     "Little Chris" "Hatchet Harry" "Willie" "Dog" "Plank" "Nick the Greek"
     "Rory Breaker" "Traffic Warden" "Lenny" "JD"})
-
-(defn add!
-  [conn player-ext-id player-name]
-  {:pre [players (string? player-name) player-ext-id]}
-  (d/transact conn
-              [{:db/id (d/tempid :db.part/user)
-                :player/id player-ext-id
-                :player/name player-name}]))
 
 (defn add-players!
   [players player-names]
@@ -72,3 +65,16 @@
   (component/using
     (map->Players {:mode :dev})
     [:db]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; API
+
+(defn add!
+  [conn {:keys [player-name]}]
+  {:pre [(string? player-name) (not (string/blank? player-name))]}
+  (let [player-ext-id (d/squuid)]
+    @(d/transact conn
+                 [{:db/id (d/tempid :db.part/user)
+                   :player/id player-ext-id
+                   :player/name player-name}])
+    {:player-id player-ext-id}))

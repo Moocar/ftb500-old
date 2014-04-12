@@ -9,7 +9,6 @@
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
-            [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.games :as games]
             [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
