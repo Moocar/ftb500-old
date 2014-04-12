@@ -189,11 +189,14 @@
                   cards-to-exchange (take 3 (:game.seat/cards winning-seat))]
               (kitty/exchange! this (d/entity (d/db conn) (:db/id winning-seat)) cards-to-exchange)
               (tricks/add-play! this
-                           (d/entity (d/db conn) (:db/id (second seats)))
-                           (nth (vec (:game.seat/cards winning-seat)) 3))
+                                (d/entity (d/db conn) (:db/id (second seats)))
+                                (nth (vec (:game.seat/cards winning-seat)) 3))
               (let [game (d/entity (d/db conn) (:db/id game))
                     winning-suit (:bid/suit (:game.bid/bid
-                                             (bids/winning-bid (:game/bids game))))]))))))
+                                             (bids/winning-bid (:game/bids game))))
+                    next-seat (d/entity (d/db conn) (:db/id (second seats)))
+                    next-card (nth (vec (:game.seat/cards winning-seat)) 3)]
+                (tricks/add-play! this next-seat next-card)))))))
     this)
   (stop [this]
     this))

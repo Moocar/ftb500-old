@@ -50,4 +50,5 @@
   (db/del-db)
   (stop)
   (refresh :after 'user/go)
+  (Thread/sleep 10)
   (pg))

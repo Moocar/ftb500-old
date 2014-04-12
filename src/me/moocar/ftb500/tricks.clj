@@ -1,11 +1,16 @@
 (ns me.moocar.ftb500.tricks
   (:require [datomic.api :as d]
             [me.moocar.ftb500.bids :as bids]
-            [me.moocar.ftb500.kitty :as kitty]))
+            [me.moocar.ftb500.kitty :as kitty]
+            [me.moocar.ftb500.seats :as seats]))
 
 (defn get-tricks
   [game]
   (sort-by :db/id (:game/tricks game)))
+
+(defn get-plays
+  [trick]
+  (sort-by :db/id (:game.trick/plays trick)))
 
 (defn finished?
   [trick]
@@ -95,6 +100,14 @@
   [contract trick]
   (reduce #(card> contract %1 %2) trick))
 
+(defn not-your-go?
+  [plays seat]
+  {:pre [(sequential? plays) seat]}
+  (let [game (first (:game/_seats seat))
+        game-seats (:game/seats game)
+        last-seat (:trick.play/seat (last plays))]
+    (not= seat (seats/next game-seats last-seat))))
+
 (defn add-play!
   [this seat card]
   (let [conn (:conn (:db this))
@@ -109,7 +122,7 @@
                       {}))
       (if (empty? tricks)
         (if (not= seat (:game.bid/seat winning-bid))
-          (throw (ex-info "Not your turn"
+          (throw (ex-info "Not your turn (first go)"
                           {}))
           (let [trick-id (d/tempid :db.part/user)
                 trick-tx [{:db/id (:db/id game)
@@ -119,7 +132,13 @@
                            :game.trick/plays play-id}
                          {:db/id play-id
                           :trick.play/seat (:db/id seat)
-                          :trick.play/card (:db/id card)}]]
+                          :trick.play/card (:db/id card)}
+                         [:db/retract (:db/id seat)
+                          :game.seat/cards (:db/id card)]]]
             @(d/transact conn (concat trick-tx play-tx))))
-        (let [last-winner (calc-winner contract last-trick)]
-          (println "last winner"))))))
+        (if (not-your-go? (get-plays last-trick) seat)
+          (throw (ex-info "Not your go (mid trick)"
+                          {}))
+          (let [last-winner (calc-winner contract last-trick)]
+            (println "last winner"))))
+      )))

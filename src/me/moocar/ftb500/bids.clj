@@ -44,12 +44,12 @@
   [current-bids seat]
   (let [game (first (:game/_seats seat))
         game-seats (:game/seats game)]
-   (loop [next-seat (seats/next game-seats (:game.bid/seat (last current-bids)))]
-     (if (= next-seat seat)
-       false
-       (if (passed-already? current-bids next-seat)
-         (recur (seats/next game-seats next-seat))
-         true)))))
+    (loop [next-seat (seats/next game-seats (:game.bid/seat (last current-bids)))]
+      (if (= next-seat seat)
+        false
+        (if (passed-already? current-bids next-seat)
+          (recur (seats/next game-seats next-seat))
+          true)))))
 
 (defn not-valid-bid?
  [current-bids seat bid-type]
