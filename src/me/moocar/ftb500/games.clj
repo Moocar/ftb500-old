@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.games
   (:require [com.stuartsierra.component :as component]
             [clojure.pprint :refer [print-table]]
+            [clojure.string :as string]
             [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.db :as db]
@@ -118,6 +119,28 @@
     "Kitty Exchanged\n"
     ""))
 
+(defn format-play
+  [play]
+  (str (card/format-short (:trick.play/card play))
+       "(" (:player/name (:game.seat/player (:trick.play/seat play))) ")"))
+
+(defn format-trick
+  [index trick]
+  (str (inc index) " "
+       (->> (:game.trick/plays trick)
+            (map format-play)
+            (string/join ","))))
+
+(defn format-tricks
+  [game]
+  (let [tricks (:game/tricks game)]
+    (if-not (empty? tricks)
+      (str "Tricks:\n"
+           (->> tricks
+                (map-indexed format-trick)
+                (string/join "\n")))
+      "")))
+
 (defn print-game
   [games game-id]
   {:pre [games (number? game-id)]}
@@ -125,13 +148,14 @@
         game (d/entity db game-id)
         game-name (:game/name game)]
     (println
-     (format "%s (%s)%sKitty: %s\nBidding:%s%s"
+     (format "%s (%s)%sKitty: %s\nBidding:%s%s%s"
              game-name
              game-id
              (format-seats (:game/seats game))
              (card/format-line-short (:game.kitty/cards game))
              (format-bids (:game/bids game))
-             (format-kitty-exchanged? game)))))
+             (format-kitty-exchanged? game)
+             (format-tricks game)))))
 
 (defrecord Games [mode db players]
   component/Lifecycle
@@ -168,10 +192,8 @@
                            (d/entity (d/db conn) (:db/id (second seats)))
                            (nth (vec (:game.seat/cards winning-seat)) 3))
               (let [game (d/entity (d/db conn) (:db/id game))
-                    winning-suit (:bid/suit (:game.bid/bid (bids/winning-bid (:game/bids game))))
-                    trump-order (tricks/trump-order (d/db conn)
-                                                    (:game/deck game)
-                                                    winning-suit)]))))))
+                    winning-suit (:bid/suit (:game.bid/bid
+                                             (bids/winning-bid (:game/bids game))))]))))))
     this)
   (stop [this]
     this))

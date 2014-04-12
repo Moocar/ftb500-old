@@ -47,5 +47,7 @@
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."
   []
+  (db/del-db)
   (stop)
-  (refresh :after 'user/go))
+  (refresh :after 'user/go)
+  (pg))
