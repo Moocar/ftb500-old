@@ -6,6 +6,7 @@
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
             [me.moocar.ftb500.bids :as bids]
+            [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
             [me.moocar.ftb500.game :as game]

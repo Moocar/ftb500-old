@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.card
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [datomic.api :as d]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Formatting
@@ -38,3 +39,17 @@
 (defn format-line-short
   [cards]
   (string/join " " (map format-short cards)))
+
+(defn find
+  [db {:keys [suit rank]}]
+  (let [full-suit (keyword "card.suit.name" (name suit))
+        full-rank (keyword "card.rank.name" (name rank))]
+   (-> '[:find ?card
+         :in $ ?suit-name ?rank-name
+         :where [?suit :card.suit/name ?suit-name]
+                [?rank :card.rank/name ?rank-name]
+                [?card :card/suit ?suit]
+                [?card :card/rank ?rank]]
+       (d/q db full-suit full-rank)
+       (ffirst)
+       (->> (d/entity db)))))

@@ -157,6 +157,24 @@
              (format-kitty-exchanged? game)
              (format-tricks game)))))
 
+(defmulti action
+  (fn [games game seat action args]
+    action))
+
+(defmethod action :bid
+  [games game seat _ args]
+  (bids/add! games game seat (:bid args)))
+
+(defmethod action :exchange-kitty
+  [games game seat _ args]
+  (let [db (d/db (:conn (:db games)))]
+    (kitty/exchange! games seat (map #(card/find %) (:cards args)))))
+
+(defmethod action :play
+  [games game seat _ args]
+  (let [db (d/db (:conn (:db games)))]
+    (tricks/add-play! games seat (card/find db (:card args)))))
+
 (defrecord Games [mode db players]
   component/Lifecycle
   (start [this]
