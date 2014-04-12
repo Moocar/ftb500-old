@@ -196,7 +196,12 @@
                                              (bids/winning-bid (:game/bids game))))
                     next-seat (d/entity (d/db conn) (:db/id (nth seats 2)))
                     next-card (nth (vec (:game.seat/cards (nth seats 2))) 0)]
-                (tricks/add-play! this next-seat next-card)))))))
+                (tricks/add-play! this next-seat next-card)
+                (let [db (d/db conn)
+                      game (d/entity db (:db/id game))
+                      next-seat (d/entity db (:db/id (nth seats 3)))
+                      next-card (nth (vec (:game.seat/cards (nth seats 3))) 0)]
+                  (tricks/add-play! this next-seat next-card))))))))
     this)
   (stop [this]
     this))

@@ -103,15 +103,34 @@
 (defn not-your-go?
   [plays seat]
   {:pre [(sequential? plays) seat]}
-  (let [game (first (:game/_seats seat))
-        game-seats (:game/seats game)
-        last-seat (:trick.play/seat (last plays))]
-    (not= seat (seats/next game-seats last-seat))))
+  (and (not (empty? plays))
+       (let [game (first (:game/_seats seat))
+             game-seats (:game/seats game)
+             last-seat (:trick.play/seat (last plays))]
+         (not= seat (seats/next game-seats last-seat)))))
 
 (defn dont-own-card?
   [seat card]
   (let [seat-cards (:game.seat/cards seat)]
     (not (contains? seat-cards card))))
+
+(defn validate-play
+  [game tricks last-trick winning-bid seat card]
+  (when-let [error (cond (not (kitty/exchanged? game))
+                         (ex-info "Kitty not exchanged yet!" {})
+
+                         (and (empty? tricks)
+                              (not= seat (:game.bid/seat winning-bid)))
+                         (ex-info "Not your turn (first go)" {})
+
+                         (not-your-go? (get-plays last-trick) seat)
+                         (ex-info "Not your go (mid trick)"
+                                  {:seat seat})
+
+                         (dont-own-card? seat card)
+                         (ex-info "You don't own this card"
+                                  {}))]
+    (throw error)))
 
 (defn add-play!
   [this seat card]
@@ -122,31 +141,23 @@
         contract (new-contract db (:game/deck game) winning-bid)
         tricks (get-tricks game)
         last-trick (last tricks)]
-    (if-not (kitty/exchanged? game)
-      (throw (ex-info "Kitty not exchanged yet!"
-                      {}))
-      (if (empty? tricks)
-        (if (not= seat (:game.bid/seat winning-bid))
-          (throw (ex-info "Not your turn (first go)"
-                          {}))
-          (let [trick-id (d/tempid :db.part/user)
-                trick-tx [{:db/id (:db/id game)
-                           :game/tricks trick-id}]
-                play-id (d/tempid :db.part/user)
-                play-tx [{:db/id trick-id
-                           :game.trick/plays play-id}
-                         {:db/id play-id
-                          :trick.play/seat (:db/id seat)
-                          :trick.play/card (:db/id card)}
-                         [:db/retract (:db/id seat)
-                          :game.seat/cards (:db/id card)]]]
-            @(d/transact conn (concat trick-tx play-tx))))
-        (if (not-your-go? (get-plays last-trick) seat)
-          (throw (ex-info "Not your go (mid trick)"
-                          {}))
-          (if (dont-own-card? seat card)
-            (throw (ex-info "You don't own this card"
-                            {}))
-            (let [last-winner (calc-winner contract last-trick)]
-              (println "last winner")))))
-      )))
+    (validate-play game tricks last-trick winning-bid seat card)
+
+    (let [new-trick? (or (empty? tricks)
+                         (= (count (:game/seats game))
+                            (count (:game.trick/plays last-trick))))
+          trick-id (if new-trick?
+                     (d/tempid :db.part/user)
+                     (:db/id last-trick))
+          trick-tx (when new-trick?
+                     [{:db/id (:db/id game)
+                       :game/tricks trick-id}])
+          play-id (d/tempid :db.part/user)
+          play-tx [{:db/id trick-id
+                    :game.trick/plays play-id}
+                   {:db/id play-id
+                    :trick.play/seat (:db/id seat)
+                    :trick.play/card (:db/id card)}
+                   [:db/retract (:db/id seat)
+                    :game.seat/cards (:db/id card)]]]
+      @(d/transact conn (concat trick-tx play-tx)))))
