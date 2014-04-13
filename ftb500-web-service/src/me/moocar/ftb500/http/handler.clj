@@ -8,7 +8,8 @@
 (def handler-lookup
   {[:post :create-player] :create-player
    [:post :create-game] :create-game
-   [:post :join-game] :join-game})
+   [:post :join-game] :join-game
+   [:post :bid] :bid})
 
 (defn make-handler
   [component]

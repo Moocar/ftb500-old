@@ -87,10 +87,9 @@
        (first)))
 
 (defn add!
-  [games game seat bid-name]
-  {:pre [games game seat (keyword? bid-name)]}
-  (let [conn (:conn (:db games))
-        db (d/db conn)
+  [conn game seat bid-name]
+  {:pre [conn game seat (keyword? bid-name)]}
+  (let [db (d/db conn)
         bid-type-id (find-bid-id db bid-name)
         bid-type (d/entity db bid-type-id)
         current-bids (get-bids game)]

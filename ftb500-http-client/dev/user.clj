@@ -35,10 +35,11 @@
   (let [game-owner (first clients)]
     (println "creating game")
     (client/create-game game-owner 4)
-    (let [game-id (:current-game-id @(:db game-owner))]
+    (let [game-id (:game-id @(:db game-owner))]
       (doseq [c (rest clients)]
         (println "joining game")
-        (client/join-game c game-id))))
+        (client/join-game c game-id)))
+    (client/bid (first clients) :six-clubs))
   :ready)
 
 (defn reset

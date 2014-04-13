@@ -12,7 +12,8 @@
   []
   {:create-player players/add!
    :create-game game/add!
-   :join-game game/join!})
+   :join-game game/join!
+   :bid game/bid!})
 
 (defn handle-request
   [component request]

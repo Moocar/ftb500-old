@@ -46,7 +46,7 @@
           cards (:cards response)]
       (assert game-id)
       (swap! (:db client) assoc
-             :current-game-id game-id
+             :game-id game-id
              :cards cards)
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
@@ -62,10 +62,23 @@
                                   :game-id game-id})
           cards (:cards response)]
       (swap! (:db client) assoc
-             :current-game-id game-id
+             :game-id game-id
              :cards cards)
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
+
+(defn bid
+  [client bid]
+  {:pre [(keyword bid)]}
+  (let [player-id (:player-id @(:db client))
+        game-id (:game-id @(:db client))
+        response (send-request client
+                               :post
+                               :bid
+                               {:player-id player-id
+                                :game-id game-id
+                                :bid bid})]
+    :done))
 
 (defrecord HttpClient [endpoint db])
 
