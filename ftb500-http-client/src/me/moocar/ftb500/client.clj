@@ -8,20 +8,27 @@
     "Rory Breaker" "Traffic Warden" "Lenny" "JD"})
 
 (def action-lookup
-  {:create-player [:post]})
+  {:create-player :post
+   :create-game :post})
 
 (defn send-request
   [client action args]
   (let [request-method (get action-lookup action)
         response (http/request {:method request-method
                                 :url (str (:endpoint client) "/" (name action))
-                                :body (pr-str args)})]
-    (edn/read-string (:body response))))
+                                :body (pr-str args)
+                                :throw-exceptions false})
+        status (:status response)]
+    (case status
+      200 (edn/read-string (:body response))
+      (throw (ex-info (str (:status response) ": " (:body response)) {})))))
 
 (defn create-player
   [client player-name]
   {:pre [(string? player-name)]}
-  (let [response (send-request client :create-player {:player-name player-name})
+  (let [response (send-request client
+                               :create-player
+                               {:player-name player-name})
         player-id (:player-id response)]
     (assert player-id)
     (swap! (:db client) assoc :player-id player-id)
@@ -29,15 +36,17 @@
 
 (defn create-game
   [client num-players]
-  {:pre (number? num-players)}
-  (let [response (send-request client
-                               :create-game
-                               {:player-id (:player-id @(:db client))
-                                            :num-players num-players})
-        game-id (:game-id response)]
-    (assert game-id)
-    (swap! (:db client) assoc :current-game-id game-id)
-    :done))
+  {:pre [(number? num-players)]}
+  (if-let [player-id (:player-id @(:db client))]
+    (let [response (send-request client
+                                 :create-game
+                                 {:player-id player-id
+                                  :num-players num-players})
+          game-id (:game-id response)]
+      (assert game-id)
+      (swap! (:db client) assoc :current-game-id game-id)
+      :done)
+    (throw (ex-info "No player registered. Call :create-player first" {}))))
 
 (defrecord HttpClient [endpoint db])
 

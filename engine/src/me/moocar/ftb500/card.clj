@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.card
   (:require [clojure.string :as string]
-            [datomic.api :as d]))
+            [datomic.api :as d])
+  (:refer-clojure :exclude [find]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Formatting
@@ -39,6 +40,9 @@
 (defn format-line-short
   [cards]
   (string/join " " (map format-short cards)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## API
 
 (defn find
   [db {:keys [suit rank]}]

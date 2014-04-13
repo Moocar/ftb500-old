@@ -6,22 +6,25 @@
             [ring.middleware.params :as params]))
 
 (def handler-lookup
-  {[:post :create-player] :create-player})
+  {[:post :create-player] :create-player
+   [:post :create-game] :create-game})
 
 (defn make-handler
   [component]
   (let [{:keys [engine-handler]} component]
     (fn [request]
+      (println "request" request)
       (let [{:keys [uri request-method body]} request
             action-name (subs uri 1)
             action (get handler-lookup [request-method (keyword action-name)])
             args (edn/read-string (slurp (jio/reader body)))
             new-request {:action action
                          :args args}]
+        (println "new request" new-request)
         (engine-handler/handle-request engine-handler new-request)))))
 
 (defn wrap-catch-error
-  [this handler]
+  [handler]
   (fn [request]
     (try
       (handler request)
@@ -29,7 +32,7 @@
         (println "got error" t)
         (.printStackTrace t)
         {:status 500
-         :body {:msg "Internal Server Error"}}))))
+         :body "Internal Server Error"}))))
 
 (defn wrap-edn-response
   [handler]
@@ -44,8 +47,8 @@
   (start [this]
     (assoc this
       :handler (-> (make-handler this)
-                   (->> (wrap-catch-error this))
-                   (wrap-edn-response))))
+                   (wrap-edn-response)
+                   (wrap-catch-error))))
   (stop [this]
     this))
 

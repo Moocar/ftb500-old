@@ -9,7 +9,6 @@
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.deck :as deck]
-            [me.moocar.ftb500.games :as games]
             [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.system :as system]
@@ -34,21 +33,11 @@
   []
   (init)
   (start)
-  (def p (:players system))
-  (def g (:games system))
   :ready)
-
-(defn pg
-  "Prints the latest game to console"
-  []
-  (games/print-game g
-                    (first (games/get-game-ids (d/db (:conn (:db g)))))))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."
   []
   (db/del-db)
   (stop)
-  (refresh :after 'user/go)
-  (Thread/sleep 10)
-  (pg))
+  (refresh :after 'user/go))

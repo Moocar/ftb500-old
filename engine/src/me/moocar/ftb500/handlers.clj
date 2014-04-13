@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.handlers
   (:require [com.stuartsierra.component :as component]
+            [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.players :as players]))
 
 (defn not-found-handler
@@ -9,7 +10,8 @@
 
 (defn make-handler-lookup
   []
-  {:create-player players/add!})
+  {:create-player players/add!
+   :create-game game/add!})
 
 (defn handle-request
   [component request]
