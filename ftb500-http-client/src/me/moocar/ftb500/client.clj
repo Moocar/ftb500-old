@@ -1,6 +1,8 @@
 (ns me.moocar.ftb500.client
   (:require [clojure.edn :as edn]
-            [clj-http.client :as http]))
+            [clj-http.client :as http]
+            [com.stuartsierra.component :as component]
+            [http.async.client :as http-async]))
 
 (defn uuid? [s]
   (instance? java.util.UUID s))
@@ -9,6 +11,9 @@
   #{"Soap" "Eddy" "Bacon" "Winston" "Big Chris" "Barry the Baptist"
     "Little Chris" "Hatchet Harry" "Willie" "Dog" "Plank" "Nick the Greek"
     "Rory Breaker" "Traffic Warden" "Lenny" "JD"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Requests
 
 (defn send-request
   [client request-method action args]
@@ -82,9 +87,23 @@
                                 :bid bid})]
     :done))
 
-(defrecord HttpClient [endpoint db])
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Events Listener
+
+(defrecord HttpClient [endpoint host port async-client websocket db]
+  component/Lifecycle
+  (start [this]
+    (let [ws (http-async/websocket async-client
+                                   (format "ws://%s:%s/ws/" host port))]
+      (assoc this
+        :websocket ws)))
+  (stop [this]
+    this))
 
 (defn new-http-client
   []
   (map->HttpClient {:endpoint "http://localhost:8080"
-                    :db (atom {})}))
+                    :host "localhost"
+                    :port 8080
+                    :db (atom {})
+                    :async-client (http-async/create-client)}))

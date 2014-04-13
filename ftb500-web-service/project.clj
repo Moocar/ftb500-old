@@ -6,7 +6,9 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.stuartsierra/component "0.2.1"]
                  [ring/ring-core "1.2.2"]
-                 [ring/ring-jetty-adapter "1.2.2"]
+                 [info.sunng/ring-jetty9-adapter "0.6.0"]
                  [me.moocar/ftb500 "0.1.0-SNAPSHOT"]]
+
   :profiles {:dev {:source-paths ["dev"]
-                   :dependencies [[org.clojure/tools.namespace "0.2.4"]]}})
+                   :dependencies [[org.clojure/tools.namespace "0.2.4"]]
+                   :java-cmd "/Library/Java/JavaVirtualMachines/jdk1.7.0_51.jdk/Contents/Home/bin/java"}})

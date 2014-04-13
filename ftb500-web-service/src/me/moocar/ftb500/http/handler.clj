@@ -5,6 +5,9 @@
             [me.moocar.ftb500.handlers :as engine-handler]
             [ring.middleware.params :as params]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Request Handlers
+
 (def handler-lookup
   {[:post :create-player] :create-player
    [:post :create-game] :create-game
@@ -43,13 +46,29 @@
           (update-in [:body] pr-str)
           (update-in [:headers] assoc "Content-Type" "application/edn")))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Websocket Handlers
+
+(defn make-websocket-handlers
+  []
+  {:on-connect (fn [ws] (println "connect" ws))
+   :on-error (fn [ws e] (println "error" ws e))
+   :on-close (fn [ws] (println "close" ws))
+   :on-text (fn [ws text] (println "text" ws text))
+   :on-bytes (fn [ws bytes offset len]
+               (println "bytes" ws bytes offset len))})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Component
+
 (defrecord HandlerComponent [engine-handler]
   component/Lifecycle
   (start [this]
     (assoc this
       :handler (-> (make-handler this)
                    (wrap-edn-response)
-                   (wrap-catch-error))))
+                   (wrap-catch-error))
+      :websocket-handler (make-websocket-handlers)))
   (stop [this]
     this))
 

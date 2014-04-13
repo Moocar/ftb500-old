@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.http.jetty
   (:require [com.stuartsierra.component :as component]
-            [ring.adapter.jetty :as jetty]))
+            [ring.adapter.jetty9 :as jetty]))
 
 (defrecord JettyHttp [port handler jetty]
   component/Lifecycle
@@ -8,7 +8,8 @@
     (assoc this
       :jetty (jetty/run-jetty (:handler handler)
                               {:join? false
-                               :port port})))
+                               :port port
+                               :websockets {"/ws" (:websocket-handler handler)}})))
   (stop [this]
     (when jetty
       (.stop jetty)
