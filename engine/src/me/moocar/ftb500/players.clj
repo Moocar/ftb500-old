@@ -70,13 +70,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
 
+(defmacro bad-arguments?
+  [forms]
+  `(when-not (empty? (keep (fn [rule#]
+                             (when-not rule#
+                               true))
+                           ~forms))
+     '~forms))
+
 (defn add!
   [conn {:keys [player-name]}]
-  {:pre [(string? player-name) (not (string/blank? player-name))]}
-  (let [player-ext-id (d/squuid)]
-    @(d/transact conn
-                 [{:db/id (d/tempid :db.part/user)
-                   :player/id player-ext-id
-                   :player/name player-name}])
-    {:status 200
-     :body {:player-id player-ext-id}}))
+  (let [errors (bad-arguments? [(string? player-name)
+                                (not (string/blank? player-name))])]
+    (if (not (empty? errors))
+      {:status 400
+       :body {:msg errors}}
+      (let [player-ext-id (d/squuid)]
+        @(d/transact conn
+                     [{:db/id (d/tempid :db.part/user)
+                       :player/id player-ext-id
+                       :player/name player-name}])
+        {:status 200
+         :body {:player-id player-ext-id}}))))
