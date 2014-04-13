@@ -88,6 +88,8 @@
          game (find db game-id)]
      (request/wrap-bad-args-response
       [player game seat]
-      (bids/add! conn game seat bid)
-      {:status 200
-       :body {}}))))
+      (if-let [error (:error (bids/add! conn game seat bid))]
+        {:status 400
+         :body error}
+        {:status 200
+         :body {}})))))

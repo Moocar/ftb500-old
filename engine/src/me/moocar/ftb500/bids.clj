@@ -93,14 +93,14 @@
         bid-type-id (find-bid-id db bid-name)
         bid-type (d/entity db bid-type-id)
         current-bids (get-bids game)]
-    (when-let [error (not-valid-bid? current-bids seat bid-type)]
-      (throw (ex-info error
-                      {:seat (:game.seat/position seat)
-                       :bid-type-name bid-name})))
-    (let [bid-id (d/tempid :db.part/user)
-          tx [{:db/id bid-id
-               :game.bid/bid bid-type-id
-               :game.bid/seat (:db/id seat)}
-              {:db/id (:db/id game)
-               :game/bids bid-id}]]
-      @(d/transact conn tx))))
+    (if-let [error (not-valid-bid? current-bids seat bid-type)]
+      {:error {:msg error
+               :data {:seat (:game.seat/position seat)
+                      :bid-type-name bid-name}}}
+      (let [bid-id (d/tempid :db.part/user)
+            tx [{:db/id bid-id
+                 :game.bid/bid bid-type-id
+                 :game.bid/seat (:db/id seat)}
+                {:db/id (:db/id game)
+                 :game/bids bid-id}]]
+        @(d/transact conn tx)))))
