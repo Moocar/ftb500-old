@@ -51,8 +51,14 @@
           (recur (seats/next game-seats next-seat))
           true)))))
 
+(def finished?
+  (memoize
+   (fn [bids num-players]
+     {:pre [(sequential? bids)]}
+     (= (dec num-players) (count (filter pass-bid? bids))))))
+
 (defn not-valid-bid?
- [current-bids seat bid-type]
+ [current-bids seat bid-type num-players]
  {:pre [(sequential? current-bids) seat bid-type]}
  (and (> (count current-bids) 0)
       (cond
@@ -67,17 +73,14 @@
        "Bid too low"
 
        (not-your-go? current-bids seat)
-       "It's not your go!")))
+       "It's not your go!"
+
+       (finished? current-bids num-players)
+       "Bidding round is finished!")))
 
 (defn get-bids
   [game]
   (sort-by :db/id (:game/bids game)))
-
-(def finished?
-  (memoize
-   (fn [bids num-players]
-     {:pre [(sequential? bids)]}
-     (= (dec num-players) (count (filter pass-bid? bids))))))
 
 (defn winning-bid
   [bids]
@@ -93,7 +96,8 @@
         bid-type-id (find-bid-id db bid-name)
         bid-type (d/entity db bid-type-id)
         current-bids (get-bids game)]
-    (if-let [error (not-valid-bid? current-bids seat bid-type)]
+    (if-let [error (not-valid-bid? current-bids seat bid-type
+                                   (count (:game/seats game)))]
       {:error {:msg error
                :data {:seat (:game.seat/position seat)
                       :bid-type-name bid-name}}}

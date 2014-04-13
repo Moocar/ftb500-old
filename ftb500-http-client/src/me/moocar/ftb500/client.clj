@@ -84,7 +84,11 @@
                                :bid
                                {:player-id player-id
                                 :game-id game-id
-                                :bid bid})]
+                                :bid bid})
+        kitty-cards (:kitty-cards response)]
+    (when kitty-cards
+      (swap! (:db client) assoc
+             :kitty-cards kitty-cards))
     :done))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
