@@ -36,56 +36,44 @@
        :game/deck (:db/id deck)}])))
 
 (defn add!
-  [conn {:keys [player-id num-players]}]
+  [conn {:keys [player num-players]}]
   (request/wrap-bad-args-response
-   [(uuid? player-id) (number? num-players)]
+   [player (number? num-players)]
    (let [db (d/db conn)
-         player (players/find db player-id)]
-     (request/wrap-bad-args-response
-      [player]
-      (let [deck (deck/find db num-players)
-            deck-cards (shuffle (:deck/cards deck))
-            game-ext-id (d/squuid)
-            {:keys [hands kitty]} (deck/partition-hands deck-cards)
-            game-tx (make-game-tx game-ext-id deck hands kitty player)
-            result @(d/transact conn game-tx)]
-        {:status 200
-         :body {:game-id game-ext-id
-                :cards (map card/ext-form (first hands))}})))))
+         deck (deck/find db num-players)
+         deck-cards (shuffle (:deck/cards deck))
+         game-ext-id (d/squuid)
+         {:keys [hands kitty]} (deck/partition-hands deck-cards)
+         game-tx (make-game-tx game-ext-id deck hands kitty player)
+         result @(d/transact conn game-tx)]
+     {:status 200
+      :body {:game-id game-ext-id
+             :cards (map card/ext-form (first hands))}})))
 
 (defn join!
-  [conn {:keys [game-id player-id]}]
+  [conn {:keys [game player]}]
   (request/wrap-bad-args-response
-   [(uuid? game-id) (uuid? player-id)]
-   (let [db (d/db conn)
-         player (players/find db player-id)
-         game (find db game-id)]
-     (request/wrap-bad-args-response
-      [player game]
-      (let [seat (seats/next-vacant game)]
-        (if-not seat
-          {:status 400
-           :body {:msg "No more seats left at this game"}}
-          (let [cards (:game.seat/cards seat)]
-            @(d/transact conn
-                         [{:db/id (:db/id seat)
-                           :game.seat/player (:db/id player)}])
-            {:status 200
-             :body {:cards (map card/ext-form cards)}})))))))
-
+   [player game]
+   (if-let [seat (seats/next-vacant game)]
+     (let [cards (:game.seat/cards seat)]
+       @(d/transact conn
+                    [{:db/id (:db/id seat)
+                      :game.seat/player (:db/id player)}])
+       {:status 200
+        :body {:cards (map card/ext-form cards)}})
+     {:status 400
+      :body {:msg "No more seats left at this game"}})))
 
 (defn bid!
-  [conn {:keys [game-id player-id bid]}]
+  [conn {:keys [game player bid]}]
   (request/wrap-bad-args-response
-   [(uuid? game-id) (uuid? player-id) (keyword bid)]
-   (let [db (d/db conn)
-         player (players/find db player-id)
-         seat (first (:game.seat/_player player))
-         game (find db game-id)]
-     (request/wrap-bad-args-response
-      [player game seat]
-      (if-let [error (:error (bids/add! conn game seat bid))]
-        {:status 400
-         :body error}
-        {:status 200
-         :body {}})))))
+   [game player (keyword bid)]
+   (if-let [seat (first (:game.seat/_player player))]
+     (if-let [error (:error (bids/add! conn game seat bid))]
+       {:status 400
+        :body error}
+       {:status 200
+        :body {}})
+     {:status 400
+      :body {:msg "Could not find player's seat"
+             :data {:player (:player/id player)}}})))
