@@ -5,4 +5,4 @@
 (defn new-system
   []
   (component/system-map
-   :client (client/new-http-client)))
+   :clients (repeatedly 4 client/new-http-client)))

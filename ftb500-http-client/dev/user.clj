@@ -26,7 +26,20 @@
   []
   (init)
   (start)
-  (def c (:client system))
+  (def clients (:clients system))
+  (def fifth-client (client/new-http-client))
+  (doseq [[c n] (map vector clients (take 4 (shuffle client/ref-player-names)))]
+    (println "creating player" n)
+    (client/create-player c n))
+  (client/create-player fifth-client "Fifth Man")
+  (let [game-owner (first clients)]
+    (println "creating game")
+    (client/create-game game-owner 4)
+    (let [game-id (:current-game-id @(:db game-owner))]
+      (doseq [c (rest clients)]
+        (println "joining game")
+        (client/join-game c game-id))
+      ()))
   :ready)
 
 (defn reset

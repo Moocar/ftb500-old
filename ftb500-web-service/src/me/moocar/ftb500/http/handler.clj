@@ -7,13 +7,13 @@
 
 (def handler-lookup
   {[:post :create-player] :create-player
-   [:post :create-game] :create-game})
+   [:post :create-game] :create-game
+   [:post :join-game] :join-game})
 
 (defn make-handler
   [component]
   (let [{:keys [engine-handler]} component]
     (fn [request]
-      (println "request" request)
       (let [{:keys [uri request-method body]} request
             action-name (subs uri 1)
             action (get handler-lookup [request-method (keyword action-name)])

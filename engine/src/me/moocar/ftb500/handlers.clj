@@ -11,7 +11,8 @@
 (defn make-handler-lookup
   []
   {:create-player players/add!
-   :create-game game/add!})
+   :create-game game/add!
+   :join-game game/join!})
 
 (defn handle-request
   [component request]
