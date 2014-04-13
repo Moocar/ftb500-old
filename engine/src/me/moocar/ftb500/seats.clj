@@ -4,7 +4,7 @@
 
 (defn next-vacant
   [game]
-  (let [seats (:game/seats game)]
+  (let [seats (sort-by :game.seat/position (:game/seats game))]
     (first (remove #(contains? % :game.seat/player) seats))))
 
 (defn make-seat-tx

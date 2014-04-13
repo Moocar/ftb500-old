@@ -39,7 +39,14 @@
       (doseq [c (rest clients)]
         (println "joining game")
         (client/join-game c game-id)))
-    (client/bid (first clients) :six-clubs))
+    (client/bid (first clients) :six-clubs)
+    (client/bid (second clients) :seven-hearts)
+    (client/bid (nth clients 2) :pass)
+    (client/bid (nth clients 3) :eight-clubs)
+    (client/bid (nth clients 0) :pass)
+    (client/bid (nth clients 1) :eight-hearts)
+    (client/bid (nth clients 3) :pass)
+    )
   :ready)
 
 (defn reset

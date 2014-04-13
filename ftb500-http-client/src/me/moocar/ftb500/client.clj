@@ -20,7 +20,7 @@
     (case status
       200 (edn/read-string (:body response))
       400 (let [{:keys [msg data]} (edn/read-string (:body response))]
-            (throw (ex-info msg data)))
+            (throw (Exception. (str msg ": " data))))
       (throw (ex-info (str (:status response) ": " (:body response)) {})))))
 
 (defn create-player
