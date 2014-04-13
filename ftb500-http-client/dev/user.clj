@@ -1,29 +1,34 @@
 (ns user
-  (:require [clojure.java.io :as jio]
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as jio]
             [clojure.pprint :refer [pprint]]
             [clojure.tools.namespace.repl :refer [refresh]]
-            [clj-http.client :as http]))
+            [com.stuartsierra.component :as component]
+            [me.moocar.ftb500.client :as client]
+            [me.moocar.ftb500.client.system :as system]))
 
 (def system nil)
 
 (defn init
   []
-  (alter-var-root #'system (constantly {:db (atom {})
-                                        :endpoint "http://localhost:8080"})))
+  (alter-var-root #'system (constantly (system/new-system))))
+
+(defn start
+  []
+  (alter-var-root #'system component/start))
+
+(defn stop
+  []
+  (alter-var-root #'system #(when % (component/stop %))))
 
 (defn go
   "Initializes and starts the system running."
   []
   (init)
+  (def c (:client system))
   :ready)
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."
   []
   (refresh :after 'user/go))
-
-(defn create-player
-  [system player-name]
-  (let [response (http/post (str (:endpoint system) "/create-player")
-                            {:body (pr-str {:player-name player-name})})]
-    (println "response" response)))
