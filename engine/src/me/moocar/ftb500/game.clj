@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.game
   (:require [datomic.api :as d]
+            [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.deck :as deck]
@@ -16,12 +17,7 @@
 
 (defn find
   [db ext-id]
-  (when-let [id (-> '[:find ?entity
-                      :in $ ?ext-id
-                      :where [?entity :game/id ?ext-id]]
-                    (d/q db ext-id)
-                    ffirst)]
-    (d/entity db id)))
+  (db/find db :game/id ext-id))
 
 (defn- make-game-tx
   [game-ext-id deck hands kitty player]

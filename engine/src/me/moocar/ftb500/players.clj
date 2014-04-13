@@ -3,6 +3,7 @@
             [clojure.string :as string]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
+            [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.request :as request])
   (:refer-clojure :exclude [find]))
 
@@ -26,17 +27,12 @@
           (map #(select-keys (d/entity db %) [:db/id :player/name]))
           (print-table))))
 
-(defn find
-  [db player-ext-id]
-  (when-let [player-id (-> '[:find ?player
-                             :in $ ?player-id
-                             :where [?player :player/id ?player-id]]
-                           (d/q db player-ext-id)
-                           ffirst)]
-    (d/entity db player-id)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
+
+(defn find
+  [db ext-id]
+  (db/find db :player/id ext-id))
 
 (defn add!
   [conn {:keys [player-name]}]

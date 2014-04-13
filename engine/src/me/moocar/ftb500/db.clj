@@ -3,7 +3,8 @@
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [datomic.api :as d])
-  (:import [java.io PushbackReader]))
+  (:import [java.io PushbackReader])
+  (:refer-clojure :exclude [find]))
 
 (def ^:private mem-uri
   "datomic:mem://ftb500")
@@ -11,7 +12,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
 
+(defn uuid? [s]
+  (instance? java.util.UUID s))
 
+(defn find
+  [db entity-id-key ext-id]
+  {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+  (when-let [entity-id (-> '[:find ?entity
+                             :in $ ?entity-id-key ?entity-id
+                             :where [?entity ?entity-id-key ?entity-id]]
+                           (d/q db entity-id-key ext-id)
+                           ffirst)]
+    (d/entity db entity-id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Setup/Teardown
