@@ -27,10 +27,14 @@
         game (when game-id (game/find db game-id))]
     (cond (and player-id (not player))
           {:status 400
-           :body {:msg "Player not found"}}
+           :body {:msg "Player not found"
+                  :data {:player-id player-id}}}
+
           (and game-id (not game))
           {:status 400
-           :body {:msg "Game not found"}}
+           :body {:msg "Game not found"
+                  :data {:game-id game-id}}}
+
           :else
           (let [handler-fn (get handler-lookup action not-found-handler)]
             (handler-fn conn (assoc args

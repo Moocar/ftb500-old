@@ -9,9 +9,6 @@
             [me.moocar.ftb500.seats :as seats])
   (:refer-clojure :exclude [find]))
 
-(defn uuid? [s]
-  (instance? java.util.UUID s))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## API
 
