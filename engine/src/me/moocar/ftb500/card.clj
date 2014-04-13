@@ -26,10 +26,14 @@
    "ace"   \A
    "joker" \B})
 
+(defn get-rank-name
+  [card]
+  (name (:card.rank/name (:card/rank card))))
+
 (defn format-short
   "Formats a card as a short string. E.g 10C or 2H"
   [card]
-  (let [rank-name (name (:card.rank/name (:card/rank card)))
+  (let [rank-name (get-rank-name card)
         suit (:card/suit card)]
     (str (format "%2s"(get short-rank-strings rank-name))
          (if suit
@@ -40,6 +44,12 @@
 (defn format-line-short
   [cards]
   (string/join " " (map format-short cards)))
+
+(defn ext-form
+  [card]
+  (let [suit (:card/suit card)]
+    (cond-> {:rank (keyword (get-rank-name card))}
+            suit (assoc :suit (keyword (name (:card.suit/name suit)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## API

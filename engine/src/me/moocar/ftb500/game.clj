@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.game
   (:require [datomic.api :as d]
+            [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.deck :as deck]
             [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.request :as request]
@@ -50,7 +51,8 @@
          game-tx (make-game-tx game-ext-id deck hands kitty player)
          result @(d/transact conn game-tx)]
      {:status 200
-      :body {:game-id game-ext-id}})))
+      :body {:game-id game-ext-id
+             :cards (map card/ext-form (first hands))}})))
 
 (defn join!
   [conn {:keys [game-id player-id]}]
@@ -59,13 +61,16 @@
    (let [db (d/db conn)
          player (players/find db player-id)
          game (find db game-id)
-         seat (seats/next-vacant game)]
+         seat (seats/next-vacant game)
+         cards (:game.seat/cards seat)]
      (if-let [errors (request/bad-args? [player game])]
        {:status 400
         :body {:msg errors}}
        (if-not seat
          {:status 400
           :body {:msg "No more seats left at this game"}}
-         @(d/transact conn
-                      [{:db/id (:db/id seat)
-                        :game.seat/player (:db/id player)}]))))))
+         (do @(d/transact conn
+                          [{:db/id (:db/id seat)
+                            :game.seat/player (:db/id player)}])
+             {:status 200
+              :body {:cards (map card/ext-form cards)}}))))))

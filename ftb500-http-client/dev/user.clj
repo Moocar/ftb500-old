@@ -38,8 +38,7 @@
     (let [game-id (:current-game-id @(:db game-owner))]
       (doseq [c (rest clients)]
         (println "joining game")
-        (client/join-game c game-id))
-      ()))
+        (client/join-game c game-id))))
   :ready)
 
 (defn reset

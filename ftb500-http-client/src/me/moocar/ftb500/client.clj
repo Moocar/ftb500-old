@@ -42,9 +42,12 @@
                                  :create-game
                                  {:player-id player-id
                                   :num-players num-players})
-          game-id (:game-id response)]
+          game-id (:game-id response)
+          cards (:cards response)]
       (assert game-id)
-      (swap! (:db client) assoc :current-game-id game-id)
+      (swap! (:db client) assoc
+             :current-game-id game-id
+             :cards cards)
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
 
@@ -56,8 +59,11 @@
                                  :post
                                  :join-game
                                  {:player-id player-id
-                                  :game-id game-id})]
-      (swap! (:db client) assoc :current-game-id game-id)
+                                  :game-id game-id})
+          cards (:cards response)]
+      (swap! (:db client) assoc
+             :current-game-id game-id
+             :cards cards)
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
 
