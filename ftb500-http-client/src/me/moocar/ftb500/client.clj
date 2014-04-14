@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.client
   (:require [clojure.edn :as edn]
+            [clojure.pprint :refer [pprint]]
             [clj-http.client :as http]
             [com.stuartsierra.component :as component]
             [http.async.client :as http-async]))
@@ -105,17 +106,28 @@
     :done))
 
 (defn play-card
-  [client card]
-  {:pre [(map? card)]}
+  ([client card]
+     {:pre [(map? card)]}
+     (let [player-id (:player-id @(:db client))
+           game-id (:game-id @(:db client))
+           response (send-request client
+                                  :post
+                                  :play-card
+                                  {:player-id player-id
+                                   :game-id game-id
+                                   :card card})]
+       :done)))
+
+(defn game-view
+  [client]
   (let [player-id (:player-id @(:db client))
-        game-id (:game-id @(:db client))
-        response (send-request client
-                               :post
-                               :play-card
-                               {:player-id player-id
-                                :game-id game-id
-                                :card card})]
-    :done))
+        game-id (:game-id @(:db client))]
+    (pprint
+     (send-request client
+                   :get
+                   :game-view
+                   {:player-id player-id
+                    :game-id game-id}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Events Listener

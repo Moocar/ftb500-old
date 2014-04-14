@@ -16,7 +16,8 @@
    :join-game game/join!
    :bid game/bid!
    :exchange-kitty game/exchange-kitty!
-   :play-card game/play-card!})
+   :play-card game/play-card!
+   :game-view game/view})
 
 (defn handle-request
   [component request]

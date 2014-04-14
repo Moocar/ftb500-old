@@ -14,7 +14,8 @@
    [:post :join-game] :join-game
    [:post :bid] :bid
    [:post :exchange-kitty] :exchange-kitty
-   [:post :play-card] :play-card})
+   [:post :play-card] :play-card
+   [:get :game-view] :game-view})
 
 (defn make-handler
   [component]

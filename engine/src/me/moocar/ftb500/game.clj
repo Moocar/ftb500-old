@@ -4,6 +4,7 @@
             [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.deck :as deck]
+            [me.moocar.ftb500.game-view :as game-view]
             [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.request :as request]
@@ -109,6 +110,18 @@
           :body error}
          {:status 200
           :body {}}))
+     {:status 400
+      :body {:msg "Could not find player's seat"
+             :data {:player (:player/id player)}}})))
+
+(defn view
+  [conn {:keys [game player]}]
+  (request/wrap-bad-args-response
+   [game player]
+   (if-let [seat (first (:game.seat/_player player))]
+     (let [db (d/db conn)]
+       {:status 200
+        :body (game-view/view db game player)})
      {:status 400
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))
