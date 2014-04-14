@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.tricks
   (:require [datomic.api :as d]
             [me.moocar.ftb500.bids :as bids]
+            [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.seats :as seats]))
 
@@ -116,48 +117,46 @@
 
 (defn validate-play
   [game tricks last-trick winning-bid seat card]
-  (when-let [error (cond (not (kitty/exchanged? game))
-                         (ex-info "Kitty not exchanged yet!" {})
+  (cond (not (kitty/exchanged? game))
+        "Kitty not exchanged yet!"
 
-                         (and (empty? tricks)
-                              (not= seat (:game.bid/seat winning-bid)))
-                         (ex-info "Not your turn (first go)" {})
+        (and (empty? tricks)
+             (not= seat (:game.bid/seat winning-bid)))
+        "Not your turn (first go)"
 
-                         (not-your-go? (get-plays last-trick) seat)
-                         (ex-info "Not your go (mid trick)"
-                                  {:seat seat})
+        (not-your-go? (get-plays last-trick) seat)
+        "Not your go (mid trick)"
 
-                         (dont-own-card? seat card)
-                         (ex-info "You don't own this card"
-                                  {}))]
-    (throw error)))
+        (dont-own-card? seat card)
+        "You don't own this card"))
 
 (defn add-play!
-  [this seat card]
-  (let [conn (:conn (:db this))
-        db (d/db conn)
+  [conn seat card]
+  (let [db (d/db conn)
         game (first (:game/_seats seat))
         winning-bid (bids/winning-bid (:game/bids game))
         contract (new-contract db (:game/deck game) winning-bid)
         tricks (get-tricks game)
         last-trick (last tricks)]
-    (validate-play game tricks last-trick winning-bid seat card)
-
-    (let [new-trick? (or (empty? tricks)
-                         (= (count (:game/seats game))
-                            (count (:game.trick/plays last-trick))))
-          trick-id (if new-trick?
-                     (d/tempid :db.part/user)
-                     (:db/id last-trick))
-          trick-tx (when new-trick?
-                     [{:db/id (:db/id game)
-                       :game/tricks trick-id}])
-          play-id (d/tempid :db.part/user)
-          play-tx [{:db/id trick-id
-                    :game.trick/plays play-id}
-                   {:db/id play-id
-                    :trick.play/seat (:db/id seat)
-                    :trick.play/card (:db/id card)}
-                   [:db/retract (:db/id seat)
-                    :game.seat/cards (:db/id card)]]]
-      @(d/transact conn (concat trick-tx play-tx)))))
+    (if-let [error (validate-play game tricks last-trick winning-bid seat card)]
+      {:error {:msg error
+               :data {:seat (:game.seat/position seat)
+                      :bid-card (card/ext-form card)}}}
+      (let [new-trick? (or (empty? tricks)
+                           (= (count (:game/seats game))
+                              (count (:game.trick/plays last-trick))))
+            trick-id (if new-trick?
+                       (d/tempid :db.part/user)
+                       (:db/id last-trick))
+            trick-tx (when new-trick?
+                       [{:db/id (:db/id game)
+                         :game/tricks trick-id}])
+            play-id (d/tempid :db.part/user)
+            play-tx [{:db/id trick-id
+                      :game.trick/plays play-id}
+                     {:db/id play-id
+                      :trick.play/seat (:db/id seat)
+                      :trick.play/card (:db/id card)}
+                     [:db/retract (:db/id seat)
+                      :game.seat/cards (:db/id card)]]]
+        @(d/transact conn (concat trick-tx play-tx))))))

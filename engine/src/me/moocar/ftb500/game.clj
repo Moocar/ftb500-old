@@ -7,7 +7,8 @@
             [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.request :as request]
-            [me.moocar.ftb500.seats :as seats])
+            [me.moocar.ftb500.seats :as seats]
+            [me.moocar.ftb500.tricks :as tricks])
   (:refer-clojure :exclude [find]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -88,6 +89,22 @@
      (let [db (d/db conn)
            card-entities (map #(card/find db %) cards)]
        (if-let [error (:error (kitty/exchange! conn seat card-entities))]
+         {:status 400
+          :body error}
+         {:status 200
+          :body {}}))
+     {:status 400
+      :body {:msg "Could not find player's seat"
+             :data {:player (:player/id player)}}})))
+
+(defn play-card!
+  [conn {:keys [game player card]}]
+  (request/wrap-bad-args-response
+   [game player (map? card)]
+   (if-let [seat (first (:game.seat/_player player))]
+     (let [db (d/db conn)
+           card-entity (card/find db card)]
+       (if-let [error (:error (tricks/add-play! conn seat card-entity))]
          {:status 400
           :body error}
          {:status 200

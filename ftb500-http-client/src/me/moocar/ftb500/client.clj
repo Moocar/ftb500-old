@@ -104,6 +104,19 @@
                                 :cards cards})]
     :done))
 
+(defn play-card
+  [client card]
+  {:pre [(map? card)]}
+  (let [player-id (:player-id @(:db client))
+        game-id (:game-id @(:db client))
+        response (send-request client
+                               :post
+                               :play-card
+                               {:player-id player-id
+                                :game-id game-id
+                                :card card})]
+    :done))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Events Listener
 
