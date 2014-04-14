@@ -12,7 +12,8 @@
   {[:post :create-player] :create-player
    [:post :create-game] :create-game
    [:post :join-game] :join-game
-   [:post :bid] :bid})
+   [:post :bid] :bid
+   [:post :exchange-kitty] :exchange-kitty})
 
 (defn make-handler
   [component]

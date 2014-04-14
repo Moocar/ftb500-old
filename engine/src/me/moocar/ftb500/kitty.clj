@@ -14,33 +14,30 @@
         (not= 3))))
 
 (defn exchange!
-  [games seat cards]
-  (let [conn (:conn (:db games))
-        game (first (:game/_seats seat))
+  [conn seat cards]
+  (let [game (first (:game/_seats seat))
         game-id (:db/id game)
         bids (bids/get-bids game)]
-    (cond
+    (if-let [error (cond
 
-     (not (bids/finished? bids (count (:game/seats game))))
-     (throw (ex-info "Bidding round not finished!"
-                     {:seat seat
-                      :cards cards}))
+                    (not= (count cards) 3)
+                    "Must submit 3 cards"
 
-     (exchanged? game)
-     (throw (ex-info "Kitty already exchanged!"
-                     {:seat seat
-                      :cards cards}))
+                    (not (bids/finished? bids (count (:game/seats game))))
+                    "Bidding round not finished!"
 
-     (not= seat (:game.bid/seat (bids/winning-bid bids)))
-     (throw (ex-info "You didn't win the bid"
-                     {:seat seat
-                      :cards cards})))
+                    (exchanged? game)
+                    "Kitty already exchanged!"
 
-    (let [current-kitty (:game.kitty/cards game)
-          tx (concat (map #(vector :db/retract game-id
-                                   :game.kitty/cards (:db/id %))
-                          current-kitty)
-                     (map #(vector :db/add game-id
-                                   :game.kitty/cards (:db/id %))
-                          cards))]
-      @(d/transact conn tx))))
+                    (not= seat (:game.bid/seat (bids/winning-bid bids)))
+                    "You didn't win the bid")]
+      {:error {:msg error
+               :data {:seat (:game.seat/position seat)}}}
+      (let [current-kitty (:game.kitty/cards game)
+            tx (concat (map #(vector :db/retract game-id
+                                     :game.kitty/cards (:db/id %))
+                            current-kitty)
+                       (map #(vector :db/add game-id
+                                     :game.kitty/cards (:db/id %))
+                            cards))]
+        @(d/transact conn tx)))))

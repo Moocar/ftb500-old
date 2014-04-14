@@ -14,7 +14,8 @@
   {:create-player players/add!
    :create-game game/add!
    :join-game game/join!
-   :bid game/bid!})
+   :bid game/bid!
+   :exchange-kitty game/exchange-kitty!})
 
 (defn handle-request
   [component request]

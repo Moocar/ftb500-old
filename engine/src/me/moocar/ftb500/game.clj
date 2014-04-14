@@ -4,6 +4,7 @@
             [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.deck :as deck]
+            [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.request :as request]
             [me.moocar.ftb500.seats :as seats])
@@ -64,7 +65,7 @@
 (defn bid!
   [conn {:keys [game player bid]}]
   (request/wrap-bad-args-response
-   [game player (keyword bid)]
+   [game player (keyword? bid)]
    (if-let [seat (first (:game.seat/_player player))]
      (if-let [error (:error (bids/add! conn game seat bid))]
        {:status 400
@@ -75,6 +76,22 @@
             :body {:kitty-cards (map card/ext-form (:game.kitty/cards game))}}
            {:status 200
             :body {}})))
+     {:status 400
+      :body {:msg "Could not find player's seat"
+             :data {:player (:player/id player)}}})))
+
+(defn exchange-kitty!
+  [conn {:keys [game player cards]}]
+  (request/wrap-bad-args-response
+   [game player (coll? cards)]
+   (if-let [seat (first (:game.seat/_player player))]
+     (let [db (d/db conn)
+           card-entities (map #(card/find db %) cards)]
+       (if-let [error (:error (kitty/exchange! conn seat card-entities))]
+         {:status 400
+          :body error}
+         {:status 200
+          :body {}}))
      {:status 400
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))

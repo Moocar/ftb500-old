@@ -76,7 +76,7 @@
 
 (defn bid
   [client bid]
-  {:pre [(keyword bid)]}
+  {:pre [(keyword? bid)]}
   (let [player-id (:player-id @(:db client))
         game-id (:game-id @(:db client))
         response (send-request client
@@ -89,6 +89,19 @@
     (when kitty-cards
       (swap! (:db client) assoc
              :kitty-cards kitty-cards))
+    :done))
+
+(defn exchange-kitty
+  [client cards]
+  {:pre [(coll? cards)]}
+  (let [player-id (:player-id @(:db client))
+        game-id (:game-id @(:db client))
+        response (send-request client
+                               :post
+                               :exchange-kitty
+                               {:player-id player-id
+                                :game-id game-id
+                                :cards cards})]
     :done))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
