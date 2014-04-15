@@ -134,7 +134,7 @@
   [conn seat card]
   (let [db (d/db conn)
         game (first (:game/_seats seat))
-        winning-bid (bids/winning-bid (:game/bids game))
+        winning-bid (bids/winning-bid (bids/get-bids game))
         contract (new-contract db (:game/deck game) winning-bid)
         tricks (get-tricks game)
         last-trick (last tricks)]

@@ -51,11 +51,10 @@
           (recur (seats/next game-seats next-seat))
           true)))))
 
-(def finished?
-  (memoize
-   (fn [bids num-players]
-     {:pre [(sequential? bids)]}
-     (= (dec num-players) (count (filter pass-bid? bids))))))
+(defn finished?
+  [bids num-players]
+  {:pre [(sequential? bids)]}
+  (= (dec num-players) (count (filter pass-bid? bids))))
 
 (defn not-valid-bid?
  [current-bids seat bid-type num-players]
