@@ -35,10 +35,12 @@
 (defn view
   [db game player]
   (let [seats (sort-by :game.seat/position (:game/seats game))
-        bids (sort-by :db/id (:game/bids game))
-        tricks (sort-by :db/id (:game/tricks game))]
+        bids (bids/get-bids game)
+        tricks (sort-by :db/id (:game/tricks game))
+        kitty-exchanged? (kitty/exchanged? game)]
     {:seats (map view-seat seats)
      :bids (map view-bid bids)
      :winning-bid (bid-name-key (bids/winning-bid bids))
      :kitty-exchanged? (kitty/exchanged? game)
-     :tricks (map view-trick tricks)}))
+     :tricks (map view-trick tricks)}
+    ))

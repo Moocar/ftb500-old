@@ -121,13 +121,14 @@
 (defn game-view
   [client]
   (let [player-id (:player-id @(:db client))
-        game-id (:game-id @(:db client))]
-    (pprint
-     (send-request client
-                   :get
-                   :game-view
-                   {:player-id player-id
-                    :game-id game-id}))))
+        game-id (:game-id @(:db client))
+        response (send-request client
+                               :get
+                               :game-view
+                               {:player-id player-id
+                                :game-id game-id})]
+    (swap! (:db client) assoc
+           :game-state response)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Events Listener

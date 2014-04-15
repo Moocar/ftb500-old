@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.game-dbg
   (:require [clojure.pprint :refer [print-table]]
             [clojure.string :as string]
+            [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as card]
             [me.moocar.ftb500.kitty :as kitty]))
 
@@ -60,6 +61,6 @@
            (:db/id game)
            (format-seats (:game/seats game))
            (card/format-line-short (:game.kitty/cards game))
-           (format-bids (:game/bids game))
+           (format-bids (bids/get-bids game))
            (format-kitty-exchanged? game)
            (format-tricks game))))

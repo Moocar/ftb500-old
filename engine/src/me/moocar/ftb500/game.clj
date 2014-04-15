@@ -72,12 +72,8 @@
      (if-let [error (:error (bids/add! conn game seat bid))]
        {:status 400
         :body error}
-       (let [bids (bids/get-bids (d/entity (d/db conn) (:db/id game)))]
-         (if (bids/finished? bids (count (:game/seats game)))
-           {:status 200
-            :body {:kitty-cards (map card/ext-form (:game.kitty/cards game))}}
-           {:status 200
-            :body {}})))
+       {:status 200
+        :body {}})
      {:status 400
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))

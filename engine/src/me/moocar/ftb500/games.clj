@@ -80,7 +80,7 @@
                                 (nth (vec (:game.seat/cards winning-seat)) 3))
               (let [game (d/entity (d/db conn) (:db/id game))
                     winning-suit (:bid/suit (:game.bid/bid
-                                             (bids/winning-bid (:game/bids game))))
+                                             (bids/winning-bid (bids/get-bids game))))
                     next-seat (d/entity (d/db conn) (:db/id (nth seats 2)))
                     next-card (nth (vec (:game.seat/cards (nth seats 2))) 0)]
                 (tricks/add-play! this next-seat next-card)

@@ -51,10 +51,19 @@
           (recur (seats/next game-seats next-seat))
           true)))))
 
+(defn get-bids
+  [game]
+  (sort-by :db/id (:game/bids game)))
+
 (defn finished?
-  [bids num-players]
-  {:pre [(sequential? bids)]}
-  (= (dec num-players) (count (filter pass-bid? bids))))
+  ([game]
+     {:pre [game]}
+     (let [bids (get-bids game)
+           num-players (count (:game/seats game))]
+       (finished? bids num-players)))
+  ([bids num-players]
+     {:pre [(sequential? bids) (number? num-players)]}
+     (= (dec num-players) (count (filter pass-bid? bids)))))
 
 (defn not-valid-bid?
  [current-bids seat bid-type num-players]
@@ -76,10 +85,6 @@
 
        (finished? current-bids num-players)
        "Bidding round is finished!")))
-
-(defn get-bids
-  [game]
-  (sort-by :db/id (:game/bids game)))
 
 (defn winning-bid
   [bids]
