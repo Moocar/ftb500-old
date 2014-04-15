@@ -72,6 +72,11 @@
       (swap! (:db client) assoc
              :game-id game-id
              :cards cards)
+      (http-async/send (:websocket client)
+                       :text
+                       (pr-str {:action :subscribe
+                                :player-id player-id
+                                :game-id game-id}))
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
 
@@ -137,7 +142,19 @@
   component/Lifecycle
   (start [this]
     (let [ws (http-async/websocket async-client
-                                   (format "ws://%s:%s/ws/" host port))]
+                                   (format "ws://%s:%s/ws/" host port)
+
+                                   :open
+                                   (fn [conn]
+                                     (println "received connection"))
+
+                                   :close
+                                   (fn [conn]
+                                     (println "Connection closed"))
+
+                                   :text
+                                   (fn [conn text]
+                                     (println "got a response" text)))]
       (assoc this
         :websocket ws)))
   (stop [this]

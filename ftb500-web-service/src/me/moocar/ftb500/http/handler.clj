@@ -50,18 +50,6 @@
           (update-in [:headers] assoc "Content-Type" "application/edn")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ## Websocket Handlers
-
-(defn make-websocket-handlers
-  []
-  {:on-connect (fn [ws] (println "connect" ws))
-   :on-error (fn [ws e] (println "error" ws e))
-   :on-close (fn [ws] (println "close" ws))
-   :on-text (fn [ws text] (println "text" ws text))
-   :on-bytes (fn [ws bytes offset len]
-               (println "bytes" ws bytes offset len))})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Component
 
 (defrecord HandlerComponent [engine-handler]
@@ -70,8 +58,7 @@
     (assoc this
       :handler (-> (make-handler this)
                    (wrap-edn-response)
-                   (wrap-catch-error))
-      :websocket-handler (make-websocket-handlers)))
+                   (wrap-catch-error))))
   (stop [this]
     this))
 

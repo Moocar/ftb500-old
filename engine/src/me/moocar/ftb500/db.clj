@@ -67,9 +67,17 @@
     (let [conn (d/connect uri)]
       (ensure-schema conn)
       (ensure-ref-data conn)
-      (assoc this :conn conn)))
+      (assoc this
+        :conn conn
+        :tx-report-queue (d/tx-report-queue conn))))
   (stop [this]
-    this))
+    (when-let [conn (:conn this)]
+      (println "removing tx report q")
+      (d/remove-tx-report-queue conn)
+      (d/release conn))
+    (assoc this
+      :conn nil
+      :tx-report-queue nil)))
 
 (defn new-datomic-database
   []
