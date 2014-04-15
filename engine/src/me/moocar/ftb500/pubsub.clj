@@ -1,8 +1,17 @@
 (ns me.moocar.ftb500.pubsub
-  (:require [com.stuartsierra.component :as component]
+  (:require [clojure.core.async :refer [put!]]
+            [com.stuartsierra.component :as component]
             [datomic.api :as d]))
 
-(defrecord Pubsub [datomic]
+(defn register-client
+  [this client-map]
+  (println "registering client" client-map)
+  (let [output-ch (:output-ch client-map)]
+    (put! output-ch {:action :registered})
+    (swap! (:client-db this)
+          conj client-map)))
+
+(defrecord Pubsub [datomic client-db]
   component/Lifecycle
   (start [this]
     (let [tx-report-queue (:tx-report-queue datomic)
@@ -22,5 +31,5 @@
 
 (defn new-pubsub
   [config]
-  (component/using (map->Pubsub {})
+  (component/using (map->Pubsub {:client-db (atom [])})
     [:datomic]))

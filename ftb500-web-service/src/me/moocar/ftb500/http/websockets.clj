@@ -1,7 +1,9 @@
 (ns me.moocar.ftb500.http.websockets
   (:require [clojure.edn :as edn]
+            [clojure.core.async :refer [go chan <!]]
             [com.stuartsierra.component :as component]
-            [ring.adapter.jetty9 :as jetty]))
+            [ring.adapter.jetty9 :as jetty]
+            [me.moocar.ftb500.pubsub :as pubsub]))
 
 (defn make-websocket-handlers
   [component]
@@ -20,17 +22,22 @@
    :on-text
    (fn [ws text]
      (println text)
-     (let [client-map (edn/read-string text)]
-       (swap! (:connections component)
-              conj (assoc client-map
-                     :ws ws)))
-     (jetty/send-text ws "Got it!"))
+     (let [client-map (edn/read-string text)
+           output-ch (chan)]
+       (go
+         (loop []
+           (when-let [msg (<! output-ch)]
+             (jetty/send-text ws (pr-str msg))
+             (recur))))
+       (pubsub/register-client (:pubsub component)
+                               (assoc client-map
+                                 :output-ch output-ch))))
 
    :on-bytes
    (fn [ws bytes offset len]
      (println "bytes" ws bytes offset len))})
 
-(defrecord Websockets []
+(defrecord Websockets [pubsub]
   component/Lifecycle
   (start [this]
     (assoc this
@@ -40,4 +47,5 @@
 
 (defn new-websockets
   [config]
-  (map->Websockets {}))
+  (component/using (map->Websockets {})
+    [:pubsub]))
