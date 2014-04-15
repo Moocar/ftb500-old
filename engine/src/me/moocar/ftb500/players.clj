@@ -45,3 +45,7 @@
                     :player/name player-name}])
      {:status 200
       :body {:player-id player-ext-id}})))
+
+(defn get-seat
+  [player]
+  (first (:game.seat/_player player)))
