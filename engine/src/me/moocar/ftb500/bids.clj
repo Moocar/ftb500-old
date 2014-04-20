@@ -112,3 +112,7 @@
                 {:db/id (:db/id game)
                  :game/bids bid-id}]]
         @(d/transact conn tx)))))
+
+(defn ext-form
+  [bid]
+  (keyword (name (:bid/name (:game.bid/bid bid)))))

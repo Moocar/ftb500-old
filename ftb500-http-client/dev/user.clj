@@ -36,7 +36,6 @@
     (client/create-game game-owner 4)
     (let [game-id (:game-id @(:db game-owner))]
       (doseq [c (rest clients)]
-        (Thread/sleep 100)
         (client/join-game c game-id)))
     (client/bid (first clients) :six-clubs)
     (client/bid (second clients) :seven-hearts)
