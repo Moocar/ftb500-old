@@ -5,7 +5,8 @@
             [clojure.tools.namespace.repl :refer [refresh]]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.client :as client]
-            [me.moocar.ftb500.client.system :as system]))
+            [me.moocar.ftb500.client.system :as system]
+            [me.moocar.log :as log]))
 
 (def system nil)
 
@@ -29,15 +30,13 @@
   (def clients (:clients system))
   (def fifth-client (client/new-http-client))
   (doseq [[c n] (map vector clients (take 4 (shuffle client/ref-player-names)))]
-    (println "creating player" n)
     (client/create-player c n))
   (client/create-player fifth-client "Fifth Man")
   (let [game-owner (first clients)]
-    (println "creating game")
     (client/create-game game-owner 4)
     (let [game-id (:game-id @(:db game-owner))]
       (doseq [c (rest clients)]
-        (println "joining game")
+        (Thread/sleep 100)
         (client/join-game c game-id)))
     (client/bid (first clients) :six-clubs)
     (client/bid (second clients) :seven-hearts)

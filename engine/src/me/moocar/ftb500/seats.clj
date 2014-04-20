@@ -39,3 +39,15 @@
     (->> game-seats
          (filter #(= next-seat-position (:game.seat/position %)))
          (first))))
+
+(defn ext-form
+  [seat]
+  (let [position (:game.seat/position seat)
+        num-cards (count (:game.seat/cards seat))
+        player (:game.seat/player seat)
+        player-name (:player/name player)
+        player-id (:player/id player)]
+    {:position position
+     :num-cards num-cards
+     :player-id player-id
+     :player-name player-name}))

@@ -1,7 +1,7 @@
 (ns me.moocar.ftb500.http.system
   (:require [com.stuartsierra.component :as component]
             [me.moocar.ftb500.db :as datomic]
-            [me.moocar.ftb500.log :as log]
+            [me.moocar.log :as log]
             [me.moocar.ftb500.http.handler :as handler]
             [me.moocar.ftb500.handlers :as engine-handler]
             [me.moocar.ftb500.http.jetty :as jetty]

@@ -3,7 +3,7 @@
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.handlers :as engine-handler]
-            [me.moocar.ftb500.log :as log]
+            [me.moocar.log :as log]
             [ring.middleware.params :as params]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

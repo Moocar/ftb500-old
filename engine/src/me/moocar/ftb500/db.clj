@@ -3,7 +3,7 @@
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
-            [me.moocar.ftb500.log :as log])
+            [me.moocar.log :as log])
   (:import [java.io PushbackReader])
   (:refer-clojure :exclude [find]))
 

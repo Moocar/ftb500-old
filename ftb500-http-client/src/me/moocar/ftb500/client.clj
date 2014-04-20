@@ -3,7 +3,8 @@
             [clojure.pprint :refer [pprint]]
             [clj-http.client :as http]
             [com.stuartsierra.component :as component]
-            [http.async.client :as http-async]))
+            [http.async.client :as http-async]
+            [me.moocar.log :as log]))
 
 (defn uuid? [s]
   (instance? java.util.UUID s))
@@ -38,12 +39,25 @@
                                {:player-name player-name})
         player-id (:player-id response)]
     (assert player-id)
-    (swap! (:db client) assoc :player-id player-id)
+    (swap! (:db client)
+           assoc
+           :player-id player-id
+           :player-name player-name)
     :done))
+
+(defn subscribe
+  [client game-id]
+  (http-async/send (:websocket client)
+                   :text
+                   (pr-str {:action :subscribe
+                            :player-id (:player-id @(:db client))
+                            :game-id game-id})))
 
 (defn create-game
   [client num-players]
   {:pre [(number? num-players)]}
+  (log/log (:log client) {:msg "Create game"
+                          :player (:player-name @(:db client))})
   (if-let [player-id (:player-id @(:db client))]
     (let [response (send-request client
                                  :post
@@ -56,12 +70,15 @@
       (swap! (:db client) assoc
              :game-id game-id
              :cards cards)
+      (subscribe client game-id)
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
 
 (defn join-game
   [client game-id]
   {:pre [(uuid? game-id)]}
+  (log/log (:log client) {:msg "Joining game"
+                          :player (:player-name @(:db client))})
   (if-let [player-id (:player-id @(:db client))]
     (let [response (send-request client
                                  :post
@@ -72,11 +89,7 @@
       (swap! (:db client) assoc
              :game-id game-id
              :cards cards)
-      (http-async/send (:websocket client)
-                       :text
-                       (pr-str {:action :subscribe
-                                :player-id player-id
-                                :game-id game-id}))
+      (subscribe client game-id)
       :done)
     (throw (ex-info "No player registered. Call :create-player first" {}))))
 
@@ -138,7 +151,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Events Listener
 
-(defrecord HttpClient [endpoint host port async-client websocket db]
+(defrecord HttpClient [endpoint host port async-client websocket db log]
   component/Lifecycle
   (start [this]
     (let [ws (http-async/websocket async-client
@@ -146,15 +159,16 @@
 
                                    :open
                                    (fn [conn]
-                                     (println "received connection"))
+                                     (log/log log {:msg "received connection"}))
 
                                    :close
                                    (fn [conn]
-                                     (println "Connection closed"))
+                                     (log/log log {:msg "Connection closed"}))
 
                                    :text
                                    (fn [conn text]
-                                     (println "got a response" text)))]
+                                     (log/log log {:msg (edn/read-string text)
+                                                   :player-name (:player-name @db)})))]
       (assoc this
         :websocket ws)))
   (stop [this]
@@ -162,8 +176,10 @@
 
 (defn new-http-client
   []
-  (map->HttpClient {:endpoint "http://localhost:8080"
-                    :host "localhost"
-                    :port 8080
-                    :db (atom {})
-                    :async-client (http-async/create-client)}))
+  (component/using
+    (map->HttpClient {:endpoint "http://localhost:8080"
+                      :host "localhost"
+                      :port 8080
+                      :db (atom {})
+                      :async-client (http-async/create-client)})
+    [:log]))

@@ -3,7 +3,7 @@
             [clojure.core.async :refer [go chan <!]]
             [com.stuartsierra.component :as component]
             [ring.adapter.jetty9 :as jetty]
-            [me.moocar.ftb500.log :as log]
+            [me.moocar.log :as log]
             [me.moocar.ftb500.pubsub :as pubsub]))
 
 (defn make-websocket-handlers

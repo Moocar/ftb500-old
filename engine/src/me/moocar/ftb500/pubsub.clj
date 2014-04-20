@@ -2,7 +2,8 @@
   (:require [clojure.core.async :refer [put!]]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
-            [me.moocar.ftb500.log :as log]))
+            [me.moocar.log :as log]
+            [me.moocar.ftb500.seats :as seats]))
 
 (defn register-client
   [this client-map]
@@ -12,6 +13,29 @@
     (put! output-ch {:action :registered})
     (swap! (:client-db this)
           conj client-map)))
+
+(defn join-game-listener
+  [component tx-data]
+  (let [log (:log component)
+        datomic (:datomic component)
+        conn (:conn datomic)
+        attr-id (:id (d/attribute (d/db conn) :game.seat/player))]
+    (when-let [seat (-> '[:find ?eid
+                          :in $ ?seat-attr-id
+                          :where [?eid ?seat-attr-id]]
+                        (d/q tx-data attr-id)
+                        ffirst
+                        (->> (d/entity (d/db conn))))]
+      (let [game (first (:game/_seats seat))
+            game-id (:game/id game)]
+        (let [game-clients (filter (fn [client-map]
+                                     (= (:game-id client-map)
+                                        game-id))
+                                   @(:client-db component))]
+          (doseq [game-client game-clients]
+            (put! (:output-ch game-client)
+                  {:action :player-joined
+                   :player (seats/ext-form seat)})))))))
 
 (defn start-db-listener
   [component]
@@ -23,11 +47,7 @@
       (log/log (:log component) {:msg "Starting pubsub loop"})
       (loop [tx (.take tx-report-queue)]
         (try
-          (log/log (:log component)
-                   {:msg "DB event"
-                    :event (-> '[:find ?eid ?attrid
-                                 :where [?eid ?attrid]]
-                               (d/q (:tx-data tx) attr-id))})
+          (join-game-listener component (:tx-data tx))
           (catch Throwable e
             (log/log (:log component)
                      {:msg "error in pubsub loop"

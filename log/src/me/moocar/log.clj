@@ -1,4 +1,4 @@
-(ns me.moocar.ftb500.log
+(ns me.moocar.log
   (:require [clojure.core.async :refer [go-loop chan <! put! close!]]
             [clojure.pprint :refer [pprint]]
             [com.stuartsierra.component :as component]))
