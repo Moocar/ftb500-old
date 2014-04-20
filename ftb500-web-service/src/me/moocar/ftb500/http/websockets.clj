@@ -3,25 +3,28 @@
             [clojure.core.async :refer [go chan <!]]
             [com.stuartsierra.component :as component]
             [ring.adapter.jetty9 :as jetty]
+            [me.moocar.ftb500.log :as log]
             [me.moocar.ftb500.pubsub :as pubsub]))
 
 (defn make-websocket-handlers
   [component]
   {:on-connect
    (fn [ws]
-     (println "This is a connect" ws))
+     (log/log (:log component) {:msg "WS connect"}))
 
    :on-error
    (fn [ws e]
-     (println "error" ws e))
+     (log/log (:log component) {:msg "WS Error"
+                                :ex e}))
 
    :on-close
    (fn [ws]
-     (println "close" ws))
+     (log/log (:log component) {:msg "WS close"}))
 
    :on-text
    (fn [ws text]
-     (println text)
+     (log/log (:log component) {:msg "WS text"
+                                :text text})
      (let [client-map (edn/read-string text)
            output-ch (chan)]
        (go
@@ -35,9 +38,10 @@
 
    :on-bytes
    (fn [ws bytes offset len]
-     (println "bytes" ws bytes offset len))})
+     (log/log (:log component) {:msg "WS bytes"
+                                :bytes bytes}))})
 
-(defrecord Websockets [pubsub]
+(defrecord Websockets [pubsub log]
   component/Lifecycle
   (start [this]
     (assoc this
@@ -48,4 +52,4 @@
 (defn new-websockets
   [config]
   (component/using (map->Websockets {})
-    [:pubsub]))
+    [:pubsub :log]))

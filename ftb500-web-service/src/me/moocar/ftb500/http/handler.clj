@@ -3,6 +3,7 @@
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.handlers :as engine-handler]
+            [me.moocar.ftb500.log :as log]
             [ring.middleware.params :as params]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -27,17 +28,18 @@
             args (edn/read-string (slurp (jio/reader body)))
             new-request {:action action
                          :args args}]
-        (println "new request" new-request)
+        (log/log (:log component) {:msg "Incoming HTTP Request"
+                                   :request new-request})
         (engine-handler/handle-request engine-handler new-request)))))
 
 (defn wrap-catch-error
-  [handler]
+  [component handler]
   (fn [request]
     (try
       (handler request)
       (catch Throwable t
-        (println "got error" t)
-        (.printStackTrace t)
+        (log/log (:log component) {:msg "Error in HTTP Handler"
+                                   :ex t})
         {:status 500
          :body "Internal Server Error"}))))
 
@@ -52,17 +54,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Component
 
-(defrecord HandlerComponent [engine-handler]
+(defrecord HandlerComponent [engine-handler log]
   component/Lifecycle
   (start [this]
     (assoc this
       :handler (-> (make-handler this)
                    (wrap-edn-response)
-                   (wrap-catch-error))))
+                   (->> (wrap-catch-error this)))))
   (stop [this]
     this))
 
 (defn new-handler
   [config]
   (component/using (map->HandlerComponent {})
-    [:engine-handler]))
+    [:engine-handler :log]))

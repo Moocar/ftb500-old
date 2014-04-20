@@ -46,12 +46,12 @@
     (client/bid (nth clients 0) :pass)
     (client/bid (nth clients 1) :eight-hearts)
     (client/bid (nth clients 3) :pass)
+    (client/game-view (nth clients 1))
+
 
     (client/exchange-kitty (nth clients 1) (take 3 (:cards @(:db (nth clients 1)))))
 
     (client/play-card (nth clients 1) (first (:cards @(:db (nth clients 1)))))
-
-    (client/game-view (nth clients 3))
 
 
     )

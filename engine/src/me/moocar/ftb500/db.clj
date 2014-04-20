@@ -2,7 +2,8 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
-            [datomic.api :as d])
+            [datomic.api :as d]
+            [me.moocar.ftb500.log :as log])
   (:import [java.io PushbackReader])
   (:refer-clojure :exclude [find]))
 
@@ -48,7 +49,6 @@
 (defn ensure-ref-data
   [conn]
   (when-not (ref-data-exists? conn)
-    (println "Adding reference data")
     (transact-resource conn "ref_cards.edn")))
 
 (defn del-db
@@ -58,12 +58,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 
-(defrecord DatomicDatabase [uri]
+(defrecord DatomicDatabase [uri log]
   component/Lifecycle
   (start [this]
     ;; Ensure database created
     (when (d/create-database uri)
-      (println "Created database" uri))
+      (log/log log {:msg "Created database"
+                    :uri uri}))
     (let [conn (d/connect uri)]
       (ensure-schema conn)
       (ensure-ref-data conn)
@@ -72,7 +73,7 @@
         :tx-report-queue (d/tx-report-queue conn))))
   (stop [this]
     (when-let [conn (:conn this)]
-      (println "removing tx report q")
+      (log/log log {:msg "removing tx report q"})
       (d/remove-tx-report-queue conn)
       (d/release conn))
     (assoc this
@@ -81,4 +82,5 @@
 
 (defn new-datomic-database
   []
-  (->DatomicDatabase mem-uri))
+  (component/using (map->DatomicDatabase {:uri mem-uri})
+    [:log]))
