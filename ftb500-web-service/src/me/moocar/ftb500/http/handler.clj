@@ -26,7 +26,7 @@
             action-name (subs uri 1)
             action (get handler-lookup [request-method (keyword action-name)])
             args (edn/read-string (slurp (jio/reader body)))
-            new-request {:action action
+y            new-request {:action action
                          :args args}]
         (log/log (:log component) {:msg "Incoming HTTP Request"
                                    :request new-request})

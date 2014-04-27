@@ -10,7 +10,7 @@
 
 (defn new-system
   []
-  (let [config {:port 8080}]
+  (let [config {:port 8081}]
     (component/system-map
      :datomic (datomic/new-datomic-database)
      :engine-handler (engine-handler/new-handler-component)

@@ -177,9 +177,9 @@
 (defn new-http-client
   []
   (component/using
-    (map->HttpClient {:endpoint "http://localhost:8080"
+    (map->HttpClient {:endpoint "http://localhost:8081"
                       :host "localhost"
-                      :port 8080
+                      :port 8081
                       :db (atom {})
                       :async-client (http-async/create-client)})
     [:log]))
