@@ -321,4 +321,20 @@
   :db/cardinality :db.cardinality/many
   :db/doc "The tricks for this game"
   :db.install/_attribute :db.part/db}
-]
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Metadata
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :action
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :action/create-game]
+ [:db/add #db/id[:db.part/user] :db/ident :action/join-game]
+ [:db/add #db/id[:db.part/user] :db/ident :action/bid]
+ [:db/add #db/id[:db.part/user] :db/ident :action/exchange-kitty]
+ [:db/add #db/id[:db.part/user] :db/ident :action/play-card]
+
+ ]
