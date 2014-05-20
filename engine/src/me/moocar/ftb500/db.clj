@@ -81,6 +81,7 @@
       :tx-report-queue nil)))
 
 (defn new-datomic-database
-  []
-  (component/using (map->DatomicDatabase {:uri mem-uri})
+  [config]
+  (component/using (map->DatomicDatabase (merge {:uri mem-uri}
+                                                (:datomic config)))
     [:log]))
