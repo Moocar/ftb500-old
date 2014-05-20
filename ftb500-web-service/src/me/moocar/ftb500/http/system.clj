@@ -10,9 +10,10 @@
 
 (defn new-system
   []
-  (let [config {:port 8081}]
+  (let [config {:port 8081
+                :datomic {:uri "datomic:free://localhost:4334/ftb500"}}]
     (component/system-map
-     :datomic (datomic/new-datomic-database)
+     :datomic (datomic/new-datomic-database config)
      :engine-handler (engine-handler/new-handler-component)
      :handler (handler/new-handler config)
      :pubsub (pubsub/new-pubsub config)
