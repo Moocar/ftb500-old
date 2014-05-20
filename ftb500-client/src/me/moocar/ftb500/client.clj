@@ -19,14 +19,33 @@
            (assoc msg
              :player (:player-name this))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Subscribe
+
+(defmulti handle-msg
+  (fn [this msg]
+    (:action msg)))
+
+(defmethod handle-msg :registered
+  [this msg]
+  (debug this {:im :registered}))
+
+(defmethod handle-msg :join-game
+  [this msg])
+
 (defn subscribe
   [this]
   (let [{:keys [log requester]} this
         ch (chan)]
     (protocols/subscribe requester (get-game-id this) ch)
     (go-loop []
-      (debug this {:msg-recv (<! ch)})
+      (let [msg (<! ch)]
+        (debug this {:msg-recv msg})
+        (handle-msg this msg))
       (recur))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Requests
 
 (defn create-player
   [this]
@@ -58,6 +77,9 @@
            :cards cards
            :game-id game-id)
     (subscribe this)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Component
 
 (defrecord Client [requester log player-name db]
   component/Lifecycle
