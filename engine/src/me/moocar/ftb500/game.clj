@@ -57,7 +57,10 @@
    (if-let [seat (seats/next-vacant game)]
      (let [cards (:game.seat/cards seat)]
        @(d/transact conn
-                    [{:db/id (:db/id seat)
+                    [{:db/id (d/tempid :db.part/tx)
+                      :game/id (:game/id game)
+                      :action :action/join-game}
+                     {:db/id (:db/id seat)
                       :game.seat/player (:db/id player)}])
        {:status 200
         :body {:cards (map card/ext-form cards)}})

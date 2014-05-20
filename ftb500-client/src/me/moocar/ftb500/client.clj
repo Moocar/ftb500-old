@@ -13,13 +13,19 @@
   [this]
   (:game-id @(:db this)))
 
+(defn debug
+  [this msg]
+  (log/log (:log this)
+           (assoc msg
+             :player (:player-name this))))
+
 (defn subscribe
   [this]
   (let [{:keys [log requester]} this
         ch (chan)]
     (protocols/subscribe requester (get-game-id this) ch)
     (go-loop []
-      (log/log log {:msg-recv (<! ch)})
+      (debug this {:msg-recv (<! ch)})
       (recur))))
 
 (defn create-player
@@ -56,7 +62,6 @@
 (defrecord Client [requester log player-name db]
   component/Lifecycle
   (start [this]
-    (log/log log {:msg (str "starting " player-name)})
     (create-player this)
     this)
   (stop [this]
