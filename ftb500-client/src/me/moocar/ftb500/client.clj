@@ -37,12 +37,12 @@
   [this]
   (let [{:keys [log requester]} this
         ch (chan)]
-    (protocols/subscribe requester (get-game-id this) ch)
     (go-loop []
-      (let [msg (<! ch)]
+      (when-let [msg (<! ch)]
         (debug this {:msg-recv msg})
-        (handle-msg this msg))
-      (recur))))
+        (handle-msg this msg)
+        (recur)))
+    (protocols/subscribe requester (get-game-id this) ch)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Requests
