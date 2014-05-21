@@ -52,6 +52,9 @@
   [this request]
   (let [response (protocols/send-request (:requester this) request)]
     (when-not (= 200 (:status response))
+      (debug this {:msg "Non 200 response"
+                   :request request
+                   :response response})
       (throw (ex-info "Non 200 response"
                       {:request request
                        :response response})))
@@ -87,6 +90,15 @@
            :cards cards
            :game-id game-id)
     (subscribe this)))
+
+(defn bid
+  [this bid]
+  (let [request {:action :bid
+                 :args {:player-id (:player-id @(:db this))
+                        :game-id (:game-id @(:db this))
+                        :bid bid}}
+        response (send-request this request)]
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
