@@ -47,11 +47,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Requests
 
+(defn send-request
+  "Sends a request and throws an exception if non 200 response"
+  [this request]
+  (let [response (protocols/send-request (:requester this) request)]
+    (when-not (= 200 (:status response))
+      (throw (ex-info "Non 200 response"
+                      {:request request
+                       :response response})))
+    response))
+
 (defn create-player
   [this]
   (let [request {:action :create-player
                  :args {:player-name (:player-name this)}}
-        response (protocols/send-request (:requester this) request)
+        response (send-request this request)
         player-id (:player-id (:body response))]
     (swap! (:db this) assoc :player-id player-id)))
 
@@ -60,7 +70,7 @@
   (let [request {:action :create-game
                  :args {:player-id (:player-id @(:db this))
                         :num-players 4}}
-        response (protocols/send-request (:requester this) request)
+        response (send-request this request)
         game-id (:game-id (:body response))]
     (swap! (:db this) assoc :game-id game-id)
     (subscribe this)))
@@ -70,7 +80,7 @@
   (let [request {:action :join-game
                  :args {:player-id (:player-id @(:db this))
                         :game-id game-id}}
-        response (protocols/send-request (:requester this) request)
+        response (send-request this request)
         cards (:cards (:body response))]
     (swap! (:db this)
            assoc
