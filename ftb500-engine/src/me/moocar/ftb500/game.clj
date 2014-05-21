@@ -58,7 +58,7 @@
      (let [cards (:game.seat/cards seat)]
        @(d/transact conn
                     [{:db/id (d/tempid :db.part/tx)
-                      :game/id (:game/id game)
+                      :tx/game-id (:game/id game)
                       :action :action/join-game}
                      {:db/id (:db/id seat)
                       :game.seat/player (:db/id player)}])

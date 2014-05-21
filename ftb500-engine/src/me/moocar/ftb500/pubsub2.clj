@@ -69,7 +69,7 @@
                [?tx ?db-instant-attr]
                [?tx ?action-attr ?action-k]]
       (d/q (:tx-data tx)
-           (:id (d/attribute (:db-after tx) :game/id))
+           (:id (d/attribute (:db-after tx) :tx/game-id))
            (:id (d/attribute (:db-after tx) :db/txInstant))
            (:id (d/attribute (:db-after tx) :action)))
       (->> (map #(update-in % [1] (fn [i] (d/ident (:db-after tx) i)))))))
