@@ -46,7 +46,10 @@
          deck-cards (shuffle (:deck/cards deck))
          game-ext-id (d/squuid)
          {:keys [hands kitty]} (deck/partition-hands deck-cards)
-         game-tx (make-game-tx game-ext-id deck hands kitty player)
+         game-tx (-> (make-game-tx game-ext-id deck hands kitty player)
+                     (conj {:db/id (d/tempid :db.part/tx)
+                            :tx/game-id game-ext-id
+                            :action :action/create-game}))
          result @(d/transact conn game-tx)]
      {:status 200
       :body {:game-id game-ext-id

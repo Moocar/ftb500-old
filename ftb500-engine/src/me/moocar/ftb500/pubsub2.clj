@@ -24,6 +24,11 @@
   (fn [action-k tx]
     action-k))
 
+(defmethod handle-tx-event :create-game
+  [_ tx]
+  (let [seat (get-attr tx :game.seat/player)]
+    {:player (seats/ext-form seat)}))
+
 (defmethod handle-tx-event :join-game
   [_ tx]
   (let [seat (get-attr tx :game.seat/player)]

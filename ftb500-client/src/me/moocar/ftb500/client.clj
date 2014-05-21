@@ -30,6 +30,12 @@
   [this msg]
   (debug this {:im :registered}))
 
+(defmethod handle-msg :create-game
+  [this msg]
+  (let [player (:player msg)
+        position (:position player)]
+    (swap! (:db this) update-in [:seats] conj player)))
+
 (defmethod handle-msg :join-game
   [this msg]
   (let [player (:player msg)
