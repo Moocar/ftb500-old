@@ -31,7 +31,10 @@
   (debug this {:im :registered}))
 
 (defmethod handle-msg :join-game
-  [this msg])
+  [this msg]
+  (let [player (:player msg)
+        position (:position player)]
+    (swap! (:db this) update-in [:seats] conj player)))
 
 (defn subscribe
   [this]
@@ -129,5 +132,6 @@
   (let [{:keys [player-name]} config
         player-name (or player-name (rand-nth (vec ref-player-names)))]
     (component/using (map->Client {:db (atom {})
-                                   :player-name player-name})
+                                   :player-name player-name
+                                   :seats []})
       [:requester :log])))
