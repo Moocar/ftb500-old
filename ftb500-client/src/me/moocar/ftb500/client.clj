@@ -45,7 +45,7 @@
     (protocols/subscribe requester (get-game-id this) ch)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Requests
+;; Request helpers
 
 (defn send-request
   "Sends a request and throws an exception if non 200 response"
@@ -60,6 +60,22 @@
                        :response response})))
     response))
 
+(defn make-player-request
+  [this action args]
+  {:action action
+   :args (merge {:player-id (:player-id @(:db this))}
+                args)})
+
+(defn make-game-request
+  [this action args]
+  {:action action
+   :args (merge {:player-id (:player-id @(:db this))
+                 :game-id (:game-id @(:db this))}
+                args)})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Requests
+
 (defn create-player
   [this]
   (let [request {:action :create-player
@@ -70,9 +86,9 @@
 
 (defn create-game
   [this]
-  (let [request {:action :create-game
-                 :args {:player-id (:player-id @(:db this))
-                        :num-players 4}}
+  (let [request (make-player-request this
+                                     :create-game
+                                     {:num-players 4})
         response (send-request this request)
         game-id (:game-id (:body response))]
     (swap! (:db this) assoc :game-id game-id)
@@ -80,9 +96,9 @@
 
 (defn join-game
   [this game-id]
-  (let [request {:action :join-game
-                 :args {:player-id (:player-id @(:db this))
-                        :game-id game-id}}
+  (let [request (make-player-request this
+                                     :join-game
+                                     {:game-id game-id})
         response (send-request this request)
         cards (:cards (:body response))]
     (swap! (:db this)
@@ -93,12 +109,9 @@
 
 (defn bid
   [this bid]
-  (let [request {:action :bid
-                 :args {:player-id (:player-id @(:db this))
-                        :game-id (:game-id @(:db this))
-                        :bid bid}}
+  (let [request (make-game-request this :bid {:bid bid})
         response (send-request this request)]
-    ))
+    response))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
