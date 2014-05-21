@@ -8,18 +8,17 @@
     (first (remove #(contains? % :game.seat/player) seats))))
 
 (defn make-seat-tx
-  ([game-id index cards player]
+  ([game-id index cards seat-id player]
      {:keys [(number? game-id) (number? index) (coll? cards) player]}
-     (let [seat-id (d/tempid :db.part/user)]
-       (concat
-        (map #(hash-map :db/id seat-id
-                        :game.seat/cards (:db/id %))
-             cards)
-        [{:db/id seat-id
-          :game.seat/player (:db/id player)
-          :game.seat/position index}
-         {:db/id game-id
-          :game/seats seat-id}])))
+     (concat
+      (map #(hash-map :db/id seat-id
+                      :game.seat/cards (:db/id %))
+           cards)
+      [{:db/id seat-id
+        :game.seat/player (:db/id player)
+        :game.seat/position index}
+       {:db/id game-id
+        :game/seats seat-id}]))
   ([game-id index cards]
      (let [seat-id (d/tempid :db.part/user)]
        (concat

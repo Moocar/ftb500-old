@@ -22,17 +22,19 @@
 (defn- make-game-tx
   [game-ext-id deck hands kitty player]
   {:pre [game-ext-id (coll? deck) (coll? hands) (coll? kitty)]}
-  (let [game-id (d/tempid :db.part/user)]
+  (let [game-id (d/tempid :db.part/user)
+        seat-id (d/tempid :db.part/user)]
     (concat
      (map #(hash-map :db/id game-id
                                  :game.kitty/cards (:db/id %))
                       kitty)
-     (seats/make-seat-tx game-id 0 (first hands) player)
+     (seats/make-seat-tx game-id 0 (first hands) seat-id player)
      (mapcat #(seats/make-seat-tx game-id %1 %2)
              (range 1 4)
              (rest hands))
      [{:db/id game-id
        :game/id game-ext-id
+       :game/first-seat seat-id
        :game/deck (:db/id deck)}])))
 
 (defn add!
