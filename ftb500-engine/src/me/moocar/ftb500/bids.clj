@@ -40,6 +40,11 @@
              (map (comp :bid/score :game.bid/bid)
                   current-bids))))
 
+(defn not-first-player?
+  [current-bids seat]
+  (let [game (first (:game/_seats seat))]
+    (not= seat (:game/first-seat game))))
+
 (defn not-your-go?
   [current-bids seat]
   (let [game (first (:game/_seats seat))
@@ -68,23 +73,23 @@
 (defn not-valid-bid?
  [current-bids seat bid-type num-players]
  {:pre [(sequential? current-bids) seat bid-type]}
- (and (> (count current-bids) 0)
-      (cond
+ (if (empty? current-bids)
+   (when (not-first-player? current-bids seat)
+     "You're not allowed to start the bidding (person left of dealer should)")
+   (cond (passed-already? current-bids seat)
+         "You've passed already"
 
-       (passed-already? current-bids seat)
-       "You've passed already"
+         (pass-bid? {:game.bid/bid bid-type})
+         false
 
-       (pass-bid? {:game.bid/bid bid-type})
-       false
+         (score-too-low? current-bids bid-type)
+         "Bid too low"
 
-       (score-too-low? current-bids bid-type)
-       "Bid too low"
+         (not-your-go? current-bids seat)
+         "It's not your go!"
 
-       (not-your-go? current-bids seat)
-       "It's not your go!"
-
-       (finished? current-bids num-players)
-       "Bidding round is finished!")))
+         (finished? current-bids num-players)
+         "Bidding round is finished!")))
 
 (defn winning-bid
   [bids]
@@ -106,7 +111,10 @@
                :data {:seat (:game.seat/position seat)
                       :bid-type-name bid-name}}}
       (let [bid-id (d/tempid :db.part/user)
-            tx [{:db/id bid-id
+            tx [{:db/id (d/tempid :db.part/tx)
+                 :tx/game-id (:game/id game)
+                 :action :action/bid}
+                {:db/id bid-id
                  :game.bid/bid bid-type-id
                  :game.bid/seat (:db/id seat)}
                 {:db/id (:db/id game)
