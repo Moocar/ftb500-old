@@ -13,7 +13,7 @@
   (-> '[:find ?eid
         :in $ ?attr-id
         :where [?eid ?attr-id]]
-      (d/q (:tx-data tx) (:id (d/attribute (:db-before tx) attr-k)))
+      (d/q (:tx-data tx) (:id (d/attribute (:db-after tx) attr-k)))
       ffirst
       (->> (d/entity (:db-after tx)))))
 
@@ -48,18 +48,7 @@
                  :card (cards/ext-form card)}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Registering
-
-(defn register-client
-  [this game-id ch]
-  (let [{:keys [log]} this]
-    (log/log log {:msg "register-client"
-                  :game-id game-id})
-    (swap! (:client-db this) update-in [:games game-id] conj ch)
-    (put! ch {:action :registered})))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Cruft
+;; Handle Report Q
 
 (defn get-game-id-and-actions
   [tx]
@@ -78,6 +67,12 @@
   [this game-id]
   (get (:games @(:client-db this)) game-id))
 
+(defn for-client
+  [action-k tx ch]
+  (let [msg (assoc (handle-tx-event action-k tx)
+              :action action-k)]
+    (put! ch msg)))
+
 (defn handle-tx
   [component tx]
   (let [{:keys [log]} component
@@ -85,9 +80,7 @@
     (doseq [[game-id action-k] game-txs]
       (let [action-k (keyword (name action-k))]
        (doseq [client-ch (find-clients component game-id)]
-         (let [msg (assoc (handle-tx-event action-k tx)
-                     :action action-k)]
-           (put! client-ch msg)))))))
+         (for-client action-k tx client-ch))))))
 
 (defn start-db-listener
   [component]
@@ -103,6 +96,46 @@
                      {:msg "error in pubsub loop"
                       :ex e})))
         (recur (.take tx-report-queue))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Registering
+
+(defn tx->datoms
+  [conn tx-id]
+  (d/q '[:find ?e ?a ?v ?tx ?added
+         :in $ ?log ?tx
+         :where [(tx-data ?log ?tx) [[?e ?a ?v _ ?added]]]
+         #_[?a :db/ident ?aname]]
+       (d/db conn)
+       (d/log conn)
+       tx-id))
+
+(defn find-game-transactions
+  [conn game-id]
+  (-> '[:find ?tx
+        :in $ ?log ?game-id
+        :where [_ :tx/game-id ?game-id ?tx]]
+      (d/q (d/db conn) (d/log conn) game-id)
+      (->> (map #(tx->datoms conn (first %))))))
+
+(defn register-client
+  [this game-id ch]
+  (let [{:keys [log datomic]} this
+        conn (:conn datomic)]
+    (log/log log {:msg "register-client"
+                  :game-id game-id})
+    (swap! (:client-db this) update-in [:games game-id] conj ch)
+    (put! ch {:action :registered})
+    (doseq [tx (find-game-transactions conn game-id)]
+      (let [tx {:tx-data tx
+                :db-after (d/db conn)}
+            game-tx (first (get-game-id-and-actions tx))
+            [game-id action-k] game-tx
+            action-k (keyword (name action-k))]
+        (for-client action-k tx ch)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Component
 
 (defrecord Pubsub [datomic client-db log]
   component/Lifecycle
