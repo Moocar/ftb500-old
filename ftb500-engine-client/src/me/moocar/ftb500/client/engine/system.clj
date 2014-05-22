@@ -4,6 +4,8 @@
             [me.moocar.ftb500.handlers :as handler]
             [me.moocar.ftb500.client.engine.requester :as requester]
             [me.moocar.ftb500.client :as client]
+            [me.moocar.ftb500.clients :as clients]
+            [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.pubsub2 :as pubsub]
             [me.moocar.log :as log]))
 
@@ -16,6 +18,10 @@
     :pubsub (pubsub/new-pubsub config)
     :log (log/new-logger config)
     :requester (requester/new-requester)
+    :transport (transport/new-client-transport)
+    :transport-handler (fn [payload] (println "transport got" payload))
+    :clients (clients/new-clients)
+    :clients-handler clients/echo-handler
     :client1 (client/new-client config)
     :client2 (client/new-client (assoc config :player-name "Bart"))
     :client3 (client/new-client config)

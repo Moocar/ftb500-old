@@ -5,3 +5,6 @@
 
 (defprotocol Subscriber
   (subscribe [this game-id ch]))
+
+(defprotocol Transporter
+  (register [this client-id request-ch response-ch]))

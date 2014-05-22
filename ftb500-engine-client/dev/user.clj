@@ -7,6 +7,7 @@
             [datomic.api :as d]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.engine.system :as system]
+            [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.log :as log]
             [me.moocar.ftb500.db :as db]))
 
@@ -34,6 +35,11 @@
       (client/join-game client game-id))
     #_(client/bid client1 :six-clubs)
     (log/log log (:db client2))))
+
+(defn play
+  []
+  (let [{:keys [transport]} system]
+    (async/go (println (async/<! (transport/request transport "Hello from Australisdfa!"))))))
 
 (defn go
   "Initializes and starts the system running."
