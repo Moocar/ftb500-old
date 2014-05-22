@@ -26,17 +26,21 @@
 
 (defn play
   []
-  )
+  (let [{:keys [log client1 client2 client3 client4]} system
+        clients [client1 client2 client3 client4]
+        _ (client/create-game client1)
+        game-id (client/get-game-id client1)]
+    (doseq [client (take 2 (rest clients))]
+      (client/join-game client game-id))
+    #_(client/bid client1 :six-clubs)
+    (log/log log (:db client2))))
 
 (defn go
   "Initializes and starts the system running."
   []
   (init)
   (start)
-  (let [{:keys [log client1 client2]} system
-        _ (client/create-game client1)
-        game-id (client/get-game-id client1)
-        _ (client/join-game client2 game-id)])
+  (play)
   :ready)
 
 (defn reset
