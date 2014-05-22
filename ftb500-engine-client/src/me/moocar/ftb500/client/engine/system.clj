@@ -17,4 +17,6 @@
     :log (log/new-logger config)
     :requester (requester/new-requester)
     :client1 (client/new-client config)
-    :client2 (client/new-client config))))
+    :client2 (client/new-client (assoc config :player-name "Bart"))
+    :client3 (client/new-client config)
+    :client4 (client/new-client config))))
