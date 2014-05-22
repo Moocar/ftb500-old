@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.clients
   (:require [com.stuartsierra.component :as component]
-            [clojure.core.async :refer [put! close! alts! timeout chan >!]]))
+            [clojure.core.async :refer [put! close! alts! timeout chan <! >! go go-loop]]))
 
 (def ^:private default-timeout 30000)
 

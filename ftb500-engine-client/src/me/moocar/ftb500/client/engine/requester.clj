@@ -3,6 +3,7 @@
             [me.moocar.ftb500.handlers :as handler]
             [me.moocar.ftb500.pubsub2 :as pubsub]
             [me.moocar.ftb500.protocols :as protocols]
+            [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.clients :as clients]))
 
 (defrecord Requester [handler pubsub clients]
@@ -15,7 +16,7 @@
   (subscribe [this game-id ch]
     (pubsub/register-client pubsub game-id ch))
 
-  protocols/Transporter
+  transport/Transporter
   (register [this client-id request-ch response-ch]
     (clients/register clients client-id request-ch response-ch)))
 

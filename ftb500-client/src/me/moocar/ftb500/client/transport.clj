@@ -1,13 +1,9 @@
 (ns me.moocar.ftb500.client.transport
   (:require [clojure.core.async :refer [chan go alts! timeout <! >! go-loop]]
-            [com.stuartsierra.component :as component]
-            [me.moocar.ftb500.protocols :as protocols]))
+            [com.stuartsierra.component :as component]))
 
-(defn register
-  [this]
-  (let [{:keys [transport request-ch response-ch]} this
-        client-id (java.util.UUID/randomUUID)]
-    (protocols/register transport client-id request-ch response-ch)))
+(defprotocol Transporter
+  (register [this client-id request-ch response-ch]))
 
 (defn register-response-ch
   [this seq-id ch]
@@ -55,7 +51,7 @@
   component/Lifecycle
   (start [this]
     (start-listen-loop this)
-    (register this)
+    (register transport "client-id" request-ch response-ch)
     this)
   (stop [this]
     this))
