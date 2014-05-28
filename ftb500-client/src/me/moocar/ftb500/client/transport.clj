@@ -32,7 +32,7 @@
             response))
         (catch Throwable t
           (.printStackTrace t)
-          (throw t))))))
+          t)))))
 
 (defn start-listen-loop
   [this]
