@@ -51,7 +51,7 @@
                             :tx/game-id game-ext-id
                             :action :action/create-game}))
          result @(d/transact conn game-tx)]
-     {:status 200
+     {:status :success
       :body {:game-id game-ext-id
              :cards (map card/ext-form (first hands))}})))
 
@@ -67,9 +67,9 @@
                       :action :action/join-game}
                      {:db/id (:db/id seat)
                       :game.seat/player (:db/id player)}])
-       {:status 200
+       {:status :success
         :body {:cards (map card/ext-form cards)}})
-     {:status 400
+     {:status :bad-args
       :body {:msg "No more seats left at this game"}})))
 
 (defn bid!
@@ -78,11 +78,11 @@
    [game player (keyword? bid)]
    (if-let [seat (first (:game.seat/_player player))]
      (if-let [error (:error (bids/add! conn game seat bid))]
-       {:status 400
+       {:status :bad-args
         :body error}
-       {:status 200
+       {:status :success
         :body {}})
-     {:status 400
+     {:status :bad-args
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))
 
@@ -94,11 +94,11 @@
      (let [db (d/db conn)
            card-entities (map #(card/find db %) cards)]
        (if-let [error (:error (kitty/exchange! conn seat card-entities))]
-         {:status 400
+         {:status :bad-args
           :body error}
-         {:status 200
+         {:status :success
           :body {}}))
-     {:status 400
+     {:status :bad-args
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))
 
@@ -110,11 +110,11 @@
      (let [db (d/db conn)
            card-entity (card/find db card)]
        (if-let [error (:error (tricks/add-play! conn seat card-entity))]
-         {:status 400
+         {:status :bad-args
           :body error}
-         {:status 200
+         {:status :success
           :body {}}))
-     {:status 400
+     {:status :bad-args
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))
 
@@ -124,8 +124,8 @@
    [game player]
    (if-let [seat (first (:game.seat/_player player))]
      (let [db (d/db conn)]
-       {:status 200
+       {:status :success
         :body (game-view/view db game player)})
-     {:status 400
+     {:status :bad-args
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))

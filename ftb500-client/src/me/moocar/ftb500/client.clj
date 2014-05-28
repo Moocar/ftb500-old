@@ -109,21 +109,43 @@
                                      :create-game
                                      {:num-players 4})]
     (go
-      (let [response (<! (send-request this request))
-            game-id (:game-id (:body response))]
-        (swap! (:db this) assoc :game-id game-id)))))
+      (try
+        (let [response (<! (transport/request (:transport this) request 10000))]
+          (assert (:status response))
+          (if (= :success (:status response))
+            (let [game-id (:game-id (:body response))]
+              (assert game-id)
+              (swap! (:db this) assoc :game-id game-id))
+            (if (nil? response)
+              (ex-info "Timeout out creating player" {})
+              (ex-info "Bad status. Fix it" response))))
+        (catch Throwable t
+          (.printStackTrace t)
+          t)))))
 
 (defn join-game
   [this game-id]
   (let [request (make-player-request this
                                      :join-game
-                                     {:game-id game-id})
-        response (send-request this request)
-        cards (:cards (:body response))]
-    (swap! (:db this)
-           assoc
-           :cards cards
-           :game-id game-id)))
+                                     {:game-id game-id})]
+    (go
+      (try
+        (let [response (<! (transport/request (:transport this) request 10000))]
+          (assert (:status response))
+          (if (= :success (:status response))
+            (let [cards (:cards (:body response))]
+              (assert cards)
+              (swap! (:db this)
+                     assoc
+                     :cards cards
+                     :game-id game-id)
+              (swap! (:db this) assoc :game-id game-id))
+            (if (nil? response)
+              (ex-info "Timeout out creating player" {})
+              (ex-info "Bad status. Fix it" response))))
+        (catch Throwable t
+          (.printStackTrace t)
+          t)))))
 
 (defn bid
   [this bid]

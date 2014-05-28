@@ -31,7 +31,7 @@
   component/Lifecycle
   (start [this]
     (let [system (component/start-system (transport-system config))
-          clients (map #(component/start-system (merge system %)) clients)]
+          clients (doall (map #(component/start-system (merge system %)) clients))]
       (assoc system :clients clients)))
   (stop [this]
     (let [clients (map component/stop-system clients)]

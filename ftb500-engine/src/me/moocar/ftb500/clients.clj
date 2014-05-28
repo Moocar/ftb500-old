@@ -23,7 +23,6 @@
 (defn- handle-packet
   [this client packet]
   (let [response-ch (chan)]
-    ((:handler this) client (:payload packet) response-ch)
     (go
       (try
         (let [[response port] (alts! [response-ch (timeout default-timeout)])]

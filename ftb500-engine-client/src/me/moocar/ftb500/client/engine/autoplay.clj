@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.client.engine.autoplay
-  (:require [clojure.core.async :refer [go <!!]]
+  (:require [clojure.core.async :refer [go <!! <!]]
             [me.moocar.ftb500.client :as client]))
 
 (defn play
@@ -8,15 +8,15 @@
     (let [overall (<!!
                    (go
                      (try
-                       #_(let [game-response (<! (client/create-game leader))]
-                         (println "game response" game-response)
+                       (let [game-response (<! (client/create-game leader))]
                          (if (instance? Throwable game-response)
                            game-response
-                           (let [game-id (:game-id game-response)]
-                             #_(<! (->> (rest clients)
-                                        (map #(client/join-game % game-id))
-                                        (doall)
-                                        (clojure.core.async/merge)))
+                           (let [game-id (:game-id game-response)
+                                 join-responses (->> (rest clients)
+                                                     (map #(client/join-game % game-id))
+                                                     (doall))]
+                             (doseq [ch join-responses]
+                               (println "response" (<! ch)))
                              (println "all players joined"))))
                        (catch Throwable t
                          (.printStackTrace t)))))]

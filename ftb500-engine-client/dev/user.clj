@@ -8,6 +8,7 @@
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.engine.system :as system]
             [me.moocar.ftb500.client.transport :as transport]
+            [me.moocar.ftb500.client.engine.autoplay :as autoplay]
             [me.moocar.log :as log]
             [me.moocar.ftb500.db :as db]))
 
@@ -15,7 +16,7 @@
 
 (defn init
   []
-  (alter-var-root #'system (constantly (system/new-system))))
+  (alter-var-root #'system (constantly (system/new-autoplay-system))))
 
 (defn start
   []
@@ -25,28 +26,12 @@
   []
   (alter-var-root #'system #(when % (component/stop %))))
 
-(defn play
-  []
-  (let [{:keys [log client1 client2 client3 client4]} system
-        clients [client1 client2 client3 client4]
-        _ (client/create-game client1)
-        game-id (client/get-game-id client1)]
-    (doseq [client (take 2 (rest clients))]
-      (client/join-game client game-id))
-    #_(client/bid client1 :six-clubs)
-    (log/log log (:db client2))))
-
-(defn play
-  []
-  (let [{:keys [transport]} system]
-    (async/go (println (async/<! (transport/request transport "Hello from Australisdfa!"))))))
-
 (defn go
   "Initializes and starts the system running."
   []
   (init)
   (start)
-  (play)
+  (autoplay/play (map :client (:clients system)))
   :ready)
 
 (defn reset
