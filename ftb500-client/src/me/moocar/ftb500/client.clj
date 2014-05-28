@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.client
-  (:require [clojure.core.async :refer [chan <! go-loop]]
+  (:require [clojure.core.async :refer [chan <! go-loop go]]
             [com.stuartsierra.component :as component]
+            [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.protocols :as protocols]
             [me.moocar.log :as log]))
 
@@ -59,15 +60,13 @@
 (defn send-request
   "Sends a request and throws an exception if non 200 response"
   [this request]
-  (let [response (protocols/send-request (:requester this) request)]
-    (when-not (= 200 (:status response))
-      (debug this {:msg "Non 200 response"
-                   :request request
-                   :response response})
-      (throw (ex-info "Non 200 response"
-                      {:request request
-                       :response response})))
-    response))
+  (go
+    (let [response (<! (transport/request (:transport this) request 10000))]
+      (if (= :success (:status response))
+        (:body response)
+        (if (nil? response)
+          (ex-info "Timeout out creating player" {})
+          (ex-info "Bad status. Fix it" response))))))
 
 (defn make-player-request
   [this action args]
@@ -88,20 +87,31 @@
 (defn create-player
   [this]
   (let [request {:action :create-player
-                 :args {:player-name (:player-name this)}}
-        response (send-request this request)
-        player-id (:player-id (:body response))]
-    (swap! (:db this) assoc :player-id player-id)))
+                 :args {:player-name (:player-name this)}}]
+    (go
+      (try
+        (let [response (<! (transport/request (:transport this) request 10000))]
+          (assert (:status response))
+          (if (= :success (:status response))
+            (let [player-id (:player-id (:body response))]
+              (assert player-id)
+              (swap! (:db this) assoc :player-id player-id))
+            (if (nil? response)
+              (ex-info "Timeout out creating player" {})
+              (ex-info "Bad status. Fix it" response))))
+        (catch Throwable t
+          (.printStackTrace t)
+          t)))))
 
 (defn create-game
   [this]
   (let [request (make-player-request this
                                      :create-game
-                                     {:num-players 4})
-        response (send-request this request)
-        game-id (:game-id (:body response))]
-    (swap! (:db this) assoc :game-id game-id)
-    (subscribe this)))
+                                     {:num-players 4})]
+    (go
+      (let [response (<! (send-request this request))
+            game-id (:game-id (:body response))]
+        (swap! (:db this) assoc :game-id game-id)))))
 
 (defn join-game
   [this game-id]
@@ -113,8 +123,7 @@
     (swap! (:db this)
            assoc
            :cards cards
-           :game-id game-id)
-    (subscribe this)))
+           :game-id game-id)))
 
 (defn bid
   [this bid]
@@ -125,7 +134,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 
-(defrecord Client [requester log player-name db]
+(defrecord Client [transport log player-name db]
   component/Lifecycle
   (start [this]
     (create-player this)
@@ -140,4 +149,24 @@
     (component/using (map->Client {:db (atom {})
                                    :player-name player-name
                                    :seats []})
-      [:requester :log])))
+      {:transport :transport
+       :log :log})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Handler
+
+(defn make-handler-fn
+  [this]
+  (fn [payload]
+    (println "got a payload" payload)))
+
+(defrecord TransportHandler [handler-fn]
+  component/Lifecycle
+  (start [this]
+    (assoc this :handler-fn (make-handler-fn this)))
+  (stop [this]
+    this))
+
+(defn new-transport-handler
+  []
+  (map->TransportHandler {}))

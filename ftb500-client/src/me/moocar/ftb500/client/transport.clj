@@ -2,8 +2,12 @@
   (:require [clojure.core.async :refer [chan go alts! timeout <! >! go-loop]]
             [com.stuartsierra.component :as component]))
 
+(def default-timeout
+  30000)
+
 (defprotocol Transporter
-  (register [this client-id request-ch response-ch]))
+  (register [this client-id request-ch response-ch]
+    "Registers a client's channels against this transporter"))
 
 (defn register-response-ch
   [this seq-id ch]
@@ -14,7 +18,7 @@
   (swap! (:open-requests this) dissoc seq-id))
 
 (defn request
-  [this payload]
+  [this payload timeout-msecs]
   (let [{:keys [request-ch seq-id-atom]} this
         seq-id (swap! seq-id-atom inc)]
     (go
@@ -23,7 +27,7 @@
                         :payload payload})
         (let [response-ch (chan)]
           (register-response-ch this seq-id response-ch)
-          (let [[response _] (alts! [response-ch (timeout 30000)])]
+          (let [[response _] (alts! [response-ch (timeout timeout-msecs)])]
             (de-register-response-ch this seq-id)
             response))
         (catch Throwable t
@@ -38,7 +42,7 @@
         (when-let [packet (<! response-ch)]
           (let [{:keys [seq-id payload]} packet]
             (if-not seq-id
-              (handler payload)
+              ((:handler-fn handler) payload)
               (when-let [open-request-ch (get @open-requests seq-id)]
                 (>! open-request-ch payload))))
           (recur))

@@ -9,20 +9,39 @@
             [me.moocar.ftb500.pubsub2 :as pubsub]
             [me.moocar.log :as log]))
 
-(defn new-system
+(defn transport-system
+  [config]
+  (component/system-map
+   :log (log/new-logger config)
+   :requester (requester/new-requester)
+   :clients (clients/new-clients)
+   :clients-handler clients/echo-handler
+   :pubsub (pubsub/new-pubsub config)
+   :datomic (db/new-datomic-database config)
+   :handler (handler/new-handler-component)))
+
+(defn new-client-system
+  [config]
+  (component/system-map
+   :transport (transport/new-client-transport)
+   :transport-handler (client/new-transport-handler)
+   :client (client/new-client config)))
+
+(defrecord AutoplaySystem [config clients]
+  component/Lifecycle
+  (start [this]
+    (let [system (component/start-system (transport-system config))
+          clients (map #(component/start-system (merge system %)) clients)]
+      (assoc system :clients clients)))
+  (stop [this]
+    (let [clients (map component/stop-system clients)]
+      (-> this
+          component/stop-system
+          (assoc :clients clients)))))
+
+(defn new-autoplay-system
   []
-  (let [config {:datomic {:uri "datomic:free://localhost:4334/ftb500"}}]
-   (component/system-map
-    :datomic (db/new-datomic-database config)
-    :handler (handler/new-handler-component)
-    :pubsub (pubsub/new-pubsub config)
-    :log (log/new-logger config)
-    :requester (requester/new-requester)
-    :transport (transport/new-client-transport)
-    :transport-handler (fn [payload] (println "transport got" payload))
-    :clients (clients/new-clients)
-    :clients-handler clients/echo-handler
-    :client1 (client/new-client config)
-    :client2 (client/new-client (assoc config :player-name "Bart"))
-    :client3 (client/new-client config)
-    :client4 (client/new-client config))))
+  (let [config {:datomic {:uri "datomic:free://localhost:4334/ftb500"}}
+        clients (repeatedly 4 #(new-client-system config))]
+    (map->AutoplaySystem {:config config
+                          :clients clients})))
