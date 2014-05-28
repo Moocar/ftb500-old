@@ -43,7 +43,7 @@
                   [{:db/id (d/tempid :db.part/user)
                     :player/id player-ext-id
                     :player/name player-name}])
-     {:status 200
+     {:status :success
       :body {:player-id player-ext-id}})))
 
 (defn get-seat

@@ -33,7 +33,8 @@
         (catch Throwable t
           (.printStackTrace t)
           (throw t)))
-      (close! response-ch))))
+      (close! response-ch))
+    ((:handler-fn (:handler this)) client (:payload packet) response-ch)))
 
 (defn- start-listen-loop
   [this client]

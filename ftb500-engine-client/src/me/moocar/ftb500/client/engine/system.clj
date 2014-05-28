@@ -15,7 +15,7 @@
    :log (log/new-logger config)
    :requester (requester/new-requester)
    :clients (clients/new-clients)
-   :clients-handler clients/echo-handler
+   :clients-handler (handler/new-handler-component)
    :pubsub (pubsub/new-pubsub config)
    :datomic (db/new-datomic-database config)
    :handler (handler/new-handler-component)))
