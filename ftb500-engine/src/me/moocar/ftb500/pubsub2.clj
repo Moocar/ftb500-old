@@ -5,8 +5,8 @@
             [me.moocar.log :as log]
             [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as cards]
-            [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.seats :as seats]))
+            [me.moocar.ftb500.seats :as seats]
+            [me.moocar.ftb500.clients :as clients]))
 
 (defn- get-attr
   [tx attr-k]
@@ -73,10 +73,10 @@
   (get (:games @(:client-db this)) game-id))
 
 (defn for-client
-  [action-k tx ch]
+  [this action-k tx client]
   (let [msg (assoc (handle-tx-event action-k tx)
               :action action-k)]
-    (put! ch msg)))
+    (clients/publish (:clients this) client msg)))
 
 (defn handle-tx
   [component tx]
@@ -84,8 +84,8 @@
         game-txs (get-game-id-and-actions tx)]
     (doseq [[game-id action-k] game-txs]
       (let [action-k (keyword (name action-k))]
-       (doseq [client-ch (find-clients component game-id)]
-         (for-client action-k tx client-ch))))))
+       (doseq [client (find-clients component game-id)]
+         (for-client component action-k tx client))))))
 
 (defn start-db-listener
   [component]
@@ -124,20 +124,20 @@
       (->> (map #(tx->datoms conn (first %))))))
 
 (defn register-client
-  [this game-id ch]
+  [this game-id client]
   (let [{:keys [log datomic]} this
         conn (:conn datomic)]
     (log/log log {:msg "register-client"
                   :game-id game-id})
-    (swap! (:client-db this) update-in [:games game-id] conj ch)
-    (put! ch {:action :registered})
+    (swap! (:client-db this) update-in [:games game-id] conj client)
+    (clients/publish (:clients this) client {:action :registered})
     (doseq [tx (find-game-transactions conn game-id)]
       (let [tx {:tx-data tx
                 :db-after (d/db conn)}
             game-tx (first (get-game-id-and-actions tx))
             [game-id action-k] game-tx
             action-k (keyword (name action-k))]
-        (for-client action-k tx ch)))))
+        (for-client this action-k tx client)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
@@ -154,4 +154,4 @@
 (defn new-pubsub
   [config]
   (component/using (map->Pubsub {:client-db (atom {:games {}})})
-    [:datomic :log]))
+    [:datomic :log :clients]))

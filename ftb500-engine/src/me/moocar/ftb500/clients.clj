@@ -4,10 +4,6 @@
 
 (def ^:private default-timeout 30000)
 
-(defn- find-client
-  [this client-id]
-  (get (:clients @(:db this)) client-id))
-
 (defn- respond
   [client seq-id payload]
   (put! (:out-ch client)
@@ -15,10 +11,9 @@
          :payload payload}))
 
 (defn publish
-  [this client-id msg]
-  (let [client (find-client this client-id)]
-    (assert client (str "Client '" client-id "' not registered"))
-    (respond client nil msg)))
+  [this client msg]
+  (assert client msg)
+  (respond client nil msg))
 
 (defn- handle-packet
   [this client packet]

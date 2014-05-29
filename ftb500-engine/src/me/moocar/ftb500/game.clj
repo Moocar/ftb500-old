@@ -54,7 +54,7 @@
                             :tx/game-id game-ext-id
                             :action :action/create-game}))
          result @(d/transact conn game-tx)]
-     #_(pubsub/register-client (:pubsub this) game-ext-id client)
+     (pubsub/register-client (:pubsub this) game-ext-id client)
      {:status :success
       :body {:game-id game-ext-id
              :cards (map card/ext-form (first hands))}})))
