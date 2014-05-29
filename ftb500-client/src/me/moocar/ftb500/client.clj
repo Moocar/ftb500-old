@@ -157,12 +157,20 @@
         response (send-request this request)]
     response))
 
+(defn start-listen-loop
+  [this]
+  (go-loop []
+    (when-let [payload (<! (:client-recv-ch this))]
+      (log/log (:log this) {:recv payload})
+      (recur))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 
-(defrecord Client [transport log player-name db]
+(defrecord Client [transport log player-name db client-recv-ch]
   component/Lifecycle
   (start [this]
+    (start-listen-loop this)
     (<!! (create-player this))
     this)
   (stop [this]
@@ -176,23 +184,5 @@
                                    :player-name player-name
                                    :seats []})
       {:transport :transport
+       :client-recv-ch :client-recv-ch
        :log :log})))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Handler
-
-(defn make-handler-fn
-  [this]
-  (fn [payload]
-    (println "got a payload" payload)))
-
-(defrecord TransportHandler [handler-fn]
-  component/Lifecycle
-  (start [this]
-    (assoc this :handler-fn (make-handler-fn this)))
-  (stop [this]
-    this))
-
-(defn new-transport-handler
-  []
-  (map->TransportHandler {}))

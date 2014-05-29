@@ -72,6 +72,7 @@
                       :action :action/join-game}
                      {:db/id (:db/id seat)
                       :game.seat/player (:db/id player)}])
+       (pubsub/register-client (:pubsub this) (:game/id game) client)
        {:status :success
         :body {:cards (map card/ext-form cards)}})
      {:status :bad-args

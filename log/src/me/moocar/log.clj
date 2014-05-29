@@ -9,10 +9,14 @@
     (let [output-ch (chan 1024)]
       (go-loop []
         (when-let [log (<! output-ch)]
-          (let [non-ex (dissoc log :ex)]
-            (pprint non-ex)
-            (when (:ex log)
-              (.printStackTrace (:ex log))))
+          (if (map? log)
+            (let [non-ex (dissoc log :ex)]
+              (pprint non-ex)
+              (when (:ex log)
+                (.printStackTrace (:ex log))))
+            (if (string? log)
+              (println log)
+              (throw (ex-info "Unsupported log message" {:log log}))))
           (recur)))
       (assoc this :output-ch output-ch)))
   (stop [this]

@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.client.transport
-  (:require [clojure.core.async :refer [chan go alts! timeout <! >! go-loop]]
+  (:require [clojure.core.async :refer [chan go alts! timeout <! >! go-loop put!]]
             [com.stuartsierra.component :as component]))
 
 (def default-timeout
@@ -36,13 +36,13 @@
 
 (defn start-listen-loop
   [this]
-  (let [{:keys [handler response-ch open-requests]} this]
+  (let [{:keys [client-recv-ch response-ch open-requests]} this]
     (go-loop []
       (try
         (when-let [packet (<! response-ch)]
           (let [{:keys [seq-id payload]} packet]
             (if-not seq-id
-              ((:handler-fn handler) payload)
+              (put! client-recv-ch payload)
               (when-let [open-request-ch (get @open-requests seq-id)]
                 (>! open-request-ch payload))))
           (recur))
@@ -67,4 +67,4 @@
                                           :seq-id-atom (atom 0)
                                           :open-requests (atom {})})
     {:transport :requester
-     :handler :transport-handler}))
+     :client-recv-ch :client-recv-ch}))

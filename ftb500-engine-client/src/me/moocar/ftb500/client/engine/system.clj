@@ -30,7 +30,7 @@
   [config]
   (component/system-map
    :transport (transport/new-client-transport)
-   :transport-handler (client/new-transport-handler)
+   :client-recv-ch (async/chan)
    :client (client/new-client config)))
 
 (defrecord AutoplaySystem [config clients]
