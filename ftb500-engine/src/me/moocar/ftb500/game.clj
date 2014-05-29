@@ -53,8 +53,8 @@
                      (conj {:db/id (d/tempid :db.part/tx)
                             :tx/game-id game-ext-id
                             :action :action/create-game}))
+         _ (pubsub/register-client (:pubsub this) game-ext-id client)
          result @(d/transact conn game-tx)]
-     (pubsub/register-client (:pubsub this) game-ext-id client)
      {:status :success
       :body {:game-id game-ext-id
              :cards (map card/ext-form (first hands))}})))
@@ -66,13 +66,13 @@
    (if-let [seat (seats/next-vacant game)]
      (let [conn (:conn (:datomic this))
            cards (:game.seat/cards seat)]
+       (pubsub/register-client (:pubsub this) (:game/id game) client)
        @(d/transact conn
                     [{:db/id (d/tempid :db.part/tx)
                       :tx/game-id (:game/id game)
                       :action :action/join-game}
                      {:db/id (:db/id seat)
                       :game.seat/player (:db/id player)}])
-       (pubsub/register-client (:pubsub this) (:game/id game) client)
        {:status :success
         :body {:cards (map card/ext-form cards)}})
      {:status :bad-args

@@ -161,7 +161,8 @@
   [this]
   (go-loop []
     (when-let [payload (<! (:client-recv-ch this))]
-      (log/log (:log this) {:recv payload})
+      (log/log (:log this) {:player (:player-name this)
+                            :recv payload})
       (recur))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
