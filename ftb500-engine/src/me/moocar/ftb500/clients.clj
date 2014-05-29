@@ -33,7 +33,7 @@
           (.printStackTrace t)
           (throw t)))
       (close! response-ch))
-    ((:handler-fn (:handler this)) client (:payload packet) response-ch)))
+    (put! (:request-ch this) [client (:payload packet) response-ch])))
 
 (defn- start-listen-loop
   [this client]
@@ -60,13 +60,7 @@
   [this client-id]
   (swap! (:db this) update-in [:clients] dissoc client-id))
 
-(defrecord Clients [handler db])
-
 (defn new-clients
   []
-  (component/using (map->Clients {:db (atom {:clients {}})})
-    {:handler :clients-handler}))
-
-(defn echo-handler
-  [client payload response-ch]
-  (put! response-ch payload))
+  (component/using {:db (atom {:clients {}})}
+    [:request-ch]))

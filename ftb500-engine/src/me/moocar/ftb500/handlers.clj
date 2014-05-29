@@ -1,27 +1,27 @@
 (ns me.moocar.ftb500.handlers
-  (:require [clojure.core.async :refer [put!]]
+  (:require [clojure.core.async :refer [put! go-loop <!]]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.players :as players]))
 
 (defn not-found-handler
-  [_ request]
+  [_ client request]
   {:status :no-route
    :body {:msg "No Service Found"}})
 
 (defn make-handler-lookup
   []
-  {:create-player players/add!
-   :create-game game/add!
-   :join-game game/join!
-   :bid game/bid!
-   :exchange-kitty game/exchange-kitty!
-   :play-card game/play-card!
-   :game-view game/view})
+  {:create-player  [:players players/add!]
+   :create-game    [:games   game/add!]
+   :join-game      [:games   game/join!]
+   :bid            [:games   game/bid!]
+   :exchange-kitty [:games   game/exchange-kitty!]
+   :play-card      [:games   game/play-card!]
+   :game-view      [:games   game/view]})
 
 (defn handle-request
-  [component request]
+  [component client request]
   (let [conn (:conn (:datomic component))
         db (d/db conn)
         handler-lookup (:handler-lookup component)
@@ -40,28 +40,36 @@
                   :data {:game-id game-id}}}
 
           :else
-          (let [handler-fn (get handler-lookup action not-found-handler)]
-            (handler-fn conn (assoc args
-                               :player player
-                               :game game))))))
+          (let [handler (get handler-lookup action [nil not-found-handler])
+                [handler-component handler-fn] handler]
+            (handler-fn (get component handler-component)
+                        client
+                        (assoc args
+                          :player player
+                          :game game))))))
 
-(defn make-handler-fn
+(defn start-listen-loop
   [this]
-  (fn [client payload response-ch]
-    (let [{:keys [action args]} payload]
-      (let [response (handle-request this payload)]
-        (put! response-ch response)))))
+  (go-loop []
+    (try
+      (when-let [request (<! (:request-ch this))]
+        (let [[client payload response-ch] request
+              {:keys [action args]} payload
+              response (handle-request this client payload)]
+          (put! response-ch response))
+        (recur))
+      (catch Throwable t
+        (.printStackTrace t)))))
 
-(defrecord HandlerComponent [datomic]
+(defrecord HandlerComponent []
   component/Lifecycle
   (start [this]
-    (assoc this
-      :handler-fn (make-handler-fn this)
-      :handler-lookup (make-handler-lookup)))
+    (start-listen-loop (assoc this :handler-lookup (make-handler-lookup)))
+    (assoc this :handler-lookup (make-handler-lookup)))
   (stop [this]
     this))
 
 (defn new-handler-component
   []
   (component/using (map->HandlerComponent {})
-    [:datomic]))
+    [:datomic :games :players :clients :request-ch]))

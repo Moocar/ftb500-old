@@ -35,10 +35,11 @@
   (db/find db :player/id ext-id))
 
 (defn add!
-  [conn {:keys [player-name]}]
+  [this client {:keys [player-name]}]
   (request/wrap-bad-args-response
    [(string? player-name) (not (string/blank? player-name))]
-   (let [player-ext-id (d/squuid)]
+   (let [conn (:conn (:datomic this))
+         player-ext-id (d/squuid)]
      @(d/transact conn
                   [{:db/id (d/tempid :db.part/user)
                     :player/id player-ext-id
@@ -49,3 +50,8 @@
 (defn get-seat
   [player]
   (first (:game.seat/_player player)))
+
+(defn new-players-component
+  []
+  (component/using {}
+    [:datomic]))

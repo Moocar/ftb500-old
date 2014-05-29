@@ -1,11 +1,14 @@
 (ns me.moocar.ftb500.client.engine.system
-  (:require [com.stuartsierra.component :as component]
+  (:require [clojure.core.async :as async]
+            [com.stuartsierra.component :as component]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.handlers :as handler]
             [me.moocar.ftb500.client.engine.requester :as requester]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.clients :as clients]
             [me.moocar.ftb500.client.transport :as transport]
+            [me.moocar.ftb500.game :as game]
+            [me.moocar.ftb500.players :as players]
             [me.moocar.ftb500.pubsub2 :as pubsub]
             [me.moocar.log :as log]))
 
@@ -18,7 +21,10 @@
    :clients-handler (handler/new-handler-component)
    :pubsub (pubsub/new-pubsub config)
    :datomic (db/new-datomic-database config)
-   :handler (handler/new-handler-component)))
+   :handler (handler/new-handler-component)
+   :games (game/new-games-component)
+   :players (players/new-players-component)
+   :request-ch (async/chan)))
 
 (defn new-client-system
   [config]

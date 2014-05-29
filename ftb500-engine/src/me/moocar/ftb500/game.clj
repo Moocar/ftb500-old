@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.game
-  (:require [datomic.api :as d]
+  (:require [com.stuartsierra.component :as component]
+            [datomic.api :as d]
             [me.moocar.ftb500.db :as db]
             [me.moocar.ftb500.bids :as bids]
             [me.moocar.ftb500.card :as card]
@@ -7,6 +8,7 @@
             [me.moocar.ftb500.game-view :as game-view]
             [me.moocar.ftb500.kitty :as kitty]
             [me.moocar.ftb500.players :as players]
+            [me.moocar.ftb500.pubsub2 :as pubsub]
             [me.moocar.ftb500.request :as request]
             [me.moocar.ftb500.seats :as seats]
             [me.moocar.ftb500.tricks :as tricks])
@@ -38,10 +40,11 @@
        :game/deck (:db/id deck)}])))
 
 (defn add!
-  [conn {:keys [player num-players]}]
+  [this client {:keys [player num-players]}]
   (request/wrap-bad-args-response
    [player (number? num-players)]
-   (let [db (d/db conn)
+   (let [conn (:conn (:datomic this))
+         db (d/db conn)
          deck (deck/find db num-players)
          deck-cards (shuffle (:deck/cards deck))
          game-ext-id (d/squuid)
@@ -51,16 +54,18 @@
                             :tx/game-id game-ext-id
                             :action :action/create-game}))
          result @(d/transact conn game-tx)]
+     #_(pubsub/register-client (:pubsub this) game-ext-id client)
      {:status :success
       :body {:game-id game-ext-id
              :cards (map card/ext-form (first hands))}})))
 
 (defn join!
-  [conn {:keys [game player]}]
+  [this client {:keys [game player]}]
   (request/wrap-bad-args-response
    [player game]
    (if-let [seat (seats/next-vacant game)]
-     (let [cards (:game.seat/cards seat)]
+     (let [conn (:conn (:datomic this))
+           cards (:game.seat/cards seat)]
        @(d/transact conn
                     [{:db/id (d/tempid :db.part/tx)
                       :tx/game-id (:game/id game)
@@ -73,25 +78,27 @@
       :body {:msg "No more seats left at this game"}})))
 
 (defn bid!
-  [conn {:keys [game player bid]}]
+  [this {:keys [game player bid]}]
   (request/wrap-bad-args-response
    [game player (keyword? bid)]
-   (if-let [seat (first (:game.seat/_player player))]
-     (if-let [error (:error (bids/add! conn game seat bid))]
+   (let [conn (:conn (:datomic this))]
+     (if-let [seat (first (:game.seat/_player player))]
+       (if-let [error (:error (bids/add! conn game seat bid))]
+         {:status :bad-args
+          :body error}
+         {:status :success
+          :body {}})
        {:status :bad-args
-        :body error}
-       {:status :success
-        :body {}})
-     {:status :bad-args
-      :body {:msg "Could not find player's seat"
-             :data {:player (:player/id player)}}})))
+        :body {:msg "Could not find player's seat"
+               :data {:player (:player/id player)}}}))))
 
 (defn exchange-kitty!
-  [conn {:keys [game player cards]}]
+  [this {:keys [game player cards]}]
   (request/wrap-bad-args-response
    [game player (coll? cards)]
    (if-let [seat (first (:game.seat/_player player))]
-     (let [db (d/db conn)
+     (let [conn (:conn (:datomic this))
+           db (d/db conn)
            card-entities (map #(card/find db %) cards)]
        (if-let [error (:error (kitty/exchange! conn seat card-entities))]
          {:status :bad-args
@@ -103,11 +110,12 @@
              :data {:player (:player/id player)}}})))
 
 (defn play-card!
-  [conn {:keys [game player card]}]
+  [this {:keys [game player card]}]
   (request/wrap-bad-args-response
    [game player (map? card)]
    (if-let [seat (first (:game.seat/_player player))]
-     (let [db (d/db conn)
+     (let [conn (:conn (:datomic this))
+           db (d/db conn)
            card-entity (card/find db card)]
        (if-let [error (:error (tricks/add-play! conn seat card-entity))]
          {:status :bad-args
@@ -119,13 +127,19 @@
              :data {:player (:player/id player)}}})))
 
 (defn view
-  [conn {:keys [game player]}]
+  [this {:keys [game player]}]
   (request/wrap-bad-args-response
    [game player]
    (if-let [seat (first (:game.seat/_player player))]
-     (let [db (d/db conn)]
+     (let [conn (:conn (:datomic this))
+           db (d/db conn)]
        {:status :success
         :body (game-view/view db game player)})
      {:status :bad-args
       :body {:msg "Could not find player's seat"
              :data {:player (:player/id player)}}})))
+
+(defn new-games-component
+  []
+  (component/using {}
+    [:datomic :pubsub]))
