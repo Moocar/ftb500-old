@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.client
-  (:require [clojure.core.async :refer [chan <! go-loop go]]
+  (:require [clojure.core.async :refer [chan <! <!! go-loop go]]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.protocols :as protocols]
@@ -13,6 +13,10 @@
 (defn get-game-id
   [this]
   (:game-id @(:db this)))
+
+(defn get-player-id
+  [this]
+  (:player-id @(:db this)))
 
 (defn debug
   [this msg]
@@ -159,7 +163,7 @@
 (defrecord Client [transport log player-name db]
   component/Lifecycle
   (start [this]
-    (create-player this)
+    (<!! (create-player this))
     this)
   (stop [this]
     this))
