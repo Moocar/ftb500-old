@@ -1,0 +1,367 @@
+[
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Player
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :player/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/doc "A player's external ID"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :player/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "A player's name"
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Card
+
+ ;; Suit
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.suit/name
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/spades]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/hearts]
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.suit/color
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.color/red]
+ [:db/add #db/id[:db.part/user] :db/ident :card.suit.color/black]
+
+ ;; Rank
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.rank/no-trumps-order
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "The rank order of the card in a no-trumps game. E.g Rank
+  '2' has a no trumps value of 0. Rank 'King' has a no trumps value of
+  11"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card.rank/name
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The Rank's name. E.g '2', 'Jack', 'Joker'"
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/two]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/three]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/four]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/five]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/six]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/seven]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/eight]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/nine]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/ten]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/jack]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/queen]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/king]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/ace]
+ [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/joker]
+
+ ;; Card
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card/suit
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :card/rank
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Deck
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :deck/num-players
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "The number of players in a deck matters because it decides
+  the number and selection of cards used in a game"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :deck/cards
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Bidding
+
+ ;; Name/Scoring
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/name
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The name of the bid. E.g 'Pass', or 'six-clubs', or
+  'misere'"
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/pass]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-spades]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-clubs]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-diamonds]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-hearts]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/misere]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.name/open-misere]
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/contract-style
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The style of the contract to play the game in. E.g trump,
+  no-trumps, misere"
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/no-trumps]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/misere]
+ [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/open-misere]
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/score
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "The score that will be given to the team if they win the
+  number of tricks for this bid, or taken from the team if they lose"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/rank
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Some bids have a corresponding rank. E.g 'six-spades' has a
+  rank of 'six'. Some bids such as 'misere' don't have a rank"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid/suit
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Some bids have a corresponding suit. E.g 'six-hearts' has a
+  suit of 'hearts'. This is used for the trumps contract style to
+  determine the trump suit"
+  :db.install/_attribute :db.part/db}
+
+ ;; Player bids
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bid
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "This is the instance of a bid that was played, as opposed
+  to the bid entity"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :seat
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The seat that played the bid"
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Game
+
+ ;; Team
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.team/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;; Seat
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :seat/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/doc "The external ID for a seat"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :seat/position
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "Each seat has a corresponding position. Positions increment
+  to the left, so position 1 will be to the left of position 0"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :seat/player
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "A seat can be in use by a player"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :seat/cards
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "At any time, a seat has zero or more cards, otherwise known
+  as the 'hand'"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :seat/team
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;; Trick Plays
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :trick.play/seat
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The seat that the card was played from"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :trick.play/card
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The card that was played"
+  :db.install/_attribute :db.part/db}
+
+ ;; Trick
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.trick/plays
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "The plays (seat and card) for this trick so far"
+  :db.install/_attribute :db.part/db}
+
+ ;; Game
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/doc "The external ID for a game"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/deck
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The deck used for this game"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/seats
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "The seats for this game"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/first-seat
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The first seat to bid. This is usually the player to the
+  left of the dealer"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game.kitty/cards
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "The cards in the kitty. This should have 3 cards after
+  dealing is complete"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/bids
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "The bids for this game"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :game/tricks
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "The tricks for this game"
+  :db.install/_attribute :db.part/db}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Metadata
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :tx/game-id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :action
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ [:db/add #db/id[:db.part/user] :db/ident :action/create-game]
+ [:db/add #db/id[:db.part/user] :db/ident :action/join-game]
+ [:db/add #db/id[:db.part/user] :db/ident :action/deal-cards]
+ [:db/add #db/id[:db.part/user] :db/ident :action/bid]
+ [:db/add #db/id[:db.part/user] :db/ident :action/exchange-kitty]
+ [:db/add #db/id[:db.part/user] :db/ident :action/play-card]
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; DB functions
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :join-game
+  :db/fn #db/fn {:lang "clojure"
+                 :params [db player-id game-id]
+                 :code "(let [game (datomic.api/entity db game-id)
+                             seats (sort-by :seat/position (:game/seats game))
+                             next-vacant (first (remove #(contains? % :seat/player) seats))]
+                         (if (empty? next-vacant)
+                           (throw (ex-info \"No more seats available\" {:no :seats}))
+                           [[:db/add (:db/id next-vacant) :seat/player player-id]]))"}}
+ ]

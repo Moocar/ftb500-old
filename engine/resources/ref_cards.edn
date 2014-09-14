@@ -1,0 +1,462 @@
+[
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Suits
+
+ {:db/id #db/id[:db.part/user -1001001]
+  :card.suit/name :card.suit.name/spades
+  :card.suit/color :card.suit.color/black}
+ {:db/id #db/id[:db.part/user -1001002]
+  :card.suit/name :card.suit.name/clubs
+  :card.suit/color :card.suit.color/black}
+ {:db/id #db/id[:db.part/user -1001003]
+  :card.suit/name :card.suit.name/diamonds
+  :card.suit/color :card.suit.color/red}
+ {:db/id #db/id[:db.part/user -1001004]
+  :card.suit/name :card.suit.name/hearts
+  :card.suit/color :card.suit.color/red}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Ranks
+
+ {:db/id #db/id[:db.part/user -1002001]
+  :card.rank/name :card.rank.name/two
+  :card.rank/no-trumps-order 0}
+ {:db/id #db/id[:db.part/user -1002002]
+  :card.rank/name :card.rank.name/three
+  :card.rank/no-trumps-order 1}
+ {:db/id #db/id[:db.part/user -1002003]
+  :card.rank/name :card.rank.name/four
+  :card.rank/no-trumps-order 2}
+ {:db/id #db/id[:db.part/user -1002004]
+  :card.rank/name :card.rank.name/five
+  :card.rank/no-trumps-order 3}
+ {:db/id #db/id[:db.part/user -1002005]
+  :card.rank/name :card.rank.name/six
+  :card.rank/no-trumps-order 4}
+ {:db/id #db/id[:db.part/user -1002006]
+  :card.rank/name :card.rank.name/seven
+  :card.rank/no-trumps-order 5}
+ {:db/id #db/id[:db.part/user -1002007]
+  :card.rank/name :card.rank.name/eight
+  :card.rank/no-trumps-order 6}
+ {:db/id #db/id[:db.part/user -1002008]
+  :card.rank/name :card.rank.name/nine
+  :card.rank/no-trumps-order 7}
+ {:db/id #db/id[:db.part/user -1002009]
+  :card.rank/name :card.rank.name/ten
+  :card.rank/no-trumps-order 8}
+ {:db/id #db/id[:db.part/user -1002010]
+  :card.rank/name :card.rank.name/jack
+  :card.rank/no-trumps-order 9}
+ {:db/id #db/id[:db.part/user -1002011]
+  :card.rank/name :card.rank.name/queen
+  :card.rank/no-trumps-order 10}
+ {:db/id #db/id[:db.part/user -1002012]
+  :card.rank/name :card.rank.name/king
+  :card.rank/no-trumps-order 11}
+ {:db/id #db/id[:db.part/user -1002013]
+  :card.rank/name :card.rank.name/ace
+  :card.rank/no-trumps-order 12}
+ {:db/id #db/id[:db.part/user -1002014]
+  :card.rank/name :card.rank.name/joker
+  :card.rank/no-trumps-order 13}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Cards
+
+ ;; Spades
+ {:db/id #db/id[:db.part/user -1003001]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002001]}
+ {:db/id #db/id[:db.part/user -1003002]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002002]}
+ {:db/id #db/id[:db.part/user -1003003]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002003]}
+ {:db/id #db/id[:db.part/user -1003004]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002004]}
+ {:db/id #db/id[:db.part/user -1003005]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002005]}
+ {:db/id #db/id[:db.part/user -1003006]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002006]}
+ {:db/id #db/id[:db.part/user -1003007]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002007]}
+ {:db/id #db/id[:db.part/user -1003008]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002008]}
+ {:db/id #db/id[:db.part/user -1003009]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002009]}
+ {:db/id #db/id[:db.part/user -1003010]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002010]}
+ {:db/id #db/id[:db.part/user -1003011]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002011]}
+ {:db/id #db/id[:db.part/user -1003012]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002012]}
+ {:db/id #db/id[:db.part/user -1003013]
+  :card/suit #db/id[:db.part/user -1001001]
+  :card/rank #db/id[:db.part/user -1002013]}
+
+ ;; Clubs
+ {:db/id #db/id[:db.part/user -1003014]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002001]}
+ {:db/id #db/id[:db.part/user -1003015]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002002]}
+ {:db/id #db/id[:db.part/user -1003016]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002003]}
+ {:db/id #db/id[:db.part/user -1003017]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002004]}
+ {:db/id #db/id[:db.part/user -1003018]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002005]}
+ {:db/id #db/id[:db.part/user -1003019]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002006]}
+ {:db/id #db/id[:db.part/user -1003020]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002007]}
+ {:db/id #db/id[:db.part/user -1003021]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002008]}
+ {:db/id #db/id[:db.part/user -1003022]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002009]}
+ {:db/id #db/id[:db.part/user -1003023]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002010]}
+ {:db/id #db/id[:db.part/user -1003024]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002011]}
+ {:db/id #db/id[:db.part/user -1003025]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002012]}
+ {:db/id #db/id[:db.part/user -1003026]
+  :card/suit #db/id[:db.part/user -1001002]
+  :card/rank #db/id[:db.part/user -1002013]}
+
+ ;; Diamonds
+ {:db/id #db/id[:db.part/user -1003027]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002001]}
+ {:db/id #db/id[:db.part/user -1003028]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002002]}
+ {:db/id #db/id[:db.part/user -1003029]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002003]}
+ {:db/id #db/id[:db.part/user -1003030]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002004]}
+ {:db/id #db/id[:db.part/user -1003031]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002005]}
+ {:db/id #db/id[:db.part/user -1003032]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002006]}
+ {:db/id #db/id[:db.part/user -1003033]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002007]}
+ {:db/id #db/id[:db.part/user -1003034]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002008]}
+ {:db/id #db/id[:db.part/user -1003035]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002009]}
+ {:db/id #db/id[:db.part/user -1003036]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002010]}
+ {:db/id #db/id[:db.part/user -1003037]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002011]}
+ {:db/id #db/id[:db.part/user -1003038]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002012]}
+ {:db/id #db/id[:db.part/user -1003039]
+  :card/suit #db/id[:db.part/user -1001003]
+  :card/rank #db/id[:db.part/user -1002013]}
+
+ ;; Hearts
+ {:db/id #db/id[:db.part/user -1003040]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002001]}
+ {:db/id #db/id[:db.part/user -1003041]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002002]}
+ {:db/id #db/id[:db.part/user -1003042]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002003]}
+ {:db/id #db/id[:db.part/user -1003043]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002004]}
+ {:db/id #db/id[:db.part/user -1003044]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002005]}
+ {:db/id #db/id[:db.part/user -1003045]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002006]}
+ {:db/id #db/id[:db.part/user -1003046]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002007]}
+ {:db/id #db/id[:db.part/user -1003047]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002008]}
+ {:db/id #db/id[:db.part/user -1003048]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002009]}
+ {:db/id #db/id[:db.part/user -1003049]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002010]}
+ {:db/id #db/id[:db.part/user -1003050]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002011]}
+ {:db/id #db/id[:db.part/user -1003051]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002012]}
+ {:db/id #db/id[:db.part/user -1003052]
+  :card/suit #db/id[:db.part/user -1001004]
+  :card/rank #db/id[:db.part/user -1002013]}
+
+ {:db/id #db/id[:db.part/user -1003053]
+  :card/rank #db/id[:db.part/user -1002014]}
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## 4 Player Deck - no 2s, 3s, or black 4s
+
+ [:db/add #db/id[:db.part/user -1004001] :deck/num-players 4]
+
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003004]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003005]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003006]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003007]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003008]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003009]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003010]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003011]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003012]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003013]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003017]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003018]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003019]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003020]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003021]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003022]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003023]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003024]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003025]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003026]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003029]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003030]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003031]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003032]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003033]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003034]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003035]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003036]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003037]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003038]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003039]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003042]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003043]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003044]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003045]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003046]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003047]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003048]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003049]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003050]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003051]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003052]]
+ [:db/add #db/id[:db.part/user -1004001] :deck/cards #db/id[:db.part/user -1003053]]
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; ## Bidding
+
+ ;; Pass
+
+ {:db/id #db/id[:db.part/user -1005001]
+  :bid/name :bid.name/pass
+  :bid/score 0}
+
+ ;; 6
+
+ {:db/id #db/id[:db.part/user -1005002]
+  :bid/name :bid.name/six-spades
+  :bid/rank #db/id[:db.part/user -1002005]
+  :bid/suit #db/id[:db.part/user -1001001]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 40}
+ {:db/id #db/id[:db.part/user -1005003]
+  :bid/name :bid.name/six-clubs
+  :bid/rank #db/id[:db.part/user -1002005]
+  :bid/suit #db/id[:db.part/user -1001002]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 60}
+ {:db/id #db/id[:db.part/user -1005004]
+  :bid/name :bid.name/six-diamonds
+  :bid/rank #db/id[:db.part/user -1002005]
+  :bid/suit #db/id[:db.part/user -1001003]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 80}
+ {:db/id #db/id[:db.part/user -1005005]
+  :bid/name :bid.name/six-hearts
+  :bid/rank #db/id[:db.part/user -1002005]
+  :bid/suit #db/id[:db.part/user -1001004]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 100}
+ {:db/id #db/id[:db.part/user -1005006]
+  :bid/name :bid.name/six-no-trumps
+  :bid/rank #db/id[:db.part/user -1002005]
+  :bid/contract-style :bid.contract-style/no-trumps
+  :bid/score 120}
+
+ ;; 7
+
+ {:db/id #db/id[:db.part/user -1005007]
+  :bid/name :bid.name/seven-spades
+  :bid/rank #db/id[:db.part/user -1002006]
+  :bid/suit #db/id[:db.part/user -1001001]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 140}
+ {:db/id #db/id[:db.part/user -1005008]
+  :bid/name :bid.name/seven-clubs
+  :bid/rank #db/id[:db.part/user -1002006]
+  :bid/suit #db/id[:db.part/user -1001002]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 160}
+ {:db/id #db/id[:db.part/user -1005009]
+  :bid/name :bid.name/seven-diamonds
+  :bid/rank #db/id[:db.part/user -1002006]
+  :bid/suit #db/id[:db.part/user -1001003]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 180}
+ {:db/id #db/id[:db.part/user -1005010]
+  :bid/name :bid.name/seven-hearts
+  :bid/rank #db/id[:db.part/user -1002006]
+  :bid/suit #db/id[:db.part/user -1001004]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 200}
+ {:db/id #db/id[:db.part/user -1005011]
+  :bid/name :bid.name/seven-no-trumps
+  :bid/rank #db/id[:db.part/user -1002006]
+  :bid/contract-style :bid.contract-style/no-trumps
+  :bid/score 220}
+
+ ;; 8
+
+ {:db/id #db/id[:db.part/user -1005012]
+  :bid/name :bid.name/eight-spades
+  :bid/rank #db/id[:db.part/user -1002007]
+  :bid/suit #db/id[:db.part/user -1001001]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 240}
+ {:db/id #db/id[:db.part/user -1005013]
+  :bid/name :bid.name/eight-clubs
+  :bid/rank #db/id[:db.part/user -1002007]
+  :bid/suit #db/id[:db.part/user -1001002]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 260}
+ {:db/id #db/id[:db.part/user -1005014]
+  :bid/name :bid.name/eight-diamonds
+  :bid/rank #db/id[:db.part/user -1002007]
+  :bid/suit #db/id[:db.part/user -1001003]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 280}
+ {:db/id #db/id[:db.part/user -1005015]
+  :bid/name :bid.name/eight-hearts
+  :bid/rank #db/id[:db.part/user -1002007]
+  :bid/suit #db/id[:db.part/user -1001004]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 300}
+ {:db/id #db/id[:db.part/user -1005016]
+  :bid/name :bid.name/eight-no-trumps
+  :bid/rank #db/id[:db.part/user -1002007]
+  :bid/contract-style :bid.contract-style/no-trumps
+  :bid/score 320}
+
+ ;; 9
+
+ {:db/id #db/id[:db.part/user -1005017]
+  :bid/name :bid.name/nine-spades
+  :bid/rank #db/id[:db.part/user -1002008]
+  :bid/suit #db/id[:db.part/user -1001001]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 340}
+ {:db/id #db/id[:db.part/user -1005018]
+  :bid/name :bid.name/nine-clubs
+  :bid/rank #db/id[:db.part/user -1002008]
+  :bid/suit #db/id[:db.part/user -1001002]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 360}
+ {:db/id #db/id[:db.part/user -1005019]
+  :bid/name :bid.name/nine-diamonds
+  :bid/rank #db/id[:db.part/user -1002008]
+  :bid/suit #db/id[:db.part/user -1001003]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 380}
+ {:db/id #db/id[:db.part/user -1005020]
+  :bid/name :bid.name/nine-hearts
+  :bid/rank #db/id[:db.part/user -1002008]
+  :bid/suit #db/id[:db.part/user -1001004]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 400}
+ {:db/id #db/id[:db.part/user -1005021]
+  :bid/name :bid.name/nine-no-trumps
+  :bid/rank #db/id[:db.part/user -1002008]
+  :bid/contract-style :bid.contract-style/no-trumps
+  :bid/score 420}
+
+ ;; 10
+
+ {:db/id #db/id[:db.part/user -1005022]
+  :bid/name :bid.name/ten-spades
+  :bid/rank #db/id[:db.part/user -1002009]
+  :bid/suit #db/id[:db.part/user -1001001]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 440}
+ {:db/id #db/id[:db.part/user -1005023]
+  :bid/name :bid.name/ten-clubs
+  :bid/rank #db/id[:db.part/user -1002009]
+  :bid/suit #db/id[:db.part/user -1001002]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 460}
+ {:db/id #db/id[:db.part/user -1005024]
+  :bid/name :bid.name/ten-diamonds
+  :bid/rank #db/id[:db.part/user -1002009]
+  :bid/suit #db/id[:db.part/user -1001003]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 480}
+ {:db/id #db/id[:db.part/user -1005025]
+  :bid/name :bid.name/ten-hearts
+  :bid/rank #db/id[:db.part/user -1002009]
+  :bid/suit #db/id[:db.part/user -1001004]
+  :bid/contract-style :bid.contract-style/trumps
+  :bid/score 500}
+ {:db/id #db/id[:db.part/user -1005026]
+  :bid/name :bid.name/ten-no-trumps
+  :bid/rank #db/id[:db.part/user -1002009]
+  :bid/contract-style :bid.contract-style/no-trumps
+  :bid/score 520}
+
+ ;; Misere
+
+ {:db/id #db/id[:db.part/user -1005027]
+  :bid/name :bid.name/misere
+  :bid/contract-style :bid.contract-style/misere
+  :bid/score 250}
+ {:db/id #db/id[:db.part/user -1005028]
+  :bid/name :bid.name/open-misere
+  :bid/contract-style :bid.contract-style/open-misere
+  :bid/score 500}
+ ]
