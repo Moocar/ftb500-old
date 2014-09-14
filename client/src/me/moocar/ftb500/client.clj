@@ -1,6 +1,3 @@
-(ns me.moocar.ftb500.client)
-
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(ns me.moocar.ftb500.client
+  (:require [clojure.core.async :as async :refer [go-loop <!]]
+            [me.moocar.log :as log]))

@@ -1,10 +1,14 @@
 (ns me.moocar.ftb500.engine.transport.sente
-  (:require [com.stuartsierra.component :as component]
+  (:require [clojure.core.async :as async :refer [go-loop <! >!]]
+            [com.stuartsierra.component :as component]
             [me.moocar.ftb500.engine.transport :as engine-transport]
             [ring.middleware.session.store :as session-store]
             [taoensso.sente :as sente]))
 
-(defrecord SenteTransport [engine-receive-ch session-store send-fn]
+(defrecord SenteTransport [server-listener session-store
+
+                           ;; fns added from `sente/make-channel-socket!`
+                           send-fn ajax-post-fn ajax-get-or-ws-handshake-fn]
 
   component/Lifecycle
   (start [this]
@@ -31,10 +35,11 @@
                   (?reply-fn :success)))
 
             ;; Else it's a normal request. Pass it to the server
-            (>! engine-receive-ch {:user-id user-id
-                                   :msg ev-data
-                                   :route route
-                                   :callback ?reply-fn}))))
+            (>! (:receive-ch server-listener)
+                {:user-id uid
+                 :msg ev-data
+                 :route route
+                 :callback ?reply-fn}))))
       (merge this sente)))
   (stop [this]
     (assoc this
@@ -46,4 +51,4 @@
 
 (defn new-sente-transport []
   (component/using (map->SenteTransport {})
-    [:engine-receive-ch :session-store]))
+    [:server-listener :session-store]))

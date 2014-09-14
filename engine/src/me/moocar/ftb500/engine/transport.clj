@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.transport
-  (:require [com.stuartsierra.component :as component]
+  (:require [clojure.core.async :as async :refer [go-loop <!]]
+            [com.stuartsierra.component :as component]
             [me.moocar.log :as log]))
 
 (defprotocol EngineTransport
@@ -7,16 +8,13 @@
 
 (defrecord EngineMultiTransport [transports]
   EngineTransport
-  (send! [this user-id msg]
+  (-send! [this user-id msg]
     (doseq [transport transports]
       (-send! transport user-id msg))))
 
-(def engine-implementations
-  #{:engine-inline-transport})
-
-(defn new-engine-multi-transport []
+(defn new-engine-multi-transport [transports]
   (component/using (map->EngineMultiTransport {})
-    engine-implementations))
+    transports))
 
 (defn send!
   "Sends the message to the user. The user can be connected by many
@@ -25,12 +23,25 @@
   [transport user-id msg]
   (-send! transport user-id msg))
 
-(defrecord ServerListener [engine-receive-ch log]
+(defrecord ServerListener [log receive-ch]
   component/Lifecycle
   (start [this]
-    (let [loop-ch
-          (go-loop []
-            (when-let [full-msg (<! engine-receive-ch)]
-              (let [{:keys [user msg]} full-msg]
-                (log/log log (str "received" full-msg)))
-              (recur)))])))
+    (if receive-ch
+      this
+      (let [receive-ch (async/chan)]
+        (go-loop []
+          (when-let [full-msg (<! receive-ch)]
+            (let [{:keys [user msg]} full-msg]
+              (log/log log (str "received" full-msg)))
+            (recur)))
+        (assoc this
+          :receive-ch receive-ch))))
+  (stop [this]
+    (if receive-ch
+      (do (async/close! receive-ch)
+          (assoc this :receive-ch nil))
+      this)))
+
+(defn new-server-listener []
+  (component/using (map->ServerListener {})
+    [:log]))

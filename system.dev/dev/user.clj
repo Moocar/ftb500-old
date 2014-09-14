@@ -13,6 +13,9 @@
    [clojure.tools.namespace.repl :refer [refresh refresh-all]]
    [com.stuartsierra.component :as component]
    [me.moocar.ftb500.engine.datomic :as datomic]
+   [me.moocar.ftb500.engine.transport :as engine-transport]
+   [me.moocar.ftb500.engine.transport.inline :as engine-inline-transport]
+   [me.moocar.ftb500.client.transport.inline :as client-inline-transport]
    [me.moocar.system.dev.gen-project :as gen-project]
    [me.moocar.log :as log]))
 
@@ -20,10 +23,18 @@
   []
   {:datomic {:uri "datomic:free://localhost:4334/ftb500"}})
 
+(def engine-implementations
+  #{:engine-inline-transport})
+
 (defn new-engine-system
   [config]
   (component/system-map
    :log (log/new-logger config)
+   :engine-inline-transport (engine-inline-transport/new-engine-inline-transport)
+   :engine-transport (engine-transport/new-engine-multi-transport (vec engine-implementations))
+   :server-listener (engine-transport/new-server-listener)
+   :client-inline-transport (client-inline-transport/new-client-inline-transport)
+   :client-listener (client-inline-transport/new-client-listener)
    :datomic (datomic/new-datomic-database config)))
 
 (def system nil)

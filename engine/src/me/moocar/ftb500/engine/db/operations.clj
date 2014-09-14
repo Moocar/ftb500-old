@@ -1,10 +1,10 @@
 (ns me.moocar.ftb500.engine.db.operations
-  (:require [datomic.api :as d]
+  (:require [com.stuartsierra.component :as component]
+            [datomic.api :as d]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.engine.handler :refer [with-bad-args]]
-            [me.moocar.ftb500.engine.tx-listener :as tx-listener]
             [me.moocar.ftb500.trick :as trick]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -51,11 +51,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spectate
 
-(defn spectate!
+#_(defn spectate!
   [this db client {:keys [game player]}]
   (let [tx-listener (:tx-listener this)
         tx [[:db/add (:db/id game) :game/spectators (:db/id player)]]]
-    (tx-listener/register-client tx-listener (:game/id game) client player)
+    #_(tx-listener/register-client tx-listener (:game/id game) client player)
     @(transact-action this tx (:game/id game) :action/spectate)
     [:success]))
 
@@ -181,6 +181,6 @@
             tx (concat trick-tx play-tx)]
         @(transact-action this tx (:game/id game) :action/play-card)))))
 
-(defn new-game-db-component []
+(defn new-db-operations []
   (component/using {}
-    [:datomic :tx-listener :log]))
+    [:datomic :log]))
