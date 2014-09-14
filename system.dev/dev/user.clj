@@ -15,6 +15,7 @@
    [me.moocar.ftb500.engine.datomic :as datomic]
    [me.moocar.ftb500.engine.transport :as engine-transport]
    [me.moocar.ftb500.engine.transport.inline :as engine-inline-transport]
+   [me.moocar.ftb500.client.transport :as client-transport]
    [me.moocar.ftb500.client.transport.inline :as client-inline-transport]
    [me.moocar.system.dev.gen-project :as gen-project]
    [me.moocar.log :as log]))

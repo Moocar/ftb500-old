@@ -2,12 +2,13 @@
   (:require [clojure.core.async :as async :refer [put!]]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.client.listener :as client-listener]
-            [me.moocar.ftb500.client.transport :as client-transport]))
+            [me.moocar.ftb500.client.transport :as client-transport]
+            [me.moocar.log :as log]))
 
 (defn- inline-send
   [this message callback]
   (let [{:keys [route msg]} message
-        {:keys [user-id-atom engine-inline-transport server-listener client-listener]} this
+        {:keys [user-id-atom engine-inline-transport server-listener client-listener log]} this
         {:keys [client-receive-chs]} engine-inline-transport]
     (case route
 
@@ -15,6 +16,7 @@
       (let [user-id (:user-id msg)]
         (reset! user-id-atom user-id)
         (swap! client-receive-chs assoc user-id (:receive-ch client-listener))
+        (log/log log "Login successful!")
         (when callback
           (callback :success)))
 
@@ -22,6 +24,7 @@
       (let [user-id (deref user-id-atom)]
         (swap! client-receive-chs dissoc user-id)
         (reset! user-id-atom nil)
+        (log/log log "Logout successful!")
         (when callback
           (callback :success)))
 
@@ -43,7 +46,7 @@
 
 (defn new-client-inline-transport []
   (component/using (map->ClientInlineTransport {:user-id-atom (atom nil)})
-    [:server-listener :engine-inline-transport :client-listener]))
+    [:server-listener :engine-inline-transport :client-listener :log]))
 
 (defrecord ClientListener [log receive-ch listener]
   component/Lifecycle

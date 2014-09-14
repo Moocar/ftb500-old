@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.card
-  (:require [datomic.api :as d]))
+  (:require [datomic.api :as d])
+  (:refer-clojure :exclude [find]))
 
 (defn partition-hands
   [deck]

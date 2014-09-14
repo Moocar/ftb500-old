@@ -25,5 +25,4 @@
       receive-ch)))
 
 (defn new-client-listener [logger]
-  {:receive-ch (async/chan)
-   :logger logger})
+  {:logger logger})

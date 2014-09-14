@@ -10,4 +10,4 @@
       (put! client-receive-ch msg))))
 
 (defn new-engine-inline-transport []
-  (map->EngineInlineTransport {:client-receive-chs (async/chan)}))
+  (map->EngineInlineTransport {:client-receive-chs (atom {})}))

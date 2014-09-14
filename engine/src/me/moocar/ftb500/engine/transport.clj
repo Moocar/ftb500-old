@@ -9,11 +9,12 @@
 (defrecord EngineMultiTransport [transports]
   EngineTransport
   (-send! [this user-id msg]
-    (doseq [transport transports]
-      (-send! transport user-id msg))))
+    (doseq [transport-k transports]
+      (let [transport (get this transport-k)]
+        (-send! transport user-id msg)))))
 
 (defn new-engine-multi-transport [transports]
-  (component/using (map->EngineMultiTransport {})
+  (component/using (map->EngineMultiTransport {:transports transports})
     transports))
 
 (defn send!
@@ -32,7 +33,7 @@
         (go-loop []
           (when-let [full-msg (<! receive-ch)]
             (let [{:keys [user msg]} full-msg]
-              (log/log log (str "received" full-msg)))
+              (log/log log (str "Server received: " full-msg)))
             (recur)))
         (assoc this
           :receive-ch receive-ch))))

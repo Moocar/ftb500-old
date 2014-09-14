@@ -33,9 +33,8 @@
   "../client/resources"
   "../engine/resources"
   "../http/resources"
-  "../pure-game/resources"
   "../sente-client/resources"]
  :test-paths
- ["test" "../engine/test" "../pure-game/test"]
+ ["test"]
  :jvm-opts
  ["-Xmx1g" "-XX:MaxPermSize=256m"])
