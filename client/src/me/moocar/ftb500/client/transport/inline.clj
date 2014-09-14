@@ -3,7 +3,7 @@
 (defn- inline-send
   [this message callback]
   (let [{:keys [route msg]} message
-        {:keys [user-id-atom]} this]
+        {:keys [user-id-atom client-receive-ch-atom]} this]
     (case route
 
       :login
@@ -27,10 +27,13 @@
                                  :route route
                                  :callback callback})))))
 
-(defrecord ClientInlineTransport [engine-receive-ch client-recv-ch
-                                  client-receive-ch-atom user-id-atom]
+(defrecord ClientInlineTransport [engine-receive-ch client-receive-ch-atom user-id-atom]
   ClientSender/Transport
   (send! [this message]
     (inline-send this message nil))
   (send! [this message timeout-ms callback]
     (inline-send this message callback)))
+
+(defn new-client-inline-transport []
+  (component/using (map->ClientInlineTransport {:user-id-atom (atom nil)})
+    [:engine-receive-ch :client-receive-ch-atom]))
