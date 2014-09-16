@@ -15,6 +15,7 @@
    [me.moocar.ftb500.engine.datomic :as datomic]
    [me.moocar.ftb500.engine.transport :as engine-transport]
    [me.moocar.ftb500.engine.transport.inline :as engine-inline-transport]
+   [me.moocar.ftb500.client :as client]
    [me.moocar.ftb500.client.transport :as client-transport]
    [me.moocar.ftb500.client.transport.inline :as client-inline-transport]
    [me.moocar.system.dev.gen-project :as gen-project]
@@ -30,13 +31,13 @@
 (defn new-engine-system
   [config]
   (component/system-map
-   :log (log/new-logger config)
+   :client-transport (client-inline-transport/new-client-inline-transport)
+   :client-listener (client-inline-transport/new-client-listener)
+   :datomic (datomic/new-datomic-database config)
    :engine-inline-transport (engine-inline-transport/new-engine-inline-transport)
    :engine-transport (engine-transport/new-engine-multi-transport (vec engine-implementations))
-   :server-listener (engine-transport/new-server-listener)
-   :client-inline-transport (client-inline-transport/new-client-inline-transport)
-   :client-listener (client-inline-transport/new-client-listener)
-   :datomic (datomic/new-datomic-database config)))
+   :log (log/new-logger config)
+   :server-listener (engine-transport/new-server-listener)))
 
 (def system nil)
 
