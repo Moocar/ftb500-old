@@ -12,12 +12,10 @@
    [clojure.test :as test]
    [clojure.tools.namespace.repl :refer [refresh refresh-all]]
    [com.stuartsierra.component :as component]
-   [me.moocar.ftb500.engine.datomic :as datomic]
-   [me.moocar.ftb500.engine.transport :as engine-transport]
-   [me.moocar.ftb500.engine.transport.inline :as engine-inline-transport]
    [me.moocar.ftb500.client :as client]
    [me.moocar.ftb500.client.transport :as client-transport]
    [me.moocar.ftb500.client.transport.inline :as client-inline-transport]
+   [me.moocar.ftb500.engine.system :as engine-system]
    [me.moocar.system.dev.gen-project :as gen-project]
    [me.moocar.log :as log]))
 
@@ -30,14 +28,9 @@
 
 (defn new-engine-system
   [config]
-  (component/system-map
-   :client-transport (client-inline-transport/new-client-inline-transport)
-   :client-listener (client-inline-transport/new-client-listener)
-   :datomic (datomic/new-datomic-database config)
-   :engine-inline-transport (engine-inline-transport/new-engine-inline-transport)
-   :engine-transport (engine-transport/new-engine-multi-transport (vec engine-implementations))
-   :log (log/new-logger config)
-   :server-listener (engine-transport/new-server-listener)))
+  (merge (engine-system/new-system config)
+         {:client-transport (client-inline-transport/new-client-inline-transport)
+          :client-listener (client-inline-transport/new-client-listener)}))
 
 (def system nil)
 

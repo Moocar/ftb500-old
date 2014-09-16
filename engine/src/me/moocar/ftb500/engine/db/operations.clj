@@ -22,33 +22,6 @@
     (d/transact conn (concat tx (action-tx game-id action)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Add Game
-
-(defn- new-seat-tx [game-db-id position]
-  (let [seat-db-id (d/tempid :db.part/user)
-        seat-id (d/squuid)]
-    [[:db/add seat-db-id :seat/id seat-id]
-     [:db/add seat-db-id :seat/position position]
-     [:db/add game-db-id :game/seats seat-id]]))
-
-(defn- new-game-tx [game-id deck]
-  {:pre [game-id (coll? deck)]}
-  (let [game-db-id (d/tempid :db.part/user)]
-    (concat
-     (mapcat #(new-seat-tx game-db-id %) (range 4))
-     [[:db/add game-db-id :game/id game-id]
-      [:db/add game-db-id :game/deck (:db/id deck)]])))
-
-(defn add!
-  [this db client {:keys [num-players]}]
-  (with-bad-args [(number? num-players)]
-    (let [deck (card/find-deck db num-players)
-          game-id (d/squuid)
-          tx (new-game-tx game-id deck)]
-      @(transact-action this tx game-id :action/create-game)
-      [:success {:game/id game-id}])))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spectate
 
 #_(defn spectate!

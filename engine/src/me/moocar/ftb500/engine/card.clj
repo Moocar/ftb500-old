@@ -3,12 +3,16 @@
   (:refer-clojure :exclude [find]))
 
 (defn partition-hands
+  "Partitions a deck an into 4 hands of 10 cards each. Returns a map
+  of :hands and :kitty"
   [deck]
   (let [partitions (partition-all 10 deck)]
     {:hands (take 4 partitions)
      :kitty (last partitions)}))
 
 (defn find-deck
+  "Loads the deck configuration for the number of players. E.g a 4
+  player game does not contain 2s, 3s, or black 4s"
   [db num-players]
   (-> '[:find ?deck
         :in $ ?num-players
@@ -18,6 +22,9 @@
       (->> (d/entity db))))
 
 (defn find
+  "Given a card in the format {:suit :hearts :rank :five}, returns
+  that card's entity. Note a joker does not have a suit and is
+  represented as {:rank :joker}"
   [db {:keys [suit rank]}]
   (if suit
     (let [full-suit (keyword "card.suit.name" (name suit))

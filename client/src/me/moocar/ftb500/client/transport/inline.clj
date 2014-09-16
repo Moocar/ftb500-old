@@ -17,22 +17,24 @@
         (reset! user-id-atom user-id)
         (swap! client-receive-chs assoc user-id (:receive-ch client-listener))
         (log/log log "Login successful!")
-        (put! response-ch :success))
+        (when response-ch
+          (put! response-ch :success)))
 
       :logout
       (let [user-id (deref user-id-atom)]
         (swap! client-receive-chs dissoc user-id)
         (reset! user-id-atom nil)
         (log/log log "Logout successful!")
-        (put! response-ch :success))
+        (when response-ch
+          (put! response-ch :success)))
 
       ;; Else it's a normal request, pass it to the server
       (let [user-id (deref user-id-atom)]
         (put! (:receive-ch server-listener)
-              {:user-id user-id
-               :msg msg
-               :route route
-               :callback #(put! response-ch %)})))))
+              (cond-> {:user-id user-id
+                       :msg msg
+                       :route route}
+                      response-ch (assoc :callback #(put! response-ch %))))))))
 
 (defrecord ClientInlineTransport [server-listener engine-inline-transport
                                   client-listener user-id-atom]

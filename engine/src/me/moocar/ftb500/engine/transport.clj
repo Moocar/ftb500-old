@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.engine.transport
   (:require [clojure.core.async :as async :refer [go-loop <!]]
             [com.stuartsierra.component :as component]
+            [me.moocar.ftb500.engine.routes :as router]
             [me.moocar.log :as log]))
 
 (defprotocol EngineTransport
@@ -24,7 +25,7 @@
   [transport user-id msg]
   (-send! transport user-id msg))
 
-(defrecord ServerListener [log receive-ch]
+(defrecord ServerListener [log receive-ch router]
   component/Lifecycle
   (start [this]
     (if receive-ch
@@ -32,8 +33,7 @@
       (let [receive-ch (async/chan)]
         (go-loop []
           (when-let [full-msg (<! receive-ch)]
-            (let [{:keys [user msg]} full-msg]
-              (log/log log (str "Server received: " full-msg)))
+            (router/route router full-msg)
             (recur)))
         (assoc this
           :receive-ch receive-ch))))

@@ -26,6 +26,17 @@
                            ffirst)]
     (d/entity db entity-id)))
 
+(defn- action-tx
+  [game-id action]
+  (let [tx-id (d/tempid :db.part/tx)]
+    [[:db/add tx-id :tx/game-id game-id]
+     [:db/add tx-id :action action]]))
+
+(defn transact-action
+  [this tx game-id action]
+  (let [conn (:conn (:datomic this))]
+    (d/transact conn (concat tx (action-tx game-id action)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Setup/Teardown
 
