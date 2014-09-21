@@ -23,8 +23,7 @@
 (defn check-logged-in
   [request]
   (when-not (:logged-in-user-id request)
-    (when-let [callback (:callback request)]
-      :must-be-logged-in)))
+    :must-be-logged-in))
 
 (defn check-num-players
   [request]

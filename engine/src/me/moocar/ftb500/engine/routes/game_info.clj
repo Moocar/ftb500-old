@@ -28,7 +28,8 @@
   (-> seat
       d/touch
       (select-keys [:seat/id :seat/position :seat/player :seat/cards :seat/team])
-      (update-in [:seat/cards] count)))
+      (update-in [:seat/cards] count)
+      (update-in [:seat/player] :user/id)))
 
 (defn ext-form
   [game]

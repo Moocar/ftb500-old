@@ -34,7 +34,11 @@
           (log/log log response)
           (let [game-id (:game/id (second response))
                 game (second (<! (client/send! (first clients) :game-info {:game-id game-id} true)))]
-            (log/log log game))))
+            (log/log log game)
+            (log/log log (<! (client/send! (first clients) :join-game {:game/id game-id
+                                                                       :seat/id (:seat/id (first (:game/seats game)))}
+                                           true)))
+            (log/log log (second (<! (client/send! (first clients) :game-info {:game-id game-id} true)))))))
       (catch Throwable t
         (log/log (:log engine) t))
       (finally

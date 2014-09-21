@@ -16,15 +16,25 @@
 (defn uuid? [s]
   (instance? java.util.UUID s))
 
+(defn find-entity-id
+  [db entity-id-key ext-id]
+  {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+  (-> '[:find ?entity
+        :in $ ?entity-id-key ?entity-id
+        :where [?entity ?entity-id-key ?entity-id]]
+      (d/q db entity-id-key ext-id)
+      ffirst))
+
 (defn find
   [db entity-id-key ext-id]
   {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
-  (when-let [entity-id (-> '[:find ?entity
-                             :in $ ?entity-id-key ?entity-id
-                             :where [?entity ?entity-id-key ?entity-id]]
-                           (d/q db entity-id-key ext-id)
-                           ffirst)]
+  (when-let [entity-id (find-entity-id db entity-id-key ext-id)]
     (d/entity db entity-id)))
+
+(defn exists?
+  [db entity-id-key ext-id]
+  {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+  (find-entity-id db entity-id-key ext-id))
 
 (defn- action-tx
   [game-id action]

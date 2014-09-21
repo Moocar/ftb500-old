@@ -12,7 +12,7 @@
         (go-loop []
           (when-let [log (<! output-ch)]
             (try
-              (if (associative? log)
+              (if (map? log)
                 (let [log (into {} log)
                       non-ex (dissoc log :ex)]
                   (pprint non-ex)
