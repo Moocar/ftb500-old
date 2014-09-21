@@ -4,6 +4,8 @@
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
+            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.engine.tx-listener :as tx-listener]
             [me.moocar.ftb500.game :as game]))
 
@@ -37,3 +39,14 @@
                        @(datomic/transact-action datomic tx game-id :action/join-game)
 
                        [:success]))))))))
+
+(defrecord JoinGameTxHandler [engine-transport]
+  tx-handler/TxHandler
+  (handle [this user-ids action-k tx]
+    (let [seat (datomic/get-attr tx :seat/player)
+          player (:seat/player seat)
+          msg {:action :join-game
+               :seat/id (:seat/id seat)
+               :player/id (:user/id player)}]
+      (doseq [user-id user-ids]
+        (transport/send! engine-transport user-id msg)))))

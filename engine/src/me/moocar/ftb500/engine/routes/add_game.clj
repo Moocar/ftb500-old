@@ -3,7 +3,9 @@
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
-            [me.moocar.ftb500.engine.routes :as routes]))
+            [me.moocar.ftb500.engine.routes :as routes]
+            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.tx-handler :as tx-handler]))
 
 (defn- new-seat-tx [game-db-id position]
   (let [seat-db-id (d/tempid :db.part/user)
@@ -44,3 +46,9 @@
                          @(datomic/transact-action datomic tx game-id :action/create-game)
                          [:success {:game/id game-id}]))]
       (callback response))))
+
+(defrecord AddGameTxHandler [engine-transport]
+  tx-handler/TxHandler
+  (handle [this user-ids action-k tx]
+    (doseq [user-id user-ids]
+      (transport/send! engine-transport user-id {:action :create-game}))))

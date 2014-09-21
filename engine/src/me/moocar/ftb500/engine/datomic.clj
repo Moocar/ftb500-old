@@ -16,6 +16,15 @@
 (defn uuid? [s]
   (instance? java.util.UUID s))
 
+(defn get-attr
+  [tx attr-k]
+  (-> '[:find ?eid
+        :in $ ?attr-id
+        :where [?eid ?attr-id]]
+      (d/q (:tx-data tx) (:id (d/attribute (:db-after tx) attr-k)))
+      ffirst
+      (->> (d/entity (:db-after tx)))))
+
 (defn find-entity-id
   [db entity-id-key ext-id]
   {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}

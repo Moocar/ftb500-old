@@ -6,6 +6,7 @@
    [me.moocar.ftb500.engine.routes.system :as route-system]
    [me.moocar.ftb500.engine.transport :as engine-transport]
    [me.moocar.ftb500.engine.transport.inline :as engine-inline-transport]
+   [me.moocar.ftb500.engine.tx-handler.system :as tx-handler-system]
    [me.moocar.ftb500.engine.tx-listener :as tx-listener]
    [me.moocar.log :as log]))
 
@@ -26,4 +27,5 @@
   [config]
   (merge
    (base-system config)
-   (route-system/new-system config)))
+   (route-system/new-system config)
+   (tx-handler-system/new-system config)))

@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.client.transport.inline.play
-  (:require [clojure.core.async :as async :refer [go <! <!!]]
+  (:require [clojure.core.async :as async :refer [go <! <!! go-loop]]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [com.stuartsierra.component :as component]
             [me.moocar.log :as log]
@@ -20,7 +20,7 @@
   []
   (let [config (dev-config)
         engine (component/start (engine-system/new-system config))
-        clients (repeatedly 4 (new-ai-client engine config))
+        clients (repeatedly 2 (new-ai-client engine config))
         log (:log engine)]
     (try
       (let [clients (->> clients
@@ -28,21 +28,29 @@
                          (doall)
                          (map <!!)
                          (doall))]
-        (go
-          (let [response (<! (client/send! (first clients) :add-game {:num-players 4} true))]
-            (let [game-id (:game/id (second response))]
-              (->> clients
-                   (map #(ai/start-playing % game-id))
-                   (doall)
-                   (map <!!)
-                   (doall))))))
+        (<!!
+         (go
+           (let [response (<! (client/send! (first clients) :add-game {:num-players 4} true))]
+             (let [game-id (:game/id (second response))]
+               (->> clients
+                    (map #(ai/start-playing % game-id))
+                    (doall)
+                    (map <!!)
+                    (doall)))))))
       (catch Throwable t
         (log/log (:log engine) t))
       (finally
         (<!! (async/timeout 500))
         (doseq [client clients]
           (component/stop client))
-        (component/stop engine)))))
+        (component/stop engine)))
+
+    (doseq [client clients]
+      (println)
+      (<!! (go-loop []
+             (when-let [msg (<! (:output-ch (:log client)))]
+               (println msg)
+               (recur)))))))
 
 (defn reset []
   (refresh :after 'me.moocar.ftb500.client.transport.inline.play/play))

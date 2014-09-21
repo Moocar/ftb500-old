@@ -4,7 +4,8 @@
             [datomic.api :as d]
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.datomic :as datomic]
-            [me.moocar.ftb500.engine.transport :as transport]))
+            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.tx-handler :as tx-handler]))
 
 (defn- log
   [this msg]
@@ -12,9 +13,12 @@
 
 (defn handle-tx-event
   [this user-ids action-k tx]
-  (log this {:user-ids user-ids :action-k action-k}))
+  (let [{:keys [tx-handlers]} this
+        tx-handler-keyword (keyword "tx-handler" (name action-k))]
+    (let [tx-handler (get tx-handlers tx-handler-keyword)]
+      (tx-handler/handle tx-handler user-ids action-k tx))))
 
-(defn stuff
+(defn get-ident
   [tx entities]
   (update-in entities
              [1]
@@ -23,7 +27,7 @@
 
 (defn get-game-id-and-actions
   [tx]
-  (-> '[:find ?game-id ?action-k
+  (-> '[:find ?game-id ?action-k ?tx
         :in $ ?game-id-attr ?db-instant-attr ?action-attr
         :where [_ ?game-id-attr ?game-id ?tx]
                [?tx ?db-instant-attr]
@@ -32,7 +36,8 @@
            (:id (d/attribute (:db-after tx) :tx/game-id))
            (:id (d/attribute (:db-after tx) :db/txInstant))
            (:id (d/attribute (:db-after tx) :action)))
-      (->> (map #(stuff tx %)))))
+      (->> (map #(get-ident tx %))
+           (sort-by #(nth % 2)))))
 
 (defn find-connected-users-for-game
   [this game-id]
@@ -42,7 +47,7 @@
   [this tx]
   (let [{:keys [log]} this
         game-txs (get-game-id-and-actions tx)]
-    (doseq [[game-id action-k] game-txs]
+    (doseq [[game-id action-k instant] game-txs]
       (let [action-k (keyword (name action-k))
             user-ids (find-connected-users-for-game this game-id)]
         (when-not (empty? user-ids)
@@ -115,4 +120,4 @@
 (defn new-tx-listener
   []
   (component/using (map->TxListener {:users-atom (atom {:games {}})})
-    [:datomic :engine-transport :log]))
+    [:datomic :engine-transport :log :tx-handlers]))

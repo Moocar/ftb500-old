@@ -38,6 +38,24 @@
   [config]
   (map->Logger {}))
 
+(defrecord ChannelLogger [output-ch started?]
+  component/Lifecycle
+  (start [this]
+    (if output-ch
+      this
+      (let [output-ch (chan 1024)]
+        (assoc this
+          :output-ch output-ch))))
+  (stop [this]
+    (if output-ch
+      (do (close! output-ch)
+          (assoc this :output-ch nil))
+      this)))
+
+(defn new-channel-logger
+  []
+  (map->ChannelLogger {}))
+
 (defn log
   [this log]
   (put! (:output-ch this)
