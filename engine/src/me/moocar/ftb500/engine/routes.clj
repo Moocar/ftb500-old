@@ -75,4 +75,5 @@
      :datomic
      :routes/add-game
      :routes/login
-     :routes/logout]))
+     :routes/logout
+     :routes/signup]))

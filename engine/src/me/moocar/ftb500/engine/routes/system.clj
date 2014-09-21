@@ -8,7 +8,9 @@
    (component/system-map
     :routes/add-game (me.moocar.ftb500.engine.routes.add-game/map->AddGame {})
     :routes/login (me.moocar.ftb500.engine.routes.login/map->Login {})
-    :routes/logout (me.moocar.ftb500.engine.routes.login/map->Logout {}))
+    :routes/logout (me.moocar.ftb500.engine.routes.login/map->Logout {})
+    :routes/signup (me.moocar.ftb500.engine.routes.login/map->Signup {}))
    {:routes/add-game [:datomic]
-    :routes/login [:datomic :user-store]
-    :routes/logout [:datomic :user-store]}))
+    :routes/login  [:user-store]
+    :routes/logout [:user-store]
+    :routes/signup [:datomic]}))
