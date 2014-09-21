@@ -24,6 +24,7 @@
   [ring/ring-core "1.3.1"]]
  :source-paths
  ["src"
+  "../ai/src"
   "../client/src"
   "../engine/src"
   "../http/src"

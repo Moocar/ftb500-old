@@ -5,4 +5,6 @@
         "engine"
         "client"
         "http"
-        "sente-client"])
+        "sente-client"
+        "ai"
+        "inline-transport"])

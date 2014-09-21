@@ -5,6 +5,12 @@
   (= (:game/num-players game)
      (count (:game/seats game))))
 
+(defn my-seat?
+  [seat player]
+  (and (:seat/player seat)
+       (= (:player/id player)
+          (:seat/player seat))))
+
 (defn seat-taken?
   [seat player]
   (and (:seat/player seat)

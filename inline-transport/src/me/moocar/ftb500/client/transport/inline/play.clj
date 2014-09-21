@@ -5,40 +5,37 @@
             [me.moocar.log :as log]
             [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
             [me.moocar.ftb500.engine.system :as engine-system]
-            [me.moocar.ftb500.client :as client]))
+            [me.moocar.ftb500.client :as client]
+            [me.moocar.ftb500.client.ai :as ai]))
 
 (defn dev-config
   []
   {:datomic {:uri "datomic:free://localhost:4334/ftb500"}})
 
-(defn signup-and-login [client]
-  (go
-    (let [user-id (java.util.UUID/randomUUID)]
-      (when (<! (client/send! client :signup {:user-id user-id} true))
-        (client/send! client :login {:user-id user-id} true)))))
+(defn new-ai-client
+  [engine config]
+  #(component/start (merge engine (inline-client-system/new-system config))))
 
 (defn play
   []
   (let [config (dev-config)
         engine (component/start (engine-system/new-system config))
-        clients (repeatedly 10 #(component/start (merge engine (inline-client-system/new-system config))))
+        clients (repeatedly 4 (new-ai-client engine config))
         log (:log engine)]
     (try
-      (->> clients
-           (map signup-and-login)
-           (doall)
-           (map <!!)
-           (doall))
-      (go
-        (let [response (<! (client/send! (first clients) :add-game {:num-players 4} true))]
-          (log/log log response)
-          (let [game-id (:game/id (second response))
-                game (second (<! (client/send! (first clients) :game-info {:game-id game-id} true)))]
-            (log/log log game)
-            (log/log log (<! (client/send! (first clients) :join-game {:game/id game-id
-                                                                       :seat/id (:seat/id (first (:game/seats game)))}
-                                           true)))
-            (log/log log (second (<! (client/send! (first clients) :game-info {:game-id game-id} true)))))))
+      (let [clients (->> clients
+                         (map ai/start)
+                         (doall)
+                         (map <!!)
+                         (doall))]
+        (go
+          (let [response (<! (client/send! (first clients) :add-game {:num-players 4} true))]
+            (let [game-id (:game/id (second response))]
+              (->> clients
+                   (map #(ai/start-playing % game-id))
+                   (doall)
+                   (map <!!)
+                   (doall))))))
       (catch Throwable t
         (log/log (:log engine) t))
       (finally
