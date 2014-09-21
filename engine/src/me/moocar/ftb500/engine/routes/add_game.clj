@@ -23,19 +23,24 @@
   [request]
   (when-not (:logged-in-user-id request)
     (when-let [callback (:callback request)]
-      (callback :must-be-logged-in)
-      true)))
+      :must-be-logged-in)))
+
+(defn check-num-players
+  [request]
+  (let [{:keys [body callback]} request
+        {:keys [num-players]} body]
+    (cond (not num-players) :num-players-required
+          (not (number? num-players)) :num-players-must-be-number)))
 
 (defrecord AddGame [datomic]
   routes/Route
   (serve [this db request]
-    (or ((some-fn check-logged-in) request)
-        (let [{:keys [body callback]} request
-              {:keys [num-players]} body]
-          (callback
-           (routes/with-bad-args [(number? num-players)]
-             (let [deck (card/find-deck db num-players)
-                   game-id (d/squuid)
-                   tx (new-game-tx game-id deck)]
-               @(datomic/transact-action this tx game-id :action/create-game)
-               [:success {:game/id game-id}])))))))
+    (let [{:keys [body callback]} request
+          {:keys [num-players]} body
+          response (or ((some-fn check-logged-in check-num-players) request)
+                       (let [deck (card/find-deck db num-players)
+                             game-id (d/squuid)
+                             tx (new-game-tx game-id deck)]
+                         @(datomic/transact-action this tx game-id :action/create-game)
+                         [:success {:game/id game-id}]))]
+      (callback response))))
