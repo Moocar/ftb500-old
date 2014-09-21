@@ -54,11 +54,11 @@
   [this message]
   (let [{:keys [body logged-in-user-id client-id route callback]} message
         route-ns-keyword (keyword "routes" (name route))]
-    (log/log (:log this) (format "%s:%s %s %s"
+    (log/log (:log this) (format "%8.8s:%8.8s %-10.10s %s"
                                  (if logged-in-user-id
-                                   (subs (str logged-in-user-id) 0 8)
+                                   (str logged-in-user-id)
                                    "ANON")
-                                  (subs (str client-id) 0 8)
+                                  (str client-id)
                                   route
                                   body))
     (if-let [server (get this route-ns-keyword)]
@@ -74,6 +74,7 @@
     [:log
      :datomic
      :routes/add-game
+     :routes/game-info
      :routes/login
      :routes/logout
      :routes/signup]))

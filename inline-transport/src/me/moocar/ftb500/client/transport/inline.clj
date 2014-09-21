@@ -9,7 +9,6 @@
 (defn- inline-send
   [this message response-ch]
   (let [{:keys [engine-inline-transport client-id]} this]
-    (println "putting!")
     (put! (:receive-ch engine-inline-transport)
           (cond-> {:message message
                    :client-id client-id}

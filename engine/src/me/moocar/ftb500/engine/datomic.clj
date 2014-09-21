@@ -34,7 +34,7 @@
 
 (defn transact-action
   [this tx game-id action]
-  (let [conn (:conn (:datomic this))]
+  (let [conn (:conn this)]
     (d/transact conn (concat tx (action-tx game-id action)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -88,7 +88,6 @@
         :tx-report-queue (d/tx-report-queue conn))))
   (stop [this]
     (when-let [conn (:conn this)]
-      (log/log log {:msg "removing tx report q"})
       (d/remove-tx-report-queue conn)
       (d/release conn))
     (assoc this

@@ -11,8 +11,7 @@
       (d/q db user-id)
       ffirst))
 
-(defn uuid?
-  [thing]
+(defn uuid? [thing]
   (instance? java.util.UUID thing))
 
 (defrecord Login [user-store]

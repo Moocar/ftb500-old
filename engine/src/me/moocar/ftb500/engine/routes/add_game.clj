@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.routes.add-game
   (:require [datomic.api :as d]
+            [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]))
@@ -9,7 +10,7 @@
         seat-id (d/squuid)]
     [[:db/add seat-db-id :seat/id seat-id]
      [:db/add seat-db-id :seat/position position]
-     [:db/add game-db-id :game/seats seat-id]]))
+     [:db/add game-db-id :game/seats seat-db-id]]))
 
 (defn- new-game-tx [game-id deck]
   {:pre [game-id (coll? deck)]}
@@ -32,7 +33,7 @@
     (cond (not num-players) :num-players-required
           (not (number? num-players)) :num-players-must-be-number)))
 
-(defrecord AddGame [datomic]
+(defrecord AddGame [datomic log]
   routes/Route
   (serve [this db request]
     (let [{:keys [body callback]} request
@@ -41,6 +42,6 @@
                        (let [deck (card/find-deck db num-players)
                              game-id (d/squuid)
                              tx (new-game-tx game-id deck)]
-                         @(datomic/transact-action this tx game-id :action/create-game)
+                         @(datomic/transact-action datomic tx game-id :action/create-game)
                          [:success {:game/id game-id}]))]
       (callback response))))

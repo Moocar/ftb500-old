@@ -20,4 +20,4 @@
                         1000
                         (fn [response]
                           (put! response-ch response)))
-       (<!! response-ch))))
+       response-ch)))

@@ -33,7 +33,10 @@
       (let [receive-ch (async/chan)]
         (go-loop []
           (when-let [full-msg (<! receive-ch)]
-            (router/route router full-msg)
+            (try
+              (router/route router full-msg)
+              (catch Throwable t
+                (log/log log t)))
             (recur)))
         (assoc this
           :receive-ch receive-ch))))
