@@ -16,7 +16,7 @@
     :routes/signup (me.moocar.ftb500.engine.routes.login/map->Signup {}))
    {:routes/add-game [:datomic :log]
     :routes/game-info [:datomic :log]
-    :routes/join-game [:datomic :log]
+    :routes/join-game [:datomic :log :tx-listener]
     :routes/login  [:user-store]
     :routes/logout [:user-store]
     :routes/signup [:datomic]}))

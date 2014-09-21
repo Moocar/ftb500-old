@@ -21,7 +21,7 @@
     (if receive-ch
       this
       (let [listener (client-listener/start
-                      (client-listener/new-client-listener log))
+                      (client-listener/new-client-listener log client-id))
             {:keys [receive-ch]} listener]
         (engine-inline-transport/connect user-store client-id receive-ch)
         (assoc this

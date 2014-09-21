@@ -4,13 +4,15 @@
 
 (defn start
   [this]
-  (let [{:keys [receive-ch logger]} this]
+  (let [{:keys [receive-ch logger client-id]} this]
     (if receive-ch
       this
       (let [receive-ch (async/chan)]
         (go-loop []
           (when-let [msg (<! receive-ch)]
-            (log/log logger (str "Client received: " msg))
+            (log/log logger (format "  CLIENT:%8.8s %s"
+                                    (str client-id)
+                                    msg))
             (recur)))
         (assoc this
           :receive-ch receive-ch)))))
@@ -24,5 +26,6 @@
             :receive-ch nil))
       receive-ch)))
 
-(defn new-client-listener [logger]
-  {:logger logger})
+(defn new-client-listener [logger client-id]
+  {:logger logger
+   :client-id client-id})

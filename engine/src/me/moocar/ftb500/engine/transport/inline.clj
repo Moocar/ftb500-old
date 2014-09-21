@@ -8,10 +8,8 @@
   [this client-id client-receive-ch]
   (let [{:keys [connected-clients-atom]} this]
     (swap! connected-clients-atom
-           update-in
-           [client-id]
-           assoc
-           :receive-ch
+           assoc-in
+           [client-id :receive-ch]
            client-receive-ch)))
 
 (defn client-user-id
@@ -22,16 +20,17 @@
 (defn user-receive-chans
   [user-store user-id]
   (let [{:keys [user-ids-atom connected-clients-atom]} user-store
-        client-ids (get (deref user-ids-atom) user-id)]
-    (map :receive-ch (deref connected-clients-atom))))
-
-(defn client-receive-ch
-  [user-store ])
+        user-ids (deref user-ids-atom)
+        connected-clients (deref connected-clients-atom)
+        client-ids (get user-ids user-id)]
+    (map (fn [client-id]
+           (:receive-ch (get connected-clients client-id)))
+         client-ids)))
 
 (defrecord InlineUserStore [connected-clients-atom user-ids-atom]
   user-store/UserStore
   (write [this client-id user-id]
-    (swap! connected-clients-atom update-in [client-id] assoc :user-id user-id)
+    (swap! connected-clients-atom assoc-in [client-id :user-id] user-id)
     (swap! user-ids-atom
            update-in
            [user-id]
@@ -75,14 +74,22 @@
       (do
         (async/close! receive-ch)
         (assoc this :receive-ch nil))
-      this))
-
-  engine-transport/EngineTransport
-  (-send! [this user-id msg]
-    (doseq [client-receive-ch (user-receive-chans user-store user-id)]
-      (put! client-receive-ch msg))))
+      this)))
 
 (defn new-engine-inline-transport []
   (component/using
     (map->EngineInlineTransport {})
     [:server-listener :user-store]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Sender
+
+(defrecord EngineInlineSender [user-store]
+  engine-transport/EngineTransport
+  (-send! [this user-id msg]
+    (doseq [client-receive-ch (user-receive-chans user-store user-id)]
+      (put! client-receive-ch msg))))
+
+(defn new-engine-inline-sender []
+  (component/using (map->EngineInlineSender {})
+    [:user-store]))

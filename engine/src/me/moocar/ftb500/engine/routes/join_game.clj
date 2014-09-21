@@ -4,12 +4,13 @@
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
+            [me.moocar.ftb500.engine.tx-listener :as tx-listener]
             [me.moocar.ftb500.game :as game]))
 
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
 
-(defrecord JoinGame [datomic log]
+(defrecord JoinGame [datomic log tx-listener]
   routes/Route
   (serve [this db request]
     (let [{:keys [logged-in-user-id body callback]} request
@@ -32,5 +33,7 @@
 
                      :main
                      (let [tx [[:join-game (:db/id player) (:db/id game)]]]
+                       (tx-listener/register-user-for-game tx-listener game-id logged-in-user-id)
                        @(datomic/transact-action datomic tx game-id :action/join-game)
+
                        [:success]))))))))
