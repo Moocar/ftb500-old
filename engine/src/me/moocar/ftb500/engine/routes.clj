@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.engine.routes
   (:require [datomic.api :as d]
             [com.stuartsierra.component :as component]
+            [me.moocar.log :as log]
             [me.moocar.ftb500.engine.datomic :as db]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.user :as user-lookup]))
@@ -51,8 +52,15 @@
 
 (defn route
   [this message]
-  (let [{:keys [body user-id route callback]} message
+  (let [{:keys [body logged-in-user-id client-id route callback]} message
         route-ns-keyword (keyword "routes" (name route))]
+    (log/log (:log this) (format "%s:%s %s %s"
+                                 (if logged-in-user-id
+                                   (subs (str logged-in-user-id) 0 8)
+                                   "ANON")
+                                  (subs (str client-id) 0 8)
+                                  route
+                                  body))
     (if-let [server (get this route-ns-keyword)]
       (let [{:keys [datomic]} this
             conn (:conn datomic)
@@ -63,7 +71,8 @@
 
 (defn new-router []
   (component/using {}
-    [:datomic
+    [:log
+     :datomic
      :routes/add-game
      :routes/login
      :routes/logout]))
