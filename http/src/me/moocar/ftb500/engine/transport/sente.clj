@@ -2,6 +2,7 @@
   (:require [clojure.core.async :as async :refer [go-loop <! >!]]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.engine.transport :as engine-transport]
+            [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [ring.middleware.session.store :as session-store]
             [taoensso.sente :as sente]))
 
@@ -10,36 +11,30 @@
                            ;; fns added from `sente/make-channel-socket!`
                            send-fn ajax-post-fn ajax-get-or-ws-handshake-fn]
 
+  user-store/UserStore
+  (write [this client-id user-id]
+    (session-store/write-session session-store client-id {:uid user-id}))
+  (delete [this client-id]
+    (session-store/write-session session-store client-id {}))
+
   component/Lifecycle
   (start [this]
     (let [sente (sente/make-channel-socket! {})
-          {:keys [ch-recv]} sente]
+          {:keys [ch-recv]} sente
+          {:keys [receive-ch]} server-listener]
       (go-loop []
-        (let [event-msg (<! ch-recv)
-              {:keys [ring-req event ?reply-fn]} event-msg
-              [ev-id ev-data] event
-              route ev-id
-              {:keys [session]} ring-req
-              {:keys [uid]} session]
-          (case route
-
-            :login
-            (let [user-id (:user-id ev-data)]
-              (session-store/write-session session-store :uid user-id)
-              (when ?reply-fn
-                (?reply-fn :success)))
-
-            :logout
-            (do (session-store/delete-session session-store :uid)
-                (when ?reply-fn
-                  (?reply-fn :success)))
-
-            ;; Else it's a normal request. Pass it to the server
-            (>! (:receive-ch server-listener)
-                {:user-id uid
-                 :msg ev-data
-                 :route route
-                 :callback ?reply-fn}))))
+        (when-let [event-msg (<! ch-recv)]
+          (let [{:keys [ring-req event ?reply-fn]} event-msg
+                [ev-id ev-data] event
+                route ev-id
+                {:keys [session]} ring-req
+                {:keys [uid]} session]
+            (>! receive-ch
+                (cond-> {:route route
+                         :client-id (get-in ring-req [:cookies :cookie :value])
+                         :body ev-data}
+                        ?reply-fn (assoc :callback ?reply-fn)
+                        uid       (assoc :logged-in-user-id uid))))))
       (merge this sente)))
   (stop [this]
     (assoc this

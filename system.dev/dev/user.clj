@@ -14,7 +14,7 @@
    [com.stuartsierra.component :as component]
    [me.moocar.ftb500.client :as client]
    [me.moocar.ftb500.client.transport :as client-transport]
-   [me.moocar.ftb500.client.transport.inline :as client-inline-transport]
+   [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
    [me.moocar.ftb500.engine.system :as engine-system]
    [me.moocar.system.dev.gen-project :as gen-project]
    [me.moocar.log :as log]))
@@ -23,14 +23,10 @@
   []
   {:datomic {:uri "datomic:free://localhost:4334/ftb500"}})
 
-(def engine-implementations
-  #{:engine-inline-transport})
-
 (defn new-engine-system
   [config]
   (merge (engine-system/new-system config)
-         {:client-transport (client-inline-transport/new-client-inline-transport)
-          :client-listener (client-inline-transport/new-client-listener)}))
+         (inline-client-system/new-system config)))
 
 (def system nil)
 

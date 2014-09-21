@@ -16,6 +16,8 @@
   [com.stuartsierra/component "0.2.2"]
   [com.taoensso/sente "1.1.0"]
   [me.moocar/log "0.1.0-SNAPSHOT"]
+  [me.moocar.ftb500/client "0.1.0-SNAPSHOT"]
+  [me.moocar.ftb500/engine "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/pure-game "0.1.0-SNAPSHOT"]
   [org.clojure/clojure "1.7.0-alpha1"]
   [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
@@ -25,6 +27,7 @@
   "../client/src"
   "../engine/src"
   "../http/src"
+  "../inline-transport/src"
   "../log/src"
   "../pure-game/src"
   "../sente-client/src"]

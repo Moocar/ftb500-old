@@ -21,14 +21,13 @@
 
 (defrecord AddGame [datomic]
   routes/Route
-  (serve [this db user msg]
-    (throw (ex-info "Request demands callback"
-                    {:route :game/add})))
-  (serve [this db user msg callback]
-    (let [{:keys [num-players]} msg]
-      (routes/with-bad-args [(number? num-players)]
-        (let [deck (card/find-deck db num-players)
-              game-id (d/squuid)
-              tx (new-game-tx game-id deck)]
-          @(datomic/transact-action this tx game-id :action/create-game)
-          [:success {:game/id game-id}])))))
+  (serve [this db request]
+    (let [{:keys [body callback]} request
+          {:keys [num-players]} body]
+      (callback
+       (routes/with-bad-args [(number? num-players)]
+         (let [deck (card/find-deck db num-players)
+               game-id (d/squuid)
+               tx (new-game-tx game-id deck)]
+           @(datomic/transact-action this tx game-id :action/create-game)
+           [:success {:game/id game-id}]))))))

@@ -25,7 +25,7 @@
   [transport user-id msg]
   (-send! transport user-id msg))
 
-(defrecord ServerListener [log receive-ch router]
+(defrecord ServerListener [log router receive-ch]
   component/Lifecycle
   (start [this]
     (if receive-ch
@@ -45,4 +45,4 @@
 
 (defn new-server-listener []
   (component/using (map->ServerListener {})
-    [:log]))
+    [:log :router]))

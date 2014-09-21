@@ -11,12 +11,12 @@
   ([this route msg]
      (transport/send! (:client-transport this)
                       {:route route
-                       :msg msg}))
+                       :body msg}))
   ([this route msg expect-response?]
      (let [response-ch (async/chan)]
        (transport/send! (:client-transport this)
                         {:route route
-                         :msg msg}
+                         :body msg}
                         1000
                         (fn [response]
                           (put! response-ch response)))

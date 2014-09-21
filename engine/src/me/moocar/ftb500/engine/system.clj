@@ -14,6 +14,7 @@
    :datomic (datomic/new-datomic-database config)
    :engine-inline-transport (engine-inline-transport/new-engine-inline-transport)
    :engine-transport (engine-transport/new-engine-multi-transport [:engine-inline-transport])
+   :user-store (engine-inline-transport/new-inline-user-store)
    :log (log/new-logger config)
    :server-listener (engine-transport/new-server-listener)
    :router (router/new-router)))

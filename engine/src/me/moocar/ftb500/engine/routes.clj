@@ -6,7 +6,7 @@
             [me.moocar.ftb500.engine.user :as user-lookup]))
 
 (defprotocol Route
-  (serve [this db user msg] [this db user msg callback]))
+  (serve [this db request]))
 
 (defmacro bad-args?
   [forms]
@@ -51,20 +51,19 @@
 
 (defn route
   [this message]
-  (let [{:keys [user-id msg route callback]} message
+  (let [{:keys [body user-id route callback]} message
         route-ns-keyword (keyword "routes" (name route))]
     (if-let [server (get this route-ns-keyword)]
-      (let [{:keys [datomic user-lookup]} this
-            conn (:datomic)
-            db (d/db conn)
-            msg-with-entities (load-arg-entities db msg)
-            user (user-lookup/lookup user-lookup db user-id)]
-       (if callback
-         (serve server db user msg-with-entities callback)
-         (serve server db user msg-with-entities)))
+      (let [{:keys [datomic]} this
+            conn (:conn datomic)
+            db (d/db conn)]
+        (serve server db message))
       (when callback
         (callback :ftb500/no-route)))))
 
 (defn new-router []
   (component/using {}
-    [:routes/add-game]))
+    [:datomic
+     :routes/add-game
+     :routes/login
+     :routes/logout]))
