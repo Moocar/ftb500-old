@@ -44,41 +44,12 @@
       [:success])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Deal cards
-
-(defn- hand-cards-to-seat-tx [seat cards]
-  (map #(vector [:db/add (:db/id seat):game.seat/cards (:db/id %)] cards)))
-
-(defn- new-deal-cards-tx [game]
-  (let [deck (:game/deck game)
-        seats (:game/seats game)
-        deck-cards (shuffle (:deck/cards deck))
-        {:keys [hands kitty]} (card/partition-hands deck-cards)
-        first-seat (:db/id (rand-nth (vec seats)))]
-    (assert game)
-    (assert (coll? seats))
-    (assert (coll? hands))
-    (assert (coll? kitty))
-    (concat
-     (mapcat #(vector [:db/add (:db/id game) :game.kitty/cards (:db/id %)]) kitty)
-     (mapcat hand-cards-to-seat-tx seats hands)
-     [[:db/add (:db/id game) :game/first-seat first-seat]])))
-
-(defn deal!
-  [this db client {:keys [game]}]
-  (with-bad-args [(not (game/full? game))
-                  (game/already-dealt? game)]
-    (let [tx (new-deal-cards-tx game)]
-      @(transact-action this tx (:game/id game) :action/deal-cards)
-      [:success])))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Bids
 
 (defn get-bids [game]
   (sort-by :db/id (:game/bids game)))
 
-(defn bid!
+#_(defn bid!
   [this db client {:keys [game seat bid]}]
   (let [game-bids (get-bids game)]
     (with-bad-args [(not (bid/passed-already? game-bids seat))

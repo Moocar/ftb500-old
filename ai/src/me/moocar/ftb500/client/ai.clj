@@ -2,6 +2,7 @@
   (:require [clojure.core.async :as async :refer [go <! put!]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.client.transport :as transport]
+            [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.game :as game]))
 
 (defn log [this msg]
@@ -25,33 +26,19 @@
                           (put! response-ch response)))
        response-ch)))
 
-(def sub-chan-keys
-  [:deal-cards :bid :kitty :exchange-kitty :play-card])
-
-(defn sub-to-chans
-  [mult]
-  (let [my-ch (async/chan)
-        pub-ch (async/pub my-ch :route)]
-    (async/tap mult my-ch)
-    (doall
-     (reduce (fn [m sub-ch-key]
-               (let [ch (async/chan)]
-                 (async/sub pub-ch sub-ch-key ch)
-                 (assoc m sub-ch-key ch)))
-             {}
-             sub-chan-keys))))
-
 (defn start
   [this]
   (let [{:keys [receive-ch]} this
         mult (async/mult receive-ch)
-        sub-chans (sub-to-chans mult)
+        tapped-ch (async/chan)
+        route-pub-ch (async/pub tapped-ch :route)
         user-id (uuid)]
+    (async/tap mult tapped-ch)
     (go
       (and (<! (send! this :signup {:user-id user-id}))
            (<! (send! this :login {:user-id user-id})))
       (assoc this
-        :sub-chans sub-chans
+        :route-pub-ch route-pub-ch
         :player/id user-id))))
 
 (defn stop
@@ -77,14 +64,24 @@
 
 (defn start-playing
   [this game-id]
-  (let [{:keys [sub-chans]} this]
-   (go
-     (let [game (<! (game-info this game-id))
-           seat (<! (join-game this game))
-           hand (set (:cards (<! (:deal-cards sub-chans))))]
-       (let []
-         (when-not seat
-           (log this "Game not joined")))))))
+  (let [{:keys [route-pub-ch]} this
+        join-game-ch (async/chan)
+        deal-cards-ch (async/chan)]
+    (async/sub route-pub-ch :join-game join-game-ch)
+    (async/sub route-pub-ch :deal-cards deal-cards-ch)
+    (go
+      (-> (<! (game-info this game-id))
+          (as-> game
+                (assoc game :bid-table (<! (send! this :bid-table {})))
+                (assoc game :num-players (count (:game/seats game)))
+                (assoc game :seat (<! (join-game this game)))
+                (assoc game :seats (->> join-game-ch
+                                        (async/take (:num-players game))
+                                        (async/into [])
+                                        (<!)
+                                        (map :body)))
+                (assoc game :hand (set (:cards (<! deal-cards-ch))))
+                (assoc game :bids (<! (bids/start this game))))))))
 
 (defn new-client-ai
   [this]

@@ -20,11 +20,7 @@
   (> (:bid/score bid)
      (reduce max 0 (map (comp :bid/score :bid) game-bids))))
 
-(defn first-player?
-  [game seat]
-  (= seat (:game/first-seat game)))
-
-(defn your-go?
+#_(defn your-go?
   [game game-bids seat]
   (or (and (empty? game-bids)
            (first-player? game seat))
@@ -48,3 +44,14 @@
        (reverse)
        (remove pass?)
        (first)))
+
+#_{:bid {:bid/name :bid.name/six-spades}
+   :seat {:seat/id "sdf"}}
+
+#_(defn last-non-pass-bid
+  [bids]
+  (->> bids
+       (remove #(= :pass (:bid/name %)))
+       first
+       :bid
+       bid-scores))

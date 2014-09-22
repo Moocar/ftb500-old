@@ -35,10 +35,18 @@
       ffirst))
 
 (defn find
-  [db entity-id-key ext-id]
-  {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
-  (when-let [entity-id (find-entity-id db entity-id-key ext-id)]
-    (d/entity db entity-id)))
+  ([db attr-key]
+     {:pre [db (keyword attr-key)]}
+     (-> '[:find ?entity
+           :in $ ?attr-key
+           :where [?entity ?attr-key]]
+         (d/q db attr-key)
+         (->> (map (comp #(d/entity db %)
+                         first)))))
+  ([db entity-id-key ext-id]
+     {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+     (when-let [entity-id (find-entity-id db entity-id-key ext-id)]
+       (d/entity db entity-id))))
 
 (defn exists?
   [db entity-id-key ext-id]

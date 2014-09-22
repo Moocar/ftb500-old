@@ -20,3 +20,8 @@
 (defn already-dealt?
   [game]
   (contains? game :game.kitty/cards))
+
+(defn first-player?
+  [game seat]
+  (= (:seat/id (:game/first-seat game))
+     (:seat/id seat)))
