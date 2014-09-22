@@ -40,17 +40,17 @@
       (catch Throwable t
         (log/log (:log engine) t))
       (finally
-        (<!! (async/timeout 1000))
         (doseq [client clients]
           (component/stop client))
         (component/stop engine)))
 
     (doseq [client clients]
       (println)
-      (<!! (go-loop []
-             (when-let [msg (<! (:output-ch (:log client)))]
-               (println msg)
-               (recur)))))))
+      (async/alts!! [(go-loop []
+                        (when-let [msg (<! (:output-ch (:log client)))]
+                          (println msg)
+                          (recur)))
+                     (async/timeout 1000)]))))
 
 (defn reset []
   (refresh :after 'me.moocar.ftb500.client.transport.inline.play/play))

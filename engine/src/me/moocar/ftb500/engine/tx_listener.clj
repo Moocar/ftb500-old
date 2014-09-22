@@ -45,8 +45,7 @@
 
 (defn handle-tx
   [this tx]
-  (let [{:keys [log]} this
-        game-txs (get-game-id-and-actions tx)]
+  (let [game-txs (get-game-id-and-actions tx)]
     (doseq [[game-id action-k instant] game-txs]
       (let [action-k (keyword (name action-k))
             user-ids (find-connected-users-for-game this game-id)]
@@ -72,7 +71,7 @@
         :in $ ?log ?game-id
         :where [_ :tx/game-id ?game-id ?tx]]
       (d/q (d/db conn) (d/log conn) game-id)
-      (->> (map #(tx->datoms conn (first %))))))
+      (->> (sort-by first))))
 
 (defn register-user-for-game
   [this game-id user-id]
@@ -85,8 +84,9 @@
              (conj (set user-ids) user-id)))
     (transport/send! engine-transport user-id {:route :registered})
     (doseq [tx (find-game-transactions conn game-id)]
-      (let [tx {:tx-data tx
-                :db-after (d/db conn)}
+      (let [tx (tx->datoms conn (first tx))
+            tx {:tx-data tx
+                      :db-after (d/db conn)}
             game-tx (first (get-game-id-and-actions tx))
             [game-id action-k] game-tx]
         (let [action-k (keyword (name action-k))]
