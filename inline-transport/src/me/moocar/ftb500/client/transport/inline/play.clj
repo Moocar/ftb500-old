@@ -20,7 +20,7 @@
   []
   (let [config (dev-config)
         engine (component/start (engine-system/new-system config))
-        clients (repeatedly 2 (new-ai-client engine config))
+        clients (repeatedly 4 (new-ai-client engine config))
         log (:log engine)]
     (try
       (let [clients (->> clients

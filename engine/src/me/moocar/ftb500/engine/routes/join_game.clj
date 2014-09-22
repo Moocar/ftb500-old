@@ -4,6 +4,7 @@
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
+            [me.moocar.ftb500.engine.routes.game-info :as game-info]
             [me.moocar.ftb500.engine.transport :as transport]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.engine.tx-listener :as tx-listener]
@@ -12,7 +13,31 @@
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
 
-(defrecord JoinGame [datomic log tx-listener]
+(defn- hand-cards-to-seat-tx [seat cards]
+  (map #(vector :db/add (:db/id seat) :seat/cards (:db/id %))
+       cards))
+
+(defn- new-deal-cards-tx [game]
+  (let [deck (:game/deck game)
+        seats (:game/seats game)
+        deck-cards (shuffle (:deck/cards deck))
+        {:keys [hands kitty]} (card/partition-hands deck-cards)
+        first-seat (:db/id (rand-nth (vec seats)))]
+    (assert game)
+    (assert (coll? seats))
+    (assert (coll? hands))
+    (assert (coll? kitty))
+    (concat
+     (mapcat #(vector [:db/add (:db/id game) :game.kitty/cards (:db/id %)]) kitty)
+     (mapcat hand-cards-to-seat-tx seats hands)
+     [[:db/add (:db/id game) :game/first-seat first-seat]])))
+
+(defn- deal-cards [this game]
+  (let [{:keys [datomic log]} this
+        tx (new-deal-cards-tx game)]
+    @(datomic/transact-action datomic tx (:game/id game) :action/deal-cards)))
+
+(defrecord JoinGame [datomic log tx-listener deal-cards-delay]
   routes/Route
   (serve [this db request]
     (let [{:keys [logged-in-user-id body callback]} request
@@ -36,17 +61,37 @@
                      :main
                      (let [tx [[:join-game (:db/id player) (:db/id game)]]]
                        (tx-listener/register-user-for-game tx-listener game-id logged-in-user-id)
-                       @(datomic/transact-action datomic tx game-id :action/join-game)
-
-                       [:success]))))))))
+                       (let [tx-result @(datomic/transact-action datomic tx game-id :action/join-game)
+                             {:keys [db-after]} tx-result
+                             game (d/entity db-after (:db/id game))]
+                         (when (game/full? game)
+                           (deal-cards this game))
+                         [:success])))))))))
 
 (defrecord JoinGameTxHandler [engine-transport]
   tx-handler/TxHandler
-  (handle [this user-ids action-k tx]
+  (handle [this user-ids tx]
     (let [seat (datomic/get-attr tx :seat/player)
           player (:seat/player seat)
           msg {:action :join-game
                :seat/id (:seat/id seat)
                :player/id (:user/id player)}]
       (doseq [user-id user-ids]
+        (transport/send! engine-transport user-id msg)))))
+
+(defn get-seat
+  [player]
+  (first (:seat/_player player)))
+
+(defrecord DealCardsTxHandler [engine-transport]
+  tx-handler/TxHandler
+  (handle [this user-ids tx]
+    (doseq [user-id user-ids]
+      (let [db (:db-after tx)
+            game (datomic/get-attr tx :game/first-seat)
+            player (datomic/find db :user/id user-id)
+            seat (get-seat player)
+            msg {:action :deal-cards
+                 :cards (map card/ext-form (:seat/cards seat))
+                 :game/first-seat (game-info/seat-ext-form (:game/first-seat game))}]
         (transport/send! engine-transport user-id msg)))))

@@ -2,8 +2,8 @@
 
 (defn full?
   [game]
-  (= (:game/num-players game)
-     (count (:game/seats game))))
+  (= (count (:game/seats game))
+     (count (filter :seat/player (:game/seats game)))))
 
 (defn my-seat?
   [seat player]

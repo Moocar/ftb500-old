@@ -49,6 +49,6 @@
 
 (defrecord AddGameTxHandler [engine-transport]
   tx-handler/TxHandler
-  (handle [this user-ids action-k tx]
+  (handle [this user-ids tx]
     (doseq [user-id user-ids]
       (transport/send! engine-transport user-id {:action :create-game}))))

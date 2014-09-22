@@ -16,7 +16,7 @@
   (let [{:keys [tx-handlers]} this
         tx-handler-keyword (keyword "tx-handler" (name action-k))]
     (let [tx-handler (get tx-handlers tx-handler-keyword)]
-      (tx-handler/handle tx-handler user-ids action-k tx))))
+      (tx-handler/handle tx-handler user-ids tx))))
 
 (defn get-ident
   [tx entities]

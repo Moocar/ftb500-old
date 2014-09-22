@@ -2,6 +2,13 @@
   (:require [datomic.api :as d])
   (:refer-clojure :exclude [find]))
 
+(defn ext-form
+  [card]
+  (-> card
+      (select-keys [:card/suit :card/rank])
+      (update-in [:card/suit] :card.suit/name)
+      (update-in [:card/rank] :card.rank/name)))
+
 (defn partition-hands
   "Partitions a deck an into 4 hands of 10 cards each. Returns a map
   of :hands and :kitty"
