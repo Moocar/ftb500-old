@@ -83,7 +83,7 @@
            [:games game-id]
            (fn [user-ids]
              (conj (set user-ids) user-id)))
-    (transport/send! engine-transport user-id {:action :registered})
+    (transport/send! engine-transport user-id {:route :registered})
     (doseq [tx (find-game-transactions conn game-id)]
       (let [tx {:tx-data tx
                 :db-after (d/db conn)}

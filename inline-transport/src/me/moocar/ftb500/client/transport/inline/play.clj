@@ -14,13 +14,13 @@
 
 (defn new-ai-client
   [engine config]
-  #(component/start (merge engine (inline-client-system/new-system config))))
+  (component/start (merge engine (inline-client-system/new-system config))))
 
 (defn play
   []
   (let [config (dev-config)
         engine (component/start (engine-system/new-system config))
-        clients (repeatedly 4 (new-ai-client engine config))
+        clients (repeatedly 4 #(ai/new-client-ai (new-ai-client engine config)))
         log (:log engine)]
     (try
       (let [clients (->> clients
@@ -40,7 +40,7 @@
       (catch Throwable t
         (log/log (:log engine) t))
       (finally
-        (<!! (async/timeout 500))
+        (<!! (async/timeout 1000))
         (doseq [client clients]
           (component/stop client))
         (component/stop engine)))

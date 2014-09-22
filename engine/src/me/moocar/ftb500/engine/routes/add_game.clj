@@ -51,4 +51,4 @@
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (doseq [user-id user-ids]
-      (transport/send! engine-transport user-id {:action :create-game}))))
+      (transport/send! engine-transport user-id {:route :create-game}))))

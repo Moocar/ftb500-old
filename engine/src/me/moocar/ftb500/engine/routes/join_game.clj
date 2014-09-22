@@ -73,7 +73,7 @@
   (handle [this user-ids tx]
     (let [seat (datomic/get-attr tx :seat/player)
           player (:seat/player seat)
-          msg {:action :join-game
+          msg {:route :join-game
                :seat/id (:seat/id seat)
                :player/id (:user/id player)}]
       (doseq [user-id user-ids]
@@ -91,7 +91,7 @@
             game (datomic/get-attr tx :game/first-seat)
             player (datomic/find db :user/id user-id)
             seat (get-seat player)
-            msg {:action :deal-cards
+            msg {:route :deal-cards
                  :cards (map card/ext-form (:seat/cards seat))
                  :game/first-seat (game-info/seat-ext-form (:game/first-seat game))}]
         (transport/send! engine-transport user-id msg)))))

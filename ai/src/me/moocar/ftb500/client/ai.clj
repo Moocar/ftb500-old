@@ -25,13 +25,33 @@
                           (put! response-ch response)))
        response-ch)))
 
+(def sub-chan-keys
+  [:deal-cards :bid :kitty :exchange-kitty :play-card])
+
+(defn sub-to-chans
+  [mult]
+  (let [my-ch (async/chan)
+        pub-ch (async/pub my-ch :route)]
+    (async/tap mult my-ch)
+    (doall
+     (reduce (fn [m sub-ch-key]
+               (let [ch (async/chan)]
+                 (async/sub pub-ch sub-ch-key ch)
+                 (assoc m sub-ch-key ch)))
+             {}
+             sub-chan-keys))))
+
 (defn start
   [this]
-  (let [user-id (uuid)]
+  (let [{:keys [receive-ch]} this
+        mult (async/mult receive-ch)
+        sub-chans (sub-to-chans mult)
+        user-id (uuid)]
     (go
       (and (<! (send! this :signup {:user-id user-id}))
            (<! (send! this :login {:user-id user-id})))
       (assoc this
+        :sub-chans sub-chans
         :player/id user-id))))
 
 (defn stop
@@ -57,12 +77,20 @@
 
 (defn start-playing
   [this game-id]
-  (go
-    (let [game (<! (game-info this game-id))]
-      (let [seat (<! (join-game this game))]
-        (when-not seat
-          (log this "Game not joined"))))))
+  (let [{:keys [sub-chans]} this]
+   (go
+     (let [game (<! (game-info this game-id))
+           seat (<! (join-game this game))
+           hand (set (:cards (<! (:deal-cards sub-chans))))]
+       (let []
+         (when-not seat
+           (log this "Game not joined")))))))
 
-(defn new-client-ai [{:keys [log client-transport]}]
-  {:log log
-   :client-transport client-transport})
+(defn new-client-ai
+  [this]
+  (let [{:keys [log client-transport]} this
+        {:keys [listener]} client-transport
+        {:keys [mult]} listener
+        receive-ch (async/chan)]
+    (async/tap mult receive-ch)
+    (merge this {:receive-ch receive-ch})))
