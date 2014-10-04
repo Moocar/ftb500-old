@@ -49,32 +49,58 @@
           {bid-name :bid/name seat-id :seat/id} body]
       (callback
        (cond
+
+        ;; Check basic inputs
+
         (not logged-in-user-id) :must-be-logged-in
         (not bid-name) :bid-required
         (not (keyword? bid-name)) :bid-must-be-keyword
         (not seat-id) :seat-id-required
         (not (uuid? seat-id)) :seat-id-must-be-uuid
 
-        :else
+        :else ;; Load entities
+
         (let [bid (find-bid db bid-name)
               seat (datomic/find db :seat/id seat-id)
               game (first (:game/_seats seat))
               bids (get-bids game)]
           (cond
+
+           ;; Make sure entities exist
+
            (not bid) :invalid-bid
            (not seat) :seat-not-found
+
+           ;; Game validations
+
            (bid/passed-already? bids seat) :you-have-already-passed
            (not (bid/your-go? game bids seat)) :its-not-your-go
            (not (bid/positive-score? bids bid)) :score-not-high-enough
 ;           (bid/finished? game bids) :bidding-already-finished
 
-           :else
+           :else ;; Perform actual transaction
+
            (let [game-bid-id (d/tempid :db.part/user)
                  tx [[:db/add game-bid-id :bid (:db/id bid)]
                      [:db/add game-bid-id :seat (:db/id seat)]
                      [:db/add (:db/id game) :game/bids game-bid-id]]]
              @(datomic/transact-action datomic tx (:game/id game) :action/bid)
              [:success]))))))))
+
+(defn seat-user-id
+  [db seat]
+  (:user/id (:seat/player seat)))
+
+(defn handle-last-bid [tx game]
+  (let [bids (get-bids game)
+        winning-bid (bid/winning-bid bids)
+        winning-seat (:seat winning-bid)]
+    (when-let [winning-seat-user-id (:user/id (:seat/player winning-seat))]
+      (let [db (:db-after tx)
+            kitty-cards (:game.kitty/cards game)
+            msg {:route :kitty
+                 :body {:cards (map card/ext-form kitty-cards)}}]
+        [[winning-seat-user-id msg]]))))
 
 (defrecord BidTxHandler [engine-transport log]
   tx-handler/TxHandler
@@ -83,6 +109,10 @@
           game (datomic/get-attr tx :game/bids)
           msg {:route :bid
                :body {:bid {:bid {:seat {:seat/id (:seat/id (:seat bid))}
-                                  :bid  {:bid/name (:bid/name (:bid bid))}}}}}]
-      (doseq [user-id user-ids]
+                                  :bid  {:bid/name (:bid/name (:bid bid))}}}}}
+          user-msgs (-> user-ids
+                        (->> (map #(vector % msg)))
+                        (cond-> (bid/finished? game (get-bids game))
+                                (concat (handle-last-bid tx game))))]
+      (doseq [[user-id msg] user-msgs]
         (transport/send! engine-transport user-id msg)))))
