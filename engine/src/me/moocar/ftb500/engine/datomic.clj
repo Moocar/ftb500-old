@@ -18,12 +18,15 @@
 
 (defn get-attr
   [tx attr-k]
-  (-> '[:find ?eid
-        :in $ ?attr-id
-        :where [?eid ?attr-id]]
-      (d/q (:tx-data tx) (:id (d/attribute (:db-after tx) attr-k)))
-      ffirst
-      (->> (d/entity (:db-after tx)))))
+  {:pre [tx (keyword? attr-k)]}
+  (let [attribute (d/attribute (:db-after tx) attr-k)]
+    (assert attribute)
+    (-> '[:find ?eid
+          :in $ ?attr-id
+          :where [?eid ?attr-id]]
+        (d/q (:tx-data tx) (:id attribute))
+        ffirst
+        (->> (d/entity (:db-after tx))))))
 
 (defn find-entity-id
   [db entity-id-key ext-id]

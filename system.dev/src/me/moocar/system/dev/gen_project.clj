@@ -150,7 +150,7 @@
         (into ["test"]
               (all-project-paths ["test"]
                                  local-dir projects))
-        :jvm-opts ["-Xmx1g" "-XX:MaxPermSize=256m"]))
+        :jvm-opts ["-Xmx1g" "-XX:MaxPermSize=256m" "-XX:-OmitStackTraceInFastThrow"]))
 
 (defn- write-project-file [file content]
   (with-open [writer (io/writer file)]

@@ -15,8 +15,9 @@
   [this user-ids action-k tx]
   (let [{:keys [tx-handlers]} this
         tx-handler-keyword (keyword "tx-handler" (name action-k))]
-    (let [tx-handler (get tx-handlers tx-handler-keyword)]
-      (tx-handler/handle tx-handler user-ids tx))))
+    (if-let [tx-handler (get tx-handlers tx-handler-keyword)]
+      (tx-handler/handle tx-handler user-ids tx)
+      (throw (ex-info "tx handler not present" {:action action-k})))))
 
 (defn get-ident
   [tx entities]

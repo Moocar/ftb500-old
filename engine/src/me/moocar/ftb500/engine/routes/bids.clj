@@ -75,3 +75,14 @@
                      [:db/add (:db/id game) :game/bids game-bid-id]]]
              @(datomic/transact-action datomic tx (:game/id game) :action/bid)
              [:success]))))))))
+
+(defrecord BidTxHandler [engine-transport log]
+  tx-handler/TxHandler
+  (handle [this user-ids tx]
+    (let [bid (datomic/get-attr tx :bid)
+          game (datomic/get-attr tx :game/bids)
+          msg {:route :bid
+               :body {:bid {:bid {:seat {:seat/id (:seat/id (:seat bid))}
+                                  :bid  {:bid/name (:bid/name (:bid bid))}}}}}]
+      (doseq [user-id user-ids]
+        (transport/send! engine-transport user-id msg)))))
