@@ -91,11 +91,13 @@
   [db seat]
   (:user/id (:seat/player seat)))
 
-(defn handle-last-bid [tx game]
+(defn handle-last-bid [tx game connected-user-ids]
   (let [bids (get-bids game)
         winning-bid (bid/winning-bid bids)
-        winning-seat (:seat winning-bid)]
-    (when-let [winning-seat-user-id (:user/id (:seat/player winning-seat))]
+        winning-seat (:seat winning-bid)
+        winning-seat-user-id (:user/id (:seat/player winning-seat))]
+    (assert winning-seat-user-id)
+    (when (contains? (set connected-user-ids) winning-seat-user-id)
       (let [db (:db-after tx)
             kitty-cards (:game.kitty/cards game)
             msg {:route :kitty
