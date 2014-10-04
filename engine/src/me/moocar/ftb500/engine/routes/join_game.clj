@@ -93,5 +93,5 @@
             seat (get-seat player)
             msg {:route :deal-cards
                  :body {:cards (map card/ext-form (:seat/cards seat))
-                        :game/first-seat (game-info/seat-ext-form (:game/first-seat game))}}]
+                        :game/first-seat (select-keys (:game/first-seat game) [:seat/id])}}]
         (transport/send! engine-transport user-id msg)))))

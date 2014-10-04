@@ -30,7 +30,7 @@
                          (doall))]
         (<!!
          (go
-           (let [response (<! (client/send! (first clients) :add-game {:num-players 4} true))]
+           (let [response (<! (client/send! (first clients) :add-game {:num-players 4}))]
              (let [game-id (:game/id (second response))]
                (->> clients
                     (map #(ai/start-playing % game-id))

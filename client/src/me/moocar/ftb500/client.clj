@@ -8,11 +8,11 @@
   (log/log (:log this) msg))
 
 (defn send!
-  ([this route msg]
+  ([this route msg dont-send]
      (transport/send! (:client-transport this)
                       {:route route
                        :body msg}))
-  ([this route msg expect-response?]
+  ([this route msg]
      (let [response-ch (async/chan)]
        (transport/send! (:client-transport this)
                         {:route route

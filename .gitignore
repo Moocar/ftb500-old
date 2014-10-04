@@ -9,3 +9,6 @@ pom.xml.asc
 /.nrepl-port
 *.*~
 */.nrepl-port
+.DS_Store
+.idea/
+*.iml

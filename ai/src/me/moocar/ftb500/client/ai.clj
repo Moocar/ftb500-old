@@ -1,6 +1,8 @@
 (ns me.moocar.ftb500.client.ai
   (:require [clojure.core.async :as async :refer [go <! put!]]
+            [clojure.set :refer [rename-keys]]
             [me.moocar.log :as log]
+            [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.game :as game]))
@@ -13,18 +15,9 @@
 
 (defn send!
   ([this route msg dont-send]
-     (transport/send! (:client-transport this)
-                      {:route route
-                       :body msg}))
+     (client/send! this route msg dont-send))
   ([this route msg]
-     (let [response-ch (async/chan)]
-       (transport/send! (:client-transport this)
-                        {:route route
-                         :body msg}
-                        1000
-                        (fn [response]
-                          (put! response-ch response)))
-       response-ch)))
+     (client/send! this route msg)))
 
 (defn start
   [this]
@@ -62,6 +55,12 @@
                                             :seat/id (:seat/id seat)}))
                 (recur (<! (game-info this game-id))))))))))
 
+(defn get-deal-cards
+  [game deal-cards]
+  (merge game
+         (-> (:body deal-cards)
+             (rename-keys {:cards :hand}))))
+
 (defn start-playing
   [this game-id]
   (let [{:keys [route-pub-ch]} this
@@ -80,8 +79,8 @@
                                         (async/into [])
                                         (<!)
                                         (map :body)))
-                (assoc game :hand (set (:cards (<! deal-cards-ch))))
-                (assoc game :bids (<! (bids/start this game))))))))
+                (get-deal-cards game (<! deal-cards-ch))
+                (assoc game :game/bids (<! (bids/start this game))))))))
 
 (defn new-client-ai
   [this]

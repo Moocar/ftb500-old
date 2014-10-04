@@ -27,7 +27,7 @@
 
 (defn find-entity-id
   [db entity-id-key ext-id]
-  {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+  {:pre [db (keyword? entity-id-key) ext-id]}
   (-> '[:find ?entity
         :in $ ?entity-id-key ?entity-id
         :where [?entity ?entity-id-key ?entity-id]]
@@ -44,13 +44,13 @@
          (->> (map (comp #(d/entity db %)
                          first)))))
   ([db entity-id-key ext-id]
-     {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+     {:pre [db (keyword? entity-id-key) ext-id]}
      (when-let [entity-id (find-entity-id db entity-id-key ext-id)]
        (d/entity db entity-id))))
 
 (defn exists?
   [db entity-id-key ext-id]
-  {:pre [db (keyword? entity-id-key) (uuid? ext-id)]}
+  {:pre [db (keyword? entity-id-key) ext-id]}
   (find-entity-id db entity-id-key ext-id))
 
 (defn- action-tx

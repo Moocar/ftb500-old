@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.bid
-  (:require [me.moocar.ftb500.seats :as seats]))
+  (:require [me.moocar.ftb500.seats :as seats]
+            [me.moocar.ftb500.game :as game]))
 
 (defn pass?
   "Returns true if the bid is a pass"
@@ -20,10 +21,10 @@
   (> (:bid/score bid)
      (reduce max 0 (map (comp :bid/score :bid) game-bids))))
 
-#_(defn your-go?
+(defn your-go?
   [game game-bids seat]
   (or (and (empty? game-bids)
-           (first-player? game seat))
+           (game/first-player? game seat))
       (and (not (passed-already? game-bids seat))
            (let [game-seats (:game/seats game)
                  last-seat (:seat (last game-bids))]
@@ -40,18 +41,31 @@
 
 (defn winning-bid
   [game-bids]
+  {:pre [(sequential? game-bids)]}
   (->> game-bids
        (reverse)
        (remove pass?)
        (first)))
 
+(defn find-score
+  "Given a bid table and a bid, find the score of the bid. A bid table
+  is a seq of {:bid/rank keyword, :bid/suit keyword, :bid/name
+  keyword :bid/contract-style :keyword :bid/score Number} ordered by score"
+  [bid-table bid]
+  (->> bid-table
+       (filter (fn [bid-table-bid]
+                 (= (:bid/name bid-table-bid)
+                    (:bid/name bid))))
+       first
+       :bid/score))
+
 #_{:bid {:bid/name :bid.name/six-spades}
    :seat {:seat/id "sdf"}}
 
-#_(defn last-non-pass-bid
+(defn last-non-pass-bid
+  "Returns the last bid that was not a pass. Bids is a seq of Bids"
   [bids]
   (->> bids
        (remove #(= :pass (:bid/name %)))
        first
-       :bid
-       bid-scores))
+       :bid))

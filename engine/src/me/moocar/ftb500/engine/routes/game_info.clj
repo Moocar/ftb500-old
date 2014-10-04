@@ -36,7 +36,8 @@
   (-> game
       (select-keys [:game/id :game/deck :game/seats :game/first-seat])
       (update-in [:game/deck] deck-ext-form)
-      (update-in [:game/seats] #(map seat-ext-form %))))
+      (update-in [:game/seats] #(map seat-ext-form %))
+      (update-in [:game/first-seat] select-keys [:seat/id])))
 
 (defrecord GameInfo [datomic log]
   routes/Route
