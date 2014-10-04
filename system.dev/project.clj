@@ -41,4 +41,4 @@
  :test-paths
  ["test"]
  :jvm-opts
- ["-Xmx1g" "-XX:MaxPermSize=256m"])
+ ["-Xmx1g" "-XX:MaxPermSize=256m" "-XX:-OmitStackTraceInFastThrow"])

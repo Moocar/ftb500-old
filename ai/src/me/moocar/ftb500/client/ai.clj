@@ -61,6 +61,14 @@
          (-> (:body deal-cards)
              (rename-keys {:cards :hand}))))
 
+(defn wait-on-joins [join-game-ch game]
+  (go (->> join-game-ch
+           (async/take (:game/num-players game))
+           (async/into [])
+           (<!)
+           (map :body)
+           (sort-by :seat/position))))
+
 (defn start-playing
   [this game-id]
   (let [{:keys [route-pub-ch]} this
@@ -72,13 +80,9 @@
       (-> (<! (game-info this game-id))
           (as-> game
                 (assoc game :bid-table (<! (send! this :bid-table {})))
-                (assoc game :num-players (count (:game/seats game)))
+                (assoc game :game/num-players (count (:game/seats game)))
                 (assoc game :seat (<! (join-game this game)))
-                (assoc game :seats (->> join-game-ch
-                                        (async/take (:num-players game))
-                                        (async/into [])
-                                        (<!)
-                                        (map :body)))
+                (assoc game :game/seats (<! (wait-on-joins join-game-ch game)))
                 (get-deal-cards game (<! deal-cards-ch))
                 (assoc game :game/bids (<! (bids/start this game))))))))
 

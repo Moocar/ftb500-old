@@ -75,6 +75,7 @@
           player (:seat/player seat)
           msg {:route :join-game
                :body {:seat/id (:seat/id seat)
+                      :seat/position (:seat/position seat)
                       :player/id (:user/id player)}}]
       (doseq [user-id user-ids]
         (transport/send! engine-transport user-id msg)))))

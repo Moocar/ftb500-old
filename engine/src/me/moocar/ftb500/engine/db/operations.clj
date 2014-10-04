@@ -68,7 +68,7 @@
 (defn kitty-exchanged?
   [game]
   (let [db (d/entity-db game)
-        num-players (count (:game/seats game))]
+        num-players (game/num-players game)]
     (-> '[:find ?cards ?tx ?added
           :in $ ?game
           :where [?game :game.kitty/cards ?cards ?tx ?added]]

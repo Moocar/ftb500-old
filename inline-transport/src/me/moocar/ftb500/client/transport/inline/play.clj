@@ -28,6 +28,11 @@
                          (doall)
                          (map <!!)
                          (doall))]
+        (go (<! (async/timeout 2000))
+            (log/log log "!!!!!!!!! Timeout and shutdown !!!!!!!!!!")
+            (doseq [client clients]
+              (component/stop client))
+            (component/stop engine))
         (<!!
          (go
            (let [response (<! (client/send! (first clients) :add-game {:num-players 4}))]

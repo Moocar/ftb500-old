@@ -25,3 +25,6 @@
   [game seat]
   (= (:seat/id (:game/first-seat game))
      (:seat/id seat)))
+
+(defn num-players [game]
+  (:deck/num-players (:game/deck game)))

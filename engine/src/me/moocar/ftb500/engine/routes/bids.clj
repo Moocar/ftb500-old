@@ -11,6 +11,9 @@
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
 
+(defn log [this msg]
+  (log/log (:log this) msg))
+
 (defn ext-form
   [bid]
   (-> bid
@@ -31,8 +34,10 @@
             (sort-by :bid/score)
             (map ext-form))))))
 
-(defn get-bids [game]
-  (sort-by :db/id (:game/bids game)))
+(defn get-bids
+  "Returns the bids in reverse chronological order as a list"
+  [game]
+  (reverse (sort-by :db/id (:game/bids game))))
 
 (defn find-bid [db bid-name]
   (-> '[:find ?bid
@@ -63,6 +68,7 @@
         (let [bid (find-bid db bid-name)
               seat (datomic/find db :seat/id seat-id)
               game (first (:game/_seats seat))
+              seats (sort-by :seat/position (:game/seats game))
               bids (get-bids game)]
           (cond
 
@@ -74,8 +80,9 @@
            ;; Game validations
 
            (bid/passed-already? bids seat) :you-have-already-passed
-           (not (bid/your-go? game bids seat)) :its-not-your-go
-           (not (bid/positive-score? bids bid)) :score-not-high-enough
+           (not (bid/your-go? game seats bids seat)) :its-not-your-go
+           (and (not (= :bid.name/pass bid-name))
+                (not (bid/positive-score? bids bid))) :score-not-high-enough
 ;           (bid/finished? game bids) :bidding-already-finished
 
            :else ;; Perform actual transaction
@@ -110,11 +117,12 @@
     (let [bid (datomic/get-attr tx :bid)
           game (datomic/get-attr tx :game/bids)
           msg {:route :bid
-               :body {:bid {:bid {:seat {:seat/id (:seat/id (:seat bid))}
-                                  :bid  {:bid/name (:bid/name (:bid bid))}}}}}
+               :body  {:bid {:seat {:seat/id (:seat/id (:seat bid))}
+                             :bid  {:bid/name (:bid/name (:bid bid))
+                                    :bid/score (:bid/score (:bid bid))}}}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game (get-bids game))
-                                (concat (handle-last-bid tx game))))]
+                                (concat (handle-last-bid tx game user-ids))))]
       (doseq [[user-id msg] user-msgs]
         (transport/send! engine-transport user-id msg)))))
