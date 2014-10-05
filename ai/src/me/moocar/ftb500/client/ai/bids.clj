@@ -9,14 +9,22 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
+(defn find-normal-bids
+  "Returns bids that are neither no trumps or misere"
+  [bids]
+  (->> bids
+       (map :bid/name)
+       (remove #(re-find #"no-trumps|misere" (name %)))))
+
 (defn calc-bid
   [this game bids]
   (let [{:keys [bid-table]} game
-        max-score (or  (bids/find-score bid-table (bids/last-non-pass-bid bids)) 0)
-        available-bids (drop-while #(<= (:bid/score %) max-score) bid-table)
-        normal-bids (remove #(re-find #"no-trumps|misere" (name %))
-                            (map :bid/name available-bids))]
-    (rand-nth (conj normal-bids :bid.name/pass))))
+        max-score (or (bids/find-score bid-table (bids/last-non-pass-bid bids)) 0)]
+    (-> bid-table
+        (->> (drop-while #(<= (:bid/score %) max-score)))
+        (find-normal-bids)
+        (conj :bid.name/pass)
+        (rand-nth))))
 
 (defn play-bid
   [this game bids]
