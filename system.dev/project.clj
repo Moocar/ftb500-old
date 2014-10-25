@@ -12,7 +12,6 @@
   [clj-stacktrace "0.2.8"]
   [org.clojure/core.cache "0.6.3"]
   [http-kit "2.1.18"]
-  [com.datomic/datomic-free "0.9.4956"]
   [com.stuartsierra/component "0.2.2"]
   [com.taoensso/sente "1.2.0"]
   [me.moocar/log "0.1.0-SNAPSHOT"]
@@ -24,7 +23,8 @@
   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
   [org.clojure/test.check "0.5.9"]
   [prismatic/schema "0.3.1"]
-  [ring/ring-core "1.3.1"]]
+  [ring/ring-core "1.3.1"]
+  [com.datomic/datomic-free "0.9.4956" :exclusions [joda-time]]]
  :source-paths
  ["src"
   "../ai/src"
