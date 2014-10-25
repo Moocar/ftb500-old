@@ -11,22 +11,26 @@
  [[org.clojure/java.classpath "0.2.2"]
   [clj-stacktrace "0.2.8"]
   [org.clojure/core.cache "0.6.3"]
-  [http-kit "2.1.16"]
-  [com.datomic/datomic-free "0.9.4880.2"]
+  [http-kit "2.1.18"]
+  [com.datomic/datomic-free "0.9.4956"]
   [com.stuartsierra/component "0.2.2"]
-  [com.taoensso/sente "1.1.0"]
+  [com.taoensso/sente "1.2.0"]
   [me.moocar/log "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/client "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/engine "0.1.0-SNAPSHOT"]
+  [me.moocar.ftb500/generators "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/pure-game "0.1.0-SNAPSHOT"]
-  [org.clojure/clojure "1.7.0-alpha1"]
-  [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
+  [org.clojure/clojure "1.7.0-alpha2"]
+  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+  [org.clojure/test.check "0.5.9"]
+  [prismatic/schema "0.3.1"]
   [ring/ring-core "1.3.1"]]
  :source-paths
  ["src"
   "../ai/src"
   "../client/src"
   "../engine/src"
+  "../generators/src"
   "../http/src"
   "../inline-transport/src"
   "../log/src"
@@ -39,6 +43,6 @@
   "../http/resources"
   "../sente-client/resources"]
  :test-paths
- ["test"]
+ ["test" "../engine/test" "../pure-game/test"]
  :jvm-opts
  ["-Xmx1g" "-XX:MaxPermSize=256m" "-XX:-OmitStackTraceInFastThrow"])
