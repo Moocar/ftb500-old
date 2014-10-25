@@ -1,5 +1,10 @@
 (ns me.moocar.ftb500.generators
-  (:require [clojure.test.check.generators :as gen]))
+  (:require [clojure.string :as string] 
+            [clojure.test.check.generators :as gen])
+  (:import (java.util UUID)))
+
+(defn fixed-tuple [size generator]
+  (apply gen/tuple (repeat size generator)))
 
 (def char-hex
   (gen/fmap char
@@ -7,38 +12,30 @@
                          (gen/choose 65 70)
                          (gen/choose 97 102)])))
 
-(defn sized-hex-string
-  [size]
-  (gen/fmap clojure.string/join
-            (apply gen/tuple (repeat size char-hex))))
-
 (def uuid
-  (gen/fmap #(clojure.string/join "-" %)
-            (gen/tuple (sized-hex-string 8)
-                       (sized-hex-string 4)
-                       (sized-hex-string 4)
-                       (sized-hex-string 4)
-                       (sized-hex-string 12))))
+  (gen/fmap #(->> (map string/join %)
+                  (string/join "-" )
+                  (UUID/fromString))
+            (gen/tuple (fixed-tuple 8 char-hex)
+                       (fixed-tuple 4 char-hex)
+                       (fixed-tuple 4 char-hex)
+                       (fixed-tuple 4 char-hex)
+                       (fixed-tuple 12 char-hex))))
 
 (def player
-  (gen/fmap (fn [[uuid]]
-              {:player/id uuid})
-            (gen/tuple uuid)))
+  (gen/hash-map :player/id uuid))
 
 (def num-players
-  (gen/choose 0 3))
+  (gen/choose 2 4))
 
 (def seat
-  (gen/fmap (fn [vals]
-              (zipmap [:seat/id :seat/player :seat/position] vals))
-            (gen/tuple uuid
-                       player
-                       num-players)))
+  (gen/hash-map :seat/id uuid
+                :player player
+                :seat/position num-players))
 
-(def deck
-  (gen/fmap (fn [vals]
-              (zipmap [:deck/num-players] vals))
-            (gen/tuple num-players)))
+(defn deck 
+  [player-count]
+  (gen/hash-map :deck/num-players (gen/return player-count)))
 
 (def bids
   [{:bid/name :bid.name/six-spades
@@ -106,10 +103,37 @@
   (gen/elements bids))
 
 (def player-bid
-  (gen/fmap #(zipmap [:seat :bid] %)
-            (gen/bind gen/boolean
-                      (fn [v]
-                        (if v
-                          (gen/tuple seat bid)
-                          (gen/tuple seat))))))
+  (gen/bind gen/boolean
+            (fn [v]
+              (if v
+                (gen/hash-map :seat seat
+                              :bid bid)
+                (gen/hash-map :seat seat)))))
 
+(def card
+  (gen/hash-map :card gen/int))
+
+(defn positions [num-players]
+  (range num-players))
+
+(defn seats 
+  [num-players]
+  (gen/bind (fixed-tuple num-players player)
+            (fn [players]
+              (gen/fmap (fn [seats]
+                          (map #(assoc %1 :player %2 :seat/position %3)
+                               seats
+                               players
+                               (range (count players))))
+                        (fixed-tuple (count players) seat)))))
+
+(def game
+  (gen/bind (gen/bind (gen/bind num-players seats)
+                      (fn [seats]
+                        (gen/tuple (gen/return seats)
+                                   (deck (count seats)))))
+            (fn [[seats deck]]
+              (gen/hash-map :game/seats (gen/return seats)
+                            :game/first-seat (gen/elements seats)
+                            :game/deck (gen/return deck)
+                            :game.kitty/cards (gen/return 4)))))
