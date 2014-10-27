@@ -6,7 +6,8 @@
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
             [me.moocar.ftb500.engine.transport :as transport]
-            [me.moocar.ftb500.engine.tx-handler :as tx-handler]))
+            [me.moocar.ftb500.engine.tx-handler :as tx-handler]
+            [me.moocar.ftb500.schema :refer [bid-names]]))
 
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
@@ -18,12 +19,12 @@
   [bid]
   (-> bid
       (select-keys [:bid/name
-                    :bid/rank
+                    :bid/tricks
                     :bid/suit
                     :bid/contract-style
                     :bid/score])
-      (update-in [:bid/rank] :card.rank/name)
-      (update-in [:bid/suit] :card.suit/name)))
+      (cond-> (:bid/suit bid)
+              (update-in [:bid/suit] :card.suit/name))))
 
 (defrecord BidTable [datomic log]
   routes/Route
@@ -58,38 +59,39 @@
         ;; Check basic inputs
 
         (not logged-in-user-id) :must-be-logged-in
-        (not bid-name) :bid-required
-        (not (keyword? bid-name)) :bid-must-be-keyword
+        (and bid-name (not ((set bid-names) bid-name))) :unknown-bid
         (not seat-id) :seat-id-required
         (not (uuid? seat-id)) :seat-id-must-be-uuid
 
         :else ;; Load entities
 
-        (let [bid (find-bid db bid-name)
+        (let [bid (when bid-name (find-bid db bid-name))
               seat (datomic/find db :seat/id seat-id)
               game (first (:game/_seats seat))
               seats (sort-by :seat/position (:game/seats game))
               bids (get-bids game)]
+
           (cond
 
            ;; Make sure entities exist
 
-           (not bid) :invalid-bid
+           (and bid-name (not bid)) :invalid-bid
            (not seat) :seat-not-found
 
            ;; Game validations
 
            (bid/passed-already? bids seat) :you-have-already-passed
            (not (bid/your-go? game seats bids seat)) :its-not-your-go
-           (and (not (= :bid.name/pass bid-name))
+           (and bid-name
                 (not (bid/positive-score? bids bid))) :score-not-high-enough
 ;           (bid/finished? game bids) :bidding-already-finished
 
            :else ;; Perform actual transaction
 
            (let [game-bid-id (d/tempid :db.part/user)
-                 tx [[:db/add game-bid-id :bid (:db/id bid)]
-                     [:db/add game-bid-id :seat (:db/id seat)]
+                 tx [(when bid-name
+                       [:db/add game-bid-id :player-bid/bid (:db/id bid)])
+                     [:db/add game-bid-id :player-bid/seat (:db/id seat)]
                      [:db/add (:db/id game) :game/bids game-bid-id]]]
              @(datomic/transact-action datomic tx (:game/id game) :action/bid)
              [:success]))))))))
@@ -114,12 +116,14 @@
 (defrecord BidTxHandler [engine-transport log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
-    (let [bid (datomic/get-attr tx :bid)
+    (let [bid (datomic/get-attr tx :player-bid/bid)
           game (datomic/get-attr tx :game/bids)
+          {:keys [player-bid/bid player-bid/seat]} bid
+          {bid-name :bid/name bid-score :bid/score} bid
           msg {:route :bid
-               :body  {:bid {:seat {:seat/id (:seat/id (:seat bid))}
-                             :bid  {:bid/name (:bid/name (:bid bid))
-                                    :bid/score (:bid/score (:bid bid))}}}}
+               :body  {:bid {:player-bid/seat {:seat/id (:seat/id seat)}
+                             :player-bi/bid  {:bid/name bid-name
+                                              :bid/score bid-score}}}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game (get-bids game))

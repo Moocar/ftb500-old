@@ -32,8 +32,8 @@
                   :game (first (:game/_seats seat)))))
    :game/id (fn [db args id]
               (assoc args :game (db/find db :game/id id)))
-   :player/id (fn [db args id]
-                (assoc args :player (db/find db :player/id id)))
+   :user/id (fn [db args id]
+                (assoc args :player (db/find db :user/id id)))
    :bid-k (fn [db args id]
             (assoc args :bid (db/find db :bid/name id)))
    :card (fn [db args card]

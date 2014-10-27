@@ -8,7 +8,8 @@
             [me.moocar.ftb500.engine.transport :as transport]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.engine.tx-listener :as tx-listener]
-            [me.moocar.ftb500.game :as game]))
+            [me.moocar.ftb500.game :as game]
+            [me.moocar.ftb500.seats :as seats]))
 
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
@@ -56,7 +57,7 @@
                (cond (not game) :game-does-not-exist
                      (not seat) :game-does-not-exist
                      (game/full? game) :game-is-already-full
-                     (game/seat-taken? seat player) :seat-taken
+                     (seats/taken-by? seat player) :seat-taken
 
                      :main
                      (let [tx [[:join-game (:db/id player) (:db/id game)]]]
@@ -76,7 +77,7 @@
           msg {:route :join-game
                :body {:seat/id (:seat/id seat)
                       :seat/position (:seat/position seat)
-                      :player/id (:user/id player)}}]
+                      :user/id (:user/id player)}}]
       (doseq [user-id user-ids]
         (transport/send! engine-transport user-id msg)))))
 

@@ -3,7 +3,8 @@
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
-            [me.moocar.log :as log])
+            [me.moocar.log :as log]
+            [me.moocar.ftb500.engine.datomic.schema :as db-schema])
   (:import [java.io PushbackReader])
   (:refer-clojure :exclude [find]))
 
@@ -82,7 +83,8 @@
 
 (defn ensure-schema
   [conn]
-  (transact-resource conn "db_schema.edn"))
+  (transact-resource conn "db_schema.edn")
+  @(d/transact conn (db-schema/enums)))
 
 (defn ref-data-exists?
   [conn]
@@ -94,7 +96,7 @@
 (defn ensure-ref-data
   [conn]
   (when-not (ref-data-exists? conn)
-    (transact-resource conn "ref_cards.edn")))
+    @(d/transact conn (db-schema/ref-data))))
 
 (defn del-db
   []

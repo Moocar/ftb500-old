@@ -24,7 +24,7 @@
                          :else
                          (if (exists? db user-id)
                            (do (user-store/write user-store client-id user-id)
-                               :success)
+                               [:success])
                            :user-not-found))]
       (callback response))))
 
@@ -34,7 +34,7 @@
     (let [{:keys [client-id]} request]
       (user-store/delete user-store client-id)
       (when-let [callback (:callback request)]
-        (callback :success)))))
+        (callback [:success])))))
 
 (defrecord Signup [datomic]
   routes/Route
@@ -47,5 +47,5 @@
                          :else
                          (let [tx [[:db/add (d/tempid :db.part/user) :user/id user-id]]]
                            @(d/transact conn tx)
-                           :success))]
+                           [:success]))]
       (callback response))))

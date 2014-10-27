@@ -23,7 +23,7 @@
                        (fixed-tuple 12 char-hex))))
 
 (def player
-  (gen/hash-map :player/id uuid))
+  (gen/hash-map :user/id uuid))
 
 (def num-players
   (gen/choose 2 4))

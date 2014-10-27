@@ -1,11 +1,13 @@
 (ns me.moocar.ftb500.client.ai
-  (:require [clojure.core.async :as async :refer [go <! put!]]
+  (:require [clojure.core.async :as async :refer [go <! put! go-loop]]
             [clojure.set :refer [rename-keys]]
             [me.moocar.log :as log]
+            [me.moocar.ftb500.schema :as schema :refer [game? seat? bid? player?]]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.client.ai.bids :as bids]
-            [me.moocar.ftb500.game :as game]))
+            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.seats :as seats]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -17,22 +19,34 @@
   ([this route msg dont-send]
      (client/send! this route msg dont-send))
   ([this route msg]
-     (client/send! this route msg)))
+     (go
+       (let [response (<! (client/send! this route msg))]
+         (if (keyword? response)
+           (let [error (ex-info "Error in Send"
+                                {:error response
+                                 :route route
+                                 :request msg})]
+             (log this error)
+             error)
+           response)))))
 
 (defn start
   [this]
-  (let [{:keys [receive-ch]} this
-        mult (async/mult receive-ch)
-        tapped-ch (async/chan)
-        route-pub-ch (async/pub tapped-ch :route)
-        user-id (uuid)]
-    (async/tap mult tapped-ch)
-    (go
-      (and (<! (send! this :signup {:user-id user-id}))
-           (<! (send! this :login {:user-id user-id})))
-      (assoc this
-        :route-pub-ch route-pub-ch
-        :player/id user-id))))
+  (if (:player this)
+    this
+    (let [{:keys [receive-ch]} this
+          mult (async/mult receive-ch)
+          tapped-ch (async/chan)
+          route-pub-ch (async/pub tapped-ch :route)
+          user-id (uuid)]
+      (async/tap mult tapped-ch)
+      (go
+        (and (<! (send! this :signup {:user-id user-id}))
+             (<! (send! this :login {:user-id user-id})))
+        (assoc this
+          :route-pub-ch route-pub-ch
+          :player {:player/name "Anthony"
+                   :user/id user-id})))))
 
 (defn stop
   [this]
@@ -42,49 +56,76 @@
   [this game-id]
   (go (second (<! (send! this :game-info {:game-id game-id})))))
 
+(defn find-players-seat [player seats]
+  (first (filter #(seats/taken-by? % player) seats)))
+
+(defn find-available-seat [seats]
+  (first (remove seats/taken? seats)))
+
 (defn join-game
-  [this game]
-  (go
-    (loop [game game]
-      (let [{game-id :game/id} game
-            seats (:game/seats game)]
-        (if-let [seat (first (filter #(game/my-seat? % this) seats))]
-          seat
-          (when-let [seat (first (remove #(game/seat-taken? % this) seats))]
-            (do (<! (send! this :join-game {:game/id game-id
-                                            :seat/id (:seat/id seat)}))
-                (recur (<! (game-info this game-id))))))))))
+  [{:keys [player game] :as ai}]
+  {:pre [(ai? ai)]}
+  (let [game-id (:game/id game)]
+    (go-loop [{:keys [game/seats]} (:game ai)]
+      (or (find-players-seat player seats)
+          (when-let [seat (find-available-seat seats)]
+            (do (<! (send! ai :join-game {:game/id game-id
+                                          :seat/id (:seat/id seat)}))
+                (recur (<! (game-info ai game-id)))))))))
+
+(defn find-seat [seats seat-id]
+  (first (filter #(= seat-id (:seat/id %)) seats)))
 
 (defn get-deal-cards
-  [game deal-cards]
-  (merge game
-         (-> (:body deal-cards)
-             (rename-keys {:cards :hand}))))
+  [ai {:keys [body] :as deal-cards}]
+  {:pre [(ai? ai)]}
+  (let [first-seat (:game/first-seat body)]
+    (-> ai
+        (assoc :hand (:cards body))
+        (as-> ai
+              (let [seat (find-seat (:game/seats (:game ai)) (:seat/id first-seat))]
+                (assoc-in ai [:game :game/first-seat] seat))))))
 
-(defn wait-on-joins [join-game-ch game]
+(defn wait-on-joins
+  [join-game-ch ai]
+  {:pre [(ai? ai)]}
   (go (->> join-game-ch
-           (async/take (:game/num-players game))
+           (async/take (:game/num-players ai))
            (async/into [])
            (<!)
            (map :body)
            (sort-by :seat/position))))
 
+(defn find-suit [suit-name]
+  (first (filter #(= suit-name (:card.suit/name %)) schema/suits)))
+
+(defn touch-suit [bid]
+  (if (contains? bid :bid/suit)
+    (update-in bid [:bid/suit] find-suit)
+    bid))
+
+(defn get-bid-table
+  [ai]
+  (go
+    (map touch-suit (<! (send! ai :bid-table {})))))
+
 (defn start-playing
-  [this game-id]
-  (let [{:keys [route-pub-ch]} this
+  [ai game-id]
+  (let [{:keys [route-pub-ch]} ai
         join-game-ch (async/chan)
         deal-cards-ch (async/chan)]
     (async/sub route-pub-ch :join-game join-game-ch)
     (async/sub route-pub-ch :deal-cards deal-cards-ch)
     (go
-      (-> (<! (game-info this game-id))
-          (as-> game
-                (assoc game :bid-table (<! (send! this :bid-table {})))
-                (assoc game :game/num-players (count (:game/seats game)))
-                (assoc game :seat (<! (join-game this game)))
-                (assoc game :game/seats (<! (wait-on-joins join-game-ch game)))
-                (get-deal-cards game (<! deal-cards-ch))
-                (assoc game :game/bids (<! (bids/start this game))))))))
+      (-> ai
+          (assoc :game (<! (game-info ai game-id)))
+          (as-> ai
+                (assoc ai :bid-table (<! (get-bid-table ai)))
+                (assoc ai :game/num-players (count (:game/seats (:game ai))))
+                (assoc ai :seat (<! (join-game ai)))
+                (assoc-in ai [:game :game/seats] (<! (wait-on-joins join-game-ch ai)))
+                (get-deal-cards ai (<! deal-cards-ch))
+                (assoc-in ai [:game :game/bids] (<! (bids/start ai))))))))
 
 (defn new-client-ai
   [this]

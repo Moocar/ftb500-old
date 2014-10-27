@@ -2,6 +2,7 @@
   :plugins [[lein-sub "0.3.0"]]
   :sub ["log"
         "pure-game"
+        "generators"
         "engine"
         "client"
         "http"

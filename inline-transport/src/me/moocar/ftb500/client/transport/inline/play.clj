@@ -2,6 +2,7 @@
   (:require [clojure.core.async :as async :refer [go <! <!! go-loop]]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [com.stuartsierra.component :as component]
+            [datomic.api :as d]
             [me.moocar.log :as log]
             [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
             [me.moocar.ftb500.engine.system :as engine-system]

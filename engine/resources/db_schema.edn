@@ -38,19 +38,11 @@
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
- [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/spades]
- [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/clubs]
- [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/diamonds]
- [:db/add #db/id[:db.part/user] :db/ident :card.suit.name/hearts]
-
  {:db/id #db/id[:db.part/db]
   :db/ident :card.suit/color
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
-
- [:db/add #db/id[:db.part/user] :db/ident :card.suit.color/red]
- [:db/add #db/id[:db.part/user] :db/ident :card.suit.color/black]
 
  ;; Rank
 
@@ -69,21 +61,6 @@
   :db/cardinality :db.cardinality/one
   :db/doc "The Rank's name. E.g '2', 'Jack', 'Joker'"
   :db.install/_attribute :db.part/db}
-
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/two]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/three]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/four]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/five]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/six]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/seven]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/eight]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/nine]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/ten]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/jack]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/queen]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/king]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/ace]
- [:db/add #db/id[:db.part/user] :db/ident :card.rank.name/joker]
 
  ;; Card
 
@@ -129,35 +106,6 @@
   'misere'"
   :db.install/_attribute :db.part/db}
 
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/pass]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-spades]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-clubs]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-diamonds]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/six-no-trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-spades]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-clubs]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-diamonds]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/seven-no-trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-spades]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-clubs]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-diamonds]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/eight-no-trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-spades]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-clubs]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-diamonds]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/nine-no-trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-spades]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-clubs]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-diamonds]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-hearts]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/ten-no-trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/misere]
- [:db/add #db/id[:db.part/user] :db/ident :bid.name/open-misere]
-
  {:db/id #db/id[:db.part/db]
   :db/ident :bid/contract-style
   :db/valueType :db.type/ref
@@ -165,11 +113,6 @@
   :db/doc "The style of the contract to play the game in. E.g trump,
   no-trumps, misere"
   :db.install/_attribute :db.part/db}
-
- [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/no-trumps]
- [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/misere]
- [:db/add #db/id[:db.part/user] :db/ident :bid.contract-style/open-misere]
 
  {:db/id #db/id[:db.part/db]
   :db/ident :bid/score
@@ -180,34 +123,35 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :bid/rank
-  :db/valueType :db.type/ref
+  :db/ident :bid/tricks
+  :db/valueType :db.type/long
   :db/cardinality :db.cardinality/one
-  :db/doc "Some bids have a corresponding rank. E.g 'six-spades' has a
-  rank of 'six'. Some bids such as 'misere' don't have a rank"
+  :db/doc "The number of tricks the bidder is trying to win. E.g
+  :bid.name/six-spades would be 6. Some bids such as 'misere' don't
+  have this attribute"
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
   :db/ident :bid/suit
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
-  :db/doc "Some bids have a corresponding suit. E.g 'six-hearts' has a
-  suit of 'hearts'. This is used for the trumps contract style to
-  determine the trump suit"
+  :db/doc "Some bids have a corresponding suit.
+  E.g :bid.name/six-hearts has a suit of :suit/hearts. This is used
+  for the trumps contract style to determine the trump suit"
   :db.install/_attribute :db.part/db}
 
  ;; Player bids
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :bid
+  :db/ident :player-bid/bid
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db/doc "This is the instance of a bid that was played, as opposed
-  to the bid entity"
+  to the bid type. A player-bid without this attribute is a pass"
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :seat
+  :db/ident :player-bid/seat
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/one
   :db/doc "The seat that played the bid"
