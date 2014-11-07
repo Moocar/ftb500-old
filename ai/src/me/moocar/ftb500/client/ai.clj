@@ -109,23 +109,44 @@
   (go
     (map touch-suit (<! (send! ai :bid-table {})))))
 
-(defn start-playing
+(defn ready-game
   [ai game-id]
+  (let [{:keys [route-pub-ch]} ai]
+    (go
+      (-> ai
+          (assoc :game (<! (game-info ai game-id)))
+          (as-> ai
+                (assoc ai :bid-table (<! (get-bid-table ai)))
+                (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
+
+(defn join-game-and-wait-for-others
+  [ai]
   (let [{:keys [route-pub-ch]} ai
         join-game-ch (async/chan)
         deal-cards-ch (async/chan)]
     (async/sub route-pub-ch :join-game join-game-ch)
     (async/sub route-pub-ch :deal-cards deal-cards-ch)
     (go
-      (-> ai
-          (assoc :game (<! (game-info ai game-id)))
-          (as-> ai
-                (assoc ai :bid-table (<! (get-bid-table ai)))
-                (assoc ai :game/num-players (count (:game/seats (:game ai))))
-                (assoc ai :seat (<! (join-game ai)))
-                (assoc-in ai [:game :game/seats] (<! (wait-on-joins join-game-ch ai)))
-                (get-deal-cards ai (<! deal-cards-ch))
-                (assoc-in ai [:game :game/bids] (<! (bids/start ai))))))))
+      (as-> ai ai
+            (assoc ai :seat (<! (join-game ai)))
+            (assoc-in ai [:game :game/seats] (<! (wait-on-joins join-game-ch ai)))
+            (get-deal-cards ai (<! deal-cards-ch))))))
+
+(defn bidding-game
+  [ai]
+  (go
+    (as-> ai ai
+          (assoc-in ai [:game :game/bids] (<! (bids/start ai))))))
+
+(defn start-playing
+  [ai game-id]
+  (go
+    (-> (ready-game ai game-id)
+        <!
+        (join-game-and-wait-for-others)
+        <!
+        (bidding-game)
+        <!)))
 
 (defn new-client-ai
   [this]
