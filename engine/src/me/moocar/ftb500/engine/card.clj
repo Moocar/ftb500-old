@@ -2,6 +2,10 @@
   (:require [datomic.api :as d])
   (:refer-clojure :exclude [find]))
 
+(defn suit-ext-form
+  [suit]
+  suit)
+
 (defn ext-form
   [card]
   (-> card

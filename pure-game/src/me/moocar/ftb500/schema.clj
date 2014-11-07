@@ -202,7 +202,7 @@
                   :bid/score (set bid-scores)}))
 
 (defn player-bid? [player-bid]
-  (when (:player-bid/bid player-bid)
+  (when (contains? player-bid :player-bid/bid)
     (check-map player-bid {:player-bid/bid bid?}))
   (check-map player-bid {:player-bid/seat seat?}))
 

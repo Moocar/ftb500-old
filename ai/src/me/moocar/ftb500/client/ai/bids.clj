@@ -39,19 +39,21 @@
          (game? game)
          (every? player-bid? player-bids)]}
   (let [my-bid (calc-bid ai game player-bids)]
-    (log ai {:my-bid my-bid})
+    (log ai {:my-bid {:seat/id (:seat/id (:seat ai))
+                      :bid/name (:bid/name my-bid)}})
     (client/send! ai :bid {:seat/id (:seat/id (:seat ai))
                            :bid/name (:bid/name my-bid)})))
 
 (defn touch-bid
   [game player-bid]
   {:pre [(game? game)]}
+  (assert (= 4 (count (:game/seats game))))
   (let [seat (first (filter #(= (:seat/id %)
                                 (:seat/id (:player-bid/seat player-bid)))
                             (:game/seats game)))]
     (seat? seat)
-    {:player-bid/bid (:player-bid/bid player-bid)
-     :player-bid/seat seat}))
+    (assoc player-bid
+      :player-bid/seat seat)))
 
 (defn start
   [ai]

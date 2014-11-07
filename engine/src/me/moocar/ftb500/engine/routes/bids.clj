@@ -24,7 +24,7 @@
                     :bid/contract-style
                     :bid/score])
       (cond-> (:bid/suit bid)
-              (update-in [:bid/suit] :card.suit/name))))
+              (update-in [:bid/suit] card/suit-ext-form))))
 
 (defrecord BidTable [datomic log]
   routes/Route
@@ -82,17 +82,17 @@
 
            (bid/passed-already? bids seat) :you-have-already-passed
            (not (bid/your-go? game seats bids seat)) :its-not-your-go
-           (and bid-name
-                (not (bid/positive-score? bids bid))) :score-not-high-enough
+           (and bid-name (not (bid/positive-score? bids bid))) :score-not-high-enough
 ;           (bid/finished? game bids) :bidding-already-finished
 
            :else ;; Perform actual transaction
 
            (let [game-bid-id (d/tempid :db.part/user)
-                 tx [(when bid-name
-                       [:db/add game-bid-id :player-bid/bid (:db/id bid)])
-                     [:db/add game-bid-id :player-bid/seat (:db/id seat)]
-                     [:db/add (:db/id game) :game/bids game-bid-id]]]
+                 tx (concat
+                     (when bid-name
+                       [[:db/add game-bid-id :player-bid/bid (:db/id bid)]])
+                     [[:db/add game-bid-id :player-bid/seat (:db/id seat)]
+                      [:db/add (:db/id game) :game/bids game-bid-id]])]
              @(datomic/transact-action datomic tx (:game/id game) :action/bid)
              [:success]))))))))
 
@@ -102,8 +102,11 @@
 
 (defn handle-last-bid [tx game connected-user-ids]
   (let [bids (get-bids game)
+        _ (assert bids)
         winning-bid (bid/winning-bid bids)
-        winning-seat (:seat winning-bid)
+        _ (assert winning-bid)
+        winning-seat (:player-bid/seat winning-bid)
+        _ (assert winning-seat)
         winning-seat-user-id (:user/id (:seat/player winning-seat))]
     (assert winning-seat-user-id)
     (when (contains? (set connected-user-ids) winning-seat-user-id)
@@ -116,14 +119,12 @@
 (defrecord BidTxHandler [engine-transport log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
-    (let [bid (datomic/get-attr tx :player-bid/bid)
+    (let [bid (datomic/get-attr tx :player-bid/seat)
           game (datomic/get-attr tx :game/bids)
           {:keys [player-bid/bid player-bid/seat]} bid
-          {bid-name :bid/name bid-score :bid/score} bid
           msg {:route :bid
-               :body  {:bid {:player-bid/seat {:seat/id (:seat/id seat)}
-                             :player-bi/bid  {:bid/name bid-name
-                                              :bid/score bid-score}}}}
+               :body  {:bid (cond-> {:player-bid/seat {:seat/id (:seat/id seat)}}
+                                    bid (assoc :player-bid/bid (ext-form bid)))}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game (get-bids game))

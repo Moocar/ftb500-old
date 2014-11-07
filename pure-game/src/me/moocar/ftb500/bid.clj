@@ -25,7 +25,7 @@
   {:pre [(every? player-bid? player-bids)
          (bid? bid)]}
   (> (:bid/score bid)
-     (reduce max 0 (map (comp :bid/score :player-bid/bid) player-bids))))
+     (reduce max 0 (keep (comp :bid/score :player-bid/bid) player-bids))))
 
 (defn your-go?
   [game seats player-bids seat]
