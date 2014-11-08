@@ -4,9 +4,10 @@
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.client :as client]
-            [me.moocar.ftb500.schema :refer [player-bid? game? bid? seat?]]
+            [me.moocar.ftb500.schema :as schema
+             :refer [player-bid? game? bid? seat? card?]]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.seats :as seats]))
+            [me.moocar.ftb500.seats :as seats :refer [seat=]]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -55,15 +56,42 @@
     (assoc player-bid
       :player-bid/seat seat)))
 
+(defn touch-card
+  [card]
+  (first (filter #(and (= (:card/suit card)
+                          (:card.suit/name (:card/suit %)))
+                       (= (:card/rank card)
+                          (:card.rank/name (:card/rank %))))
+                 schema/cards)))
+
+(defn kitty-game
+  [ai kitty-ch]
+  {:pre [(ai? ai)]}
+  (let [{:keys [game]} ai
+        bids (:game/bids game)]
+    (go
+      (log ai {:msg "In kitty game now"
+               :bids (count bids)})
+      (if (seat= (:seat ai)
+                 (:player-bid/seat (bids/winning-bid bids)))
+        (do (log ai "Waiting for kitty")
+            (let [kitty-cards (map touch-card (:cards (:body (<! kitty-ch))))]
+              (log ai {:kitty-cards kitty-cards})
+              (assert (every? card? kitty-cards))
+              ai))
+        ai))))
+
 (defn start
   [ai]
   {:pre [(ai? ai)]}
   (let [{:keys [route-pub-ch seat game]} ai
         seats (:game/seats game)
         position (:seat/position seat)
-        bids-ch (async/chan)]
+        bids-ch (async/chan)
+        kitty-ch (async/chan)]
     (log ai (str "starting bidding " (:hand ai)))
     (async/sub route-pub-ch :bid bids-ch)
+    (async/sub route-pub-ch :kitty kitty-ch)
     (go
       (try
         (when (game/first-player? game seat)
@@ -77,7 +105,7 @@
               new-bids (conj bids player-bid)]
           (player-bid? player-bid)
           (if (bids/finished? game new-bids)
-            new-bids
+            (kitty-game (assoc-in ai [:game :game/bids] new-bids) kitty-ch)
             (do
               (when (bids/your-go? game seats new-bids seat)
                 (log ai "My go")

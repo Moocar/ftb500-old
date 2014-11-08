@@ -24,6 +24,8 @@
         deck-cards (shuffle (:deck/cards deck))
         {:keys [hands kitty]} (card/partition-hands deck-cards)
         first-seat (:db/id (rand-nth (vec seats)))]
+    (assert (= 3 (count kitty))
+            (str "kitty has " (count kitty) " cards. Deck count: " (count deck-cards)))
     (assert game)
     (assert (coll? seats))
     (assert (coll? hands))

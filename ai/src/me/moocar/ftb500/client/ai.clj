@@ -2,12 +2,12 @@
   (:require [clojure.core.async :as async :refer [go <! put! go-loop]]
             [clojure.set :refer [rename-keys]]
             [me.moocar.log :as log]
-            [me.moocar.ftb500.schema :as schema :refer [game? seat? bid? player?]]
+            [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.seats :as seats]))
+            [me.moocar.ftb500.schema :as schema :refer [game? seat? bid? player? uuid?]]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -111,6 +111,7 @@
 
 (defn ready-game
   [ai game-id]
+  {:pre [(uuid? game-id)]}
   (let [{:keys [route-pub-ch]} ai]
     (go
       (-> ai
@@ -121,6 +122,7 @@
 
 (defn join-game-and-wait-for-others
   [ai]
+  {:pre [(ai? ai)]}
   (let [{:keys [route-pub-ch]} ai
         join-game-ch (async/chan)
         deal-cards-ch (async/chan)]
@@ -132,12 +134,6 @@
             (assoc-in ai [:game :game/seats] (<! (wait-on-joins join-game-ch ai)))
             (get-deal-cards ai (<! deal-cards-ch))))))
 
-(defn bidding-game
-  [ai]
-  (go
-    (as-> ai ai
-          (assoc-in ai [:game :game/bids] (<! (bids/start ai))))))
-
 (defn start-playing
   [ai game-id]
   (go
@@ -145,7 +141,7 @@
         <!
         (join-game-and-wait-for-others)
         <!
-        (bidding-game)
+        (bids/start)
         <!)))
 
 (defn new-client-ai
