@@ -17,6 +17,12 @@
   [engine config]
   (component/start (merge engine (inline-client-system/new-system config))))
 
+(defn <!!all [s]
+  (->> s
+       (doall)
+       (map <!!)
+       (doall)))
+
 (defn play
   []
   (let [config (dev-config)
@@ -24,11 +30,7 @@
         clients (repeatedly 4 #(ai/new-client-ai (new-ai-client engine config)))
         log (:log engine)]
     (try
-      (let [clients (->> clients
-                         (map ai/start)
-                         (doall)
-                         (map <!!)
-                         (doall))]
+      (let [clients (<!!all (map ai/start clients))]
         (go (<! (async/timeout 2000))
             (log/log log "!!!!!!!!! Timeout and shutdown !!!!!!!!!!")
             (doseq [client clients]
@@ -38,11 +40,7 @@
          (go
            (let [response (<! (client/send! (first clients) :add-game {:num-players 4}))]
              (let [game-id (:game/id (second response))]
-               (->> clients
-                    (map #(ai/start-playing % game-id))
-                    (doall)
-                    (map <!!)
-                    (doall)))))))
+               (<!!all (map #(ai/start-playing % game-id) clients)))))))
       (catch Throwable t
         (log/log (:log engine) t))
       (finally
