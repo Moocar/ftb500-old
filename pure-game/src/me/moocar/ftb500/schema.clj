@@ -40,6 +40,10 @@
 (defn joker? [card]
   (= card joker-rank))
 
+(defn joker-rank? [rank]
+  (= (:card.rank/name rank)
+     (:card.rank/name joker-rank)))
+
 (def suit-colors
   #{:card.suit.color/red
     :card.suit.color/black})

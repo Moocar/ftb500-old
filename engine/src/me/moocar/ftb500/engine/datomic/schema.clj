@@ -45,7 +45,7 @@
         ranks (map #(assoc % :db/id (tempid)) schema/ranks)
         cards (conj
                (for [suit suits
-                     rank (remove schema/joker? ranks)]
+                     rank (remove schema/joker-rank? ranks)]
                  {:db/id (tempid)
                   :card/suit (:db/id suit)
                   :card/rank (:db/id rank)})
