@@ -56,18 +56,10 @@
     (assoc player-bid
       :player-bid/seat seat)))
 
-(defn touch-card
-  [card]
-  (first (filter #(and (= (:card/suit card)
-                          (:card.suit/name (:card/suit %)))
-                       (= (:card/rank card)
-                          (:card.rank/name (:card/rank %))))
-                 schema/cards)))
-
 (defn kitty-game
   [ai kitty-ch]
   {:pre [(ai? ai)]}
-  (let [{:keys [game]} ai
+  (let [{:keys [game hand]} ai
         bids (:game/bids game)]
     (go
       (log ai {:msg "In kitty game now"
@@ -75,10 +67,19 @@
       (if (seat= (:seat ai)
                  (:player-bid/seat (bids/winning-bid bids)))
         (do (log ai "Waiting for kitty")
-            (let [kitty-cards (map touch-card (:cards (:body (<! kitty-ch))))]
+            (let [kitty-cards (map schema/touch-card (:cards (:body (<! kitty-ch))))]
               (log ai {:kitty-cards kitty-cards})
               (assert (every? card? kitty-cards))
-              ai))
+              (let [all-shuffled (shuffle (concat kitty-cards hand))
+                    [new-kitty-cards hand] (split-at 3 all-shuffled)]
+                (log ai {:exchange-kiytt new-kitty-cards})
+                (let [response (<! (client/send! ai :exchange-kitty {:cards new-kitty-cards
+                                                                     :seat/id (:seat/id (:seat ai))}))]
+                 (log ai {:kitty-response response})
+                 (if-not (keyword? response)
+                   (assoc ai :hand (set hand))
+                   (throw (ex-info "Failed to exchange kitty"
+                                   {:reason response})))))))
         ai))))
 
 (defn start

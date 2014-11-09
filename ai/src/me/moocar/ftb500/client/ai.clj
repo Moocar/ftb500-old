@@ -7,7 +7,9 @@
             [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.schema :as schema :refer [game? seat? bid? player? uuid?]]))
+            [me.moocar.ftb500.seats :as seats]
+            [me.moocar.ftb500.schema :as schema
+             :refer [game? seat? bid? player? uuid? ext-card? card?]]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -78,10 +80,12 @@
 
 (defn get-deal-cards
   [ai {:keys [body] :as deal-cards}]
-  {:pre [(ai? ai)]}
+  {:pre [(ai? ai)
+         (every? ext-card? (:cards body))]}
   (let [first-seat (:game/first-seat body)]
+    (every? card? (map schema/touch-card (:cards body)))
     (-> ai
-        (assoc :hand (:cards body))
+        (assoc :hand (map schema/touch-card (:cards body)))
         (as-> ai
               (let [seat (find-seat (:game/seats (:game ai)) (:seat/id first-seat))]
                 (assoc-in ai [:game :game/first-seat] seat))))))
