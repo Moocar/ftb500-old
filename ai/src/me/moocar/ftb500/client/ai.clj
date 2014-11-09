@@ -6,6 +6,7 @@
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.transport :as transport]
             [me.moocar.ftb500.client.ai.bids :as bids]
+            #_[me.moocar.ftb500.client.ai.tricks :as tricks]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.ftb500.seats :as seats]
             [me.moocar.ftb500.schema :as schema
@@ -57,9 +58,14 @@
   [this]
   (<! (send! this :logout {})))
 
+(defn touch-game
+  [game]
+  (-> game
+      (update-in [:game/deck :deck/cards] #(map schema/touch-card %))))
+
 (defn game-info
   [this game-id]
-  (go (second (<! (send! this :game-info {:game-id game-id})))))
+  (go (touch-game (second (<! (send! this :game-info {:game-id game-id}))))))
 
 (defn find-players-seat [player seats]
   (first (filter #(seats/taken-by? % player) seats)))
@@ -141,6 +147,10 @@
             (assoc-in ai [:game :game/seats] (<! (wait-on-joins join-game-ch ai)))
             (get-deal-cards ai (<! deal-cards-ch))))))
 
+(defn start-trick-game [ai]
+  {:pre [(ai? ai)]}
+  )
+
 (defn start-playing
   [ai game-id]
   (go
@@ -149,7 +159,8 @@
         (join-game-and-wait-for-others)
         <!
         (bids/start)
-        <!)))
+        <!
+        #_(tricks/start))))
 
 (defn new-client-ai
   [this]

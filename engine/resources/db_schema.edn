@@ -225,7 +225,7 @@
  ;; Trick
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :game.trick/plays
+  :db/ident :trick/plays
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db/doc "The plays (seat and card) for this trick so far"

@@ -1,9 +1,14 @@
 (ns me.moocar.ftb500.schema
+  (:require [me.moocar.ftb500.protocols :as protocols])
   (:import (java.util UUID)))
 
 (def joker-rank
   {:card.rank/name :card.rank.name/joker
    :card.rank/no-trumps-order 13})
+
+(def jack
+  {:card.rank/name :card.rank.name/jack
+   :card.rank/no-trumps-order 9})
 
 (def ranks
   #{{:card.rank/name :card.rank.name/two
@@ -24,8 +29,7 @@
      :card.rank/no-trumps-order 7}
     {:card.rank/name :card.rank.name/ten
      :card.rank/no-trumps-order 8}
-    {:card.rank/name :card.rank.name/jack
-     :card.rank/no-trumps-order 9}
+    jack
     {:card.rank/name :card.rank.name/queen
      :card.rank/no-trumps-order 10}
     {:card.rank/name :card.rank.name/king
@@ -39,6 +43,10 @@
 
 (defn joker? [card]
   (= card joker-rank))
+
+(defn jack? [card]
+  (= (select-keys (:card/rank card) (keys jack))
+     jack))
 
 (defn joker-rank? [rank]
   (= (:card.rank/name rank)
@@ -199,7 +207,8 @@
                      ((set suit-names) (:card.suit/name (:card/suit card)))))])))
 
 (def deck?
-  (map-checker {:deck/num-players number?}))
+  (map-checker {:deck/num-players number?
+                :deck/cards #(every? card? %)}))
 
 (def player?
   (map-checker {:user/id uuid?}))
@@ -234,11 +243,26 @@
     (check-map player-bid {:player-bid/bid bid?}))
   (check-map player-bid {:player-bid/seat seat?}))
 
+(def play?
+  (map-checker {:trick.play/seat seat?
+                :trick.play/card card?}))
+
+(defn trick? [trick]
+  (check-map trick {:trick/plays #(every? play? %)}))
+
 (defn game? [game]
   (when (:game/bids game) 
     (check-map game {:game/bids #(every? player-bid? %)}))
   (check-map game {:game/id uuid?
                    :game/seats (every-pred #(every? seat? %) coll?)
                    :game/deck deck?}))
+
+(defn trick-game? [game]
+  (game? game)
+  (check game [(comp not-empty :game/bids)
+               (comp #(every? player-bid? %) :game/bids)])
+  (check-map game {:contract-style #(instance? protocols/ContractStyle %)})
+  (when (:game/tricks game)
+    (check-map game {:game/tricks #(every? trick? %)})))
 
 

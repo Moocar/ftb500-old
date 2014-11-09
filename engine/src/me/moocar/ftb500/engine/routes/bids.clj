@@ -35,11 +35,6 @@
             (sort-by :bid/score)
             (map ext-form))))))
 
-(defn get-bids
-  "Returns the bids in reverse chronological order as a list"
-  [game]
-  (reverse (sort-by :db/id (:game/bids game))))
-
 (defn find-bid [db bid-name]
   (-> '[:find ?bid
         :in $ ?bid-name
@@ -48,60 +43,72 @@
       ffirst
       (->> (d/entity db))))
 
+(defn touch-game
+  [game]
+  (-> game
+      (->> (into {}))
+      (update-in [:game/bids] #(reverse (sort-by :db/id %)))
+      (update-in [:game/seats] #(sort-by :seat/position %))
+      (assoc :db/id (:db/id game))))
+
+(defn implementation [this db request]
+  (let [{:keys [datomic log]} this
+        {:keys [body logged-in-user-id callback]} request
+        {bid-name :bid/name seat-id :seat/id} body]
+    (callback
+     (cond
+
+      ;; Check basic inputs
+
+      (not logged-in-user-id) :must-be-logged-in
+      (and bid-name (not ((set bid-names) bid-name))) :unknown-bid
+      (not seat-id) :seat-id-required
+      (not (uuid? seat-id)) :seat-id-must-be-uuid
+
+      :else ;; Load entities
+
+      (let [bid (when bid-name (find-bid db bid-name))
+            seat (datomic/find db :seat/id seat-id)
+            pre-game (first (:game/_seats seat))
+            game (touch-game pre-game)
+            {:keys [game/seats game/bids]} game]
+
+        (cond
+
+         ;; Make sure entities exist
+
+         (and bid-name (not bid)) :invalid-bid
+         (not seat) :seat-not-found
+
+         ;; Game validations
+
+         (bid/passed-already? bids seat) :you-have-already-passed
+         (not (bid/your-go? game seats bids seat)) :its-not-your-go
+         (and bid-name (not (bid/positive-score? bids bid))) :score-not-high-enough
+                                        ;           (bid/finished? game bids) :bidding-already-finished
+
+         :else ;; Perform actual transaction
+
+         (let [game-bid-id (d/tempid :db.part/user)
+               tx (concat
+                   (when bid-name
+                     [[:db/add game-bid-id :player-bid/bid (:db/id bid)]])
+                   [[:db/add game-bid-id :player-bid/seat (:db/id seat)]
+                    [:db/add (:db/id game) :game/bids game-bid-id]])]
+           @(datomic/transact-action datomic tx (:game/id game) :action/bid)
+           [:success])))))))
+
 (defrecord Bid [datomic log]
   routes/Route
   (serve [this db request]
-    (let [{:keys [body logged-in-user-id callback]} request
-          {bid-name :bid/name seat-id :seat/id} body]
-      (callback
-       (cond
-
-        ;; Check basic inputs
-
-        (not logged-in-user-id) :must-be-logged-in
-        (and bid-name (not ((set bid-names) bid-name))) :unknown-bid
-        (not seat-id) :seat-id-required
-        (not (uuid? seat-id)) :seat-id-must-be-uuid
-
-        :else ;; Load entities
-
-        (let [bid (when bid-name (find-bid db bid-name))
-              seat (datomic/find db :seat/id seat-id)
-              game (first (:game/_seats seat))
-              seats (sort-by :seat/position (:game/seats game))
-              bids (get-bids game)]
-
-          (cond
-
-           ;; Make sure entities exist
-
-           (and bid-name (not bid)) :invalid-bid
-           (not seat) :seat-not-found
-
-           ;; Game validations
-
-           (bid/passed-already? bids seat) :you-have-already-passed
-           (not (bid/your-go? game seats bids seat)) :its-not-your-go
-           (and bid-name (not (bid/positive-score? bids bid))) :score-not-high-enough
-;           (bid/finished? game bids) :bidding-already-finished
-
-           :else ;; Perform actual transaction
-
-           (let [game-bid-id (d/tempid :db.part/user)
-                 tx (concat
-                     (when bid-name
-                       [[:db/add game-bid-id :player-bid/bid (:db/id bid)]])
-                     [[:db/add game-bid-id :player-bid/seat (:db/id seat)]
-                      [:db/add (:db/id game) :game/bids game-bid-id]])]
-             @(datomic/transact-action datomic tx (:game/id game) :action/bid)
-             [:success]))))))))
+    (implementation this db request)))
 
 (defn seat-user-id
   [db seat]
   (:user/id (:seat/player seat)))
 
 (defn handle-last-bid [tx game connected-user-ids]
-  (let [bids (get-bids game)
+  (let [{:keys [game/bids]} game
         _ (assert bids)
         winning-bid (bid/winning-bid bids)
         _ (assert winning-bid)
@@ -120,14 +127,14 @@
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [bid (datomic/get-attr tx :player-bid/seat)
-          game (datomic/get-attr tx :game/bids)
+          game (touch-game (datomic/get-attr tx :game/bids))
           {:keys [player-bid/bid player-bid/seat]} bid
           msg {:route :bid
                :body  {:bid (cond-> {:player-bid/seat {:seat/id (:seat/id seat)}}
                                     bid (assoc :player-bid/bid (ext-form bid)))}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
-                        (cond-> (bid/finished? game (get-bids game))
+                        (cond-> (bid/finished? game (:game/bids game))
                                 (concat (handle-last-bid tx game user-ids))))]
       (doseq [[user-id msg] user-msgs]
         (transport/send! engine-transport user-id msg)))))

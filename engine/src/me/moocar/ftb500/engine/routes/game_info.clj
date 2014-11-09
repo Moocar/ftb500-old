@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.engine.routes.game-info
   (:require [datomic.api :as d]
             [me.moocar.log :as log]
+            [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes])
   (:refer-clojure :exclude [find]))
@@ -21,7 +22,8 @@
 
 (defn deck-ext-form [deck]
   (-> deck
-      (select-keys [:deck/num-players])))
+      (->> (into {}))
+      (update-in [:deck/cards] #(map card/ext-form %))))
 
 (defn seat-ext-form [seat]
   (-> seat
