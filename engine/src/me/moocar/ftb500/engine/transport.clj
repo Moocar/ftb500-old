@@ -25,27 +25,62 @@
   [transport user-id msg]
   (-send! transport user-id msg))
 
-(defrecord ServerListener [log router receive-ch]
+(defn wait-for-in-flight [this]
+  (log/log (:log this) "Starting to wait for in flight")
+  (go-loop []
+    (if (empty? @(:in-flight this))
+      (do (log/log (:log this) "Finished waiting for in flight")
+          true)
+      (do (<! (async/timeout 300))
+          (recur)))))
+
+(defn tracked-callback [callback in-flight]
+  (swap! in-flight conj callback)
+  (fn [& args]
+    (swap! in-flight disj callback)
+    (apply callback args)))
+
+(defrecord ServerListener [log router receive-ch run-loop in-flight shutting-down?]
   component/Lifecycle
   (start [this]
     (if receive-ch
       this
-      (let [receive-ch (async/chan)]
-        (go-loop []
-          (when-let [full-msg (<! receive-ch)]
-            (try
-              (router/route router full-msg)
-              (catch Throwable t
-                (log/log log t)))
-            (recur)))
+      (let [receive-ch (async/chan)
+            in-flight (atom #{})
+            run-loop
+            (go-loop []
+              (if-let [full-msg (<! receive-ch)]
+                (do
+                  (try
+                    (router/route router
+                                  (cond-> full-msg
+                                          (:callback full-msg)
+                                          (update-in [:callback] tracked-callback in-flight)))
+                    (catch Throwable t
+                      (log/log log t)))
+                  (recur))
+                (do (log/log log "Run loop finished")
+                    :finished)))]
         (assoc this
-          :receive-ch receive-ch))))
+          :run-loop run-loop
+          :receive-ch receive-ch
+          :in-flight in-flight))))
   (stop [this]
-    (if receive-ch
-      (do (async/close! receive-ch)
-          (assoc this :receive-ch nil))
+    (if (and receive-ch (not @shutting-down?))
+      (do
+        (try
+          (log/log log "Shutting down Server Listener")
+          (reset! shutting-down? true)
+          (async/close! receive-ch)
+          (if-not (first (async/alts!! [(async/take 2 (async/merge [run-loop (wait-for-in-flight this)]))
+                                        (async/timeout 1000)]))
+            (log/log log "Requests took too long to shutdown")
+            (log/log log "Shutdown Success"))
+          (assoc this :receive-ch nil)
+          (finally
+            (reset! shutting-down? false))))
       this)))
 
 (defn new-server-listener []
-  (component/using (map->ServerListener {})
+  (component/using (map->ServerListener {:shutting-down? (atom false)})
     [:log :router]))

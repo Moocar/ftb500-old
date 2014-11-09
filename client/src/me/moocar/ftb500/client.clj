@@ -17,7 +17,7 @@
        (transport/send! (:client-transport this)
                         {:route route
                          :body msg}
-                        1000
+                        2000
                         (fn [response]
                           (put! response-ch response)))
        response-ch)))

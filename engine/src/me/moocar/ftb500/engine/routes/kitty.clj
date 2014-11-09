@@ -57,7 +57,6 @@
                add-tx (map #(vector :db/add game-id
                                     :game.kitty/cards (:db/id %))
                            cards)]
-           (log/log log {:exchanging cards})
            @(datomic/transact-action datomic retract-tx (:game/id game) :action/exchange-kitty)
            @(datomic/transact-action datomic add-tx (:game/id game) :action/exchange-kitty)
            [:success])))))))

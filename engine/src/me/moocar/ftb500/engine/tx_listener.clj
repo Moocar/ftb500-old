@@ -93,32 +93,53 @@
         (let [action-k (keyword (name action-k))]
           (handle-tx-event this [user-id] action-k tx))))))
 
-(defrecord TxListener [datomic engine-transport log users-atom tx-report-queue]
+(defrecord TxListener [datomic engine-transport log users-atom tx-report-queue run-thread shutting-down?]
   component/Lifecycle
   (start [this]
     (if tx-report-queue
       this
       (let [{:keys [conn]} datomic
-            tx-report-queue (d/tx-report-queue conn)]
-        (async/thread
-          (loop [tx (.take tx-report-queue)]
-            (try
-              (handle-tx this tx)
-              (catch Throwable e
-                (log/log log
-                         {:msg "error in pubsub loop"
-                          :ex e})))
-            (recur (.take tx-report-queue))))
+            tx-report-queue (d/tx-report-queue conn)
+            run-thread
+            (async/thread
+              (try
+                (loop []
+                  (let [tx (.take tx-report-queue)]
+                    (if (= tx :finished)
+                      :finished
+                      (do
+                        (try
+                          (handle-tx this tx)
+                          (catch Throwable e
+                            (log/log log
+                                     {:msg "error in pubsub loop"
+                                      :ex e})))
+                        (recur)))))
+                (catch InterruptedException e
+                  :finished)))]
         (assoc this
-          :tx-report-queue tx-report-queue))))
+          :tx-report-queue tx-report-queue
+          :run-thread run-thread))))
   (stop [this]
-    (if tx-report-queue
+    (if (and tx-report-queue (not @shutting-down?))
       (do
-        (d/remove-tx-report-queue (:conn datomic))
+        (try
+          (log/log log "Shutting down tx listener")
+          (reset! shutting-down? true)
+          (d/remove-tx-report-queue (:conn datomic))
+          (.add tx-report-queue :finished)
+          (let [timeout (async/timeout 10000)
+                [_ port] (async/alts!! [run-thread timeout])]
+            (if (= timeout port)
+              (log/log log "Timed out waiting for tx listener thread to finish")
+              (log/log log "TxListener shutdown successfully: ")))
+          (finally
+            (reset! shutting-down? false)))
         (assoc this :tx-report-queue nil))
       this)))
 
 (defn new-tx-listener
   []
-  (component/using (map->TxListener {:users-atom (atom {:games {}})})
+  (component/using (map->TxListener {:users-atom (atom {:games {}})
+                                     :shutting-down? (atom false)})
     [:datomic :engine-transport :log :tx-handlers]))

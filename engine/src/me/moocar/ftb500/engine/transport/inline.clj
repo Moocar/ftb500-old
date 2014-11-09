@@ -2,7 +2,8 @@
   (:require [clojure.core.async :as async :refer [go-loop <! >! put!]]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.engine.transport :as engine-transport]
-            [me.moocar.ftb500.engine.transport.user-store :as user-store]))
+            [me.moocar.ftb500.engine.transport.user-store :as user-store]
+            [me.moocar.log :as log]))
 
 (defn connect
   [this client-id client-receive-ch]
@@ -47,7 +48,7 @@
   (map->InlineUserStore {:connected-clients-atom (atom {})
                          :user-ids-atom (atom {})}))
 
-(defrecord EngineInlineTransport [server-listener user-store receive-ch]
+(defrecord EngineInlineTransport [server-listener user-store receive-ch log]
 
   component/Lifecycle
   (start [this]
@@ -72,6 +73,7 @@
   (stop [this]
     (if receive-ch
       (do
+        (log/log log "Stopping engine inline transport")
         (async/close! receive-ch)
         (assoc this :receive-ch nil))
       this)))
@@ -79,7 +81,7 @@
 (defn new-engine-inline-transport []
   (component/using
     (map->EngineInlineTransport {})
-    [:server-listener :user-store]))
+    [:server-listener :user-store :log]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Sender
