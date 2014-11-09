@@ -5,7 +5,8 @@
             me.moocar.ftb500.engine.routes.game-info
             me.moocar.ftb500.engine.routes.join-game
             me.moocar.ftb500.engine.routes.kitty
-            me.moocar.ftb500.engine.routes.login))
+            me.moocar.ftb500.engine.routes.login
+            me.moocar.ftb500.engine.routes.play-card))
 
 (defn new-system [config]
   (component/system-using
@@ -18,13 +19,15 @@
     :routes/login          (me.moocar.ftb500.engine.routes.login/map->Login {})
     :routes/logout         (me.moocar.ftb500.engine.routes.login/map->Logout {})
     :routes/signup         (me.moocar.ftb500.engine.routes.login/map->Signup {})
-    :routes/exchange-kitty (me.moocar.ftb500.engine.routes.kitty/map->ExchangeKitty {}))
-   {:routes/add-game  [:datomic :log]
-    :routes/bid       [:datomic :log]
-    :routes/bid-table [:datomic :log]
-    :routes/game-info [:datomic :log]
-    :routes/join-game [:datomic :log :tx-listener]
-    :routes/login  [:user-store]
-    :routes/logout [:user-store]
-    :routes/signup [:datomic]
-    :routes/exchange-kitty [:datomic :log]}))
+    :routes/exchange-kitty (me.moocar.ftb500.engine.routes.kitty/map->ExchangeKitty {})
+    :routes/play-card      (me.moocar.ftb500.engine.routes.play-card/map->PlayCard {}))
+   {:routes/add-game       [:datomic :log]
+    :routes/bid            [:datomic :log]
+    :routes/bid-table      [:datomic :log]
+    :routes/game-info      [:datomic :log]
+    :routes/join-game      [:datomic :log :tx-listener]
+    :routes/login          [:user-store]
+    :routes/logout         [:user-store]
+    :routes/signup         [:datomic]
+    :routes/exchange-kitty [:datomic :log]
+    :routes/play-card      [:datomic :log]}))

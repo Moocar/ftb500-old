@@ -31,10 +31,9 @@
 (defrecord Logout [user-store]
   routes/Route
   (serve [this db request]
-    (let [{:keys [client-id]} request]
+    (let [{:keys [client-id callback]} request]
       (user-store/delete user-store client-id)
-      (when-let [callback (:callback request)]
-        (callback [:success])))))
+      (callback [:success]))))
 
 (defrecord Signup [datomic]
   routes/Route

@@ -56,7 +56,7 @@
 
 (defn stop
   [this]
-  (<! (send! this :logout {})))
+  (send! this :logout {}))
 
 (defn touch-game
   [game]

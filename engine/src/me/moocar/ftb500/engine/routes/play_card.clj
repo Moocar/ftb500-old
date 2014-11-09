@@ -13,10 +13,9 @@
             [me.moocar.log :as log]))
 
 (defn kitty-exchanged?
-  [game]
+  [db game]
   {:pre [(trick-game? game)]}
-  (let [db (d/entity-db game)
-        num-players (count (:game/seats game))]
+  (let [num-players (count (:game/seats game))]
     (-> '[:find ?cards ?tx ?added
           :in $ ?game
           :where [?game :game.kitty/cards ?cards ?tx ?added]]
@@ -51,18 +50,22 @@
             (and (can-follow-suit? seat leading-suit)
                  (not= (:card/suit card) leading-suit))))))))
 
+(defn sort-plays [plays]
+  (sort-by :db/id plays))
+
 (defn sort-tricks
   [tricks]
-  (-> tricks
-      (update-in [:trick/plays] #(sort-by :db/id %))
-      (->> (sort-by :db/id))))
+  (->> tricks
+       (map #(update-in % [:trick/plays] sort-plays))
+       (sort-by :db/id)))
 
 (defn touch-game
   [game]
-  (-> game
+  (-> (into {} game)
       (update-in [:game/tricks] sort-tricks)
       (update-in [:game/bids] #(reverse (sort-by :db/id %)))
-      (update-in [:game/seats] #(sort-by :seat/position))))
+      (update-in [:game/seats] #(sort-by :seat/position %))
+      (assoc :db/id (:db/id game))))
 
 (defn implementation [this db request]
   (let [{:keys [datomic log]} this
@@ -86,29 +89,28 @@
             {:keys [game/seats game/bids game/tricks game/deck]} game
             last-trick (last tricks)
             winning-bid (bids/winning-bid bids)
-            contract-style (trick/new-contract deck winning-bid)]
+            contract-style (trick/new-contract game winning-bid)
+            game (assoc game :contract-style contract-style)]
+
+        (log/log log "Loaded")
 
         (cond
          
          ;; Make sure entities exist
 
          (not seat) :seat-not-found
-         (not card) :card-not-foun
-         (card? card) :card-is-not-card
+         (not card) :card-not-found
+         (not (card? card)) :card-is-not-card
          
          ;; Validations
 
-         (not (kitty-exchanged? game)) :kitty-not-exchanged-yet
-
-         ;; first trick? And seat didn't win bidding?
-         (and (empty? tricks)
-              (not (seat= seat (:player-bid/seat winning-bid)))) :not-your-go
+         (not (kitty-exchanged? db game)) :kitty-not-exchanged-yet
 
          (not (trick/your-go? game seat)) :not-your-go
 
          (not (own-card? seat card)) :you-dont-own-that-card
 
-         (could-have-followed-lead-suit? game seat tricks card) :could-have-followed-suit
+         (could-have-followed-lead-suit? game seat card) :could-have-followed-suit
 
          :main
 
@@ -121,16 +123,13 @@
                           [{:db/id (:db/id game)
                             :game/tricks trick-id}])
                play-id (d/tempid :db.part/user)
-               play-tx [{:db/id (d/tempid :db.part/tx)
-                         :tx/game-id (:game/id game)
-                         :action :action/play-card}
-                        {:db/id trick-id
-                         :game.trick/plays play-id}
+               play-tx [{:db/id trick-id
+                         :trick/plays play-id}
                         {:db/id play-id
                          :trick.play/seat (:db/id seat)
                          :trick.play/card (:db/id card)}
                         [:db/retract (:db/id seat)
-                         :game.seat/cards (:db/id card)]]
+                         :seat/cards (:db/id card)]]
                tx (concat trick-tx play-tx)]
            @(datomic/transact-action datomic tx (:game/id game) :action/play-card)
            [:success])))))))
@@ -139,3 +138,15 @@
   routes/Route
   (serve [this db request]
     (implementation this db request)))
+
+(defrecord PlayCardTxHandler [engine-transport log]
+  tx-handler/TxHandler
+  (handle [this user-ids tx]
+    (let [db (:db-after tx)
+          trick (datomic/get-attr tx :trick.play/card)
+          {:keys [trick.play/card trick.play/seat]} trick
+          msg {:route :play-card
+               :body {:trick.play/card (card/ext-form card)
+                      :trick.play/seat {:seat/id (:seat/id seat)}}}]
+      (doseq [user-id user-ids]
+        (transport/send! engine-transport user-id msg)))))

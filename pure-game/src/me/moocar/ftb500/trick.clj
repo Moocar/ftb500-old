@@ -161,11 +161,15 @@
   [game seat]
   {:pre [(trick-game? game)
          (seat? seat)]}
-  (let [{:keys [game/tricks]} game]
-    (if (empty? (last tricks))
-      (seat= seat (:trick.play/seat (last-trick-winner game)))
-      (when-not (finished? game (last tricks))
-        (let [last-play (last (:trick/plays (last tricks)))]
-          (seat= seat (seats/next (:game/seats game)
-                                  (:trick.play/seat last-play))))))))
+  (let [{:keys [game/tricks game/bids]} game
+        winning-bid (bid/winning-bid bids)]
+    (or (and (empty? tricks)
+             (seat= seat (:player-bid/seat winning-bid)))
+        (if (empty? (last tricks))
+          (when-let [last-winner (last-trick-winner game)]
+            (seat= seat (:trick.play/seat last-winner)))
+          (when-not (finished? game (last tricks))
+            (let [last-play (last (:trick/plays (last tricks)))]
+              (seat= seat (seats/next (:game/seats game)
+                                      (:trick.play/seat last-play)))))))))
 

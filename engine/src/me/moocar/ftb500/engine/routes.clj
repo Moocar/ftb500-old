@@ -81,4 +81,5 @@
      :routes/login
      :routes/logout
      :routes/signup
-     :routes/exchange-kitty]))
+     :routes/exchange-kitty
+     :routes/play-card]))

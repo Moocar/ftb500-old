@@ -53,7 +53,6 @@
   [player-bids]
   {:pre [(every? player-bid? player-bids)]}
   (->> player-bids
-       (reverse)
        (remove pass?)
        (first)))
 

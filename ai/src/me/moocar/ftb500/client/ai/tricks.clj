@@ -28,9 +28,14 @@
 
 (defn play-card [ai]
   {:pre [(ai? ai)]}
-  (let [card (calc-next-card ai)]
-    (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
-                                 :trick.play/card card})))
+  (go
+    (let [card (calc-next-card ai)]
+      (log ai (str "Sending card: " card))
+      (let [result (<! (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
+                                                    :trick.play/card card}))]
+        (log ai (str "Result: " result))
+        (if (keyword? result)
+          (log ai (str "Play card failure: " result)))))))
 
 (defn won-bidding? [ai]
   (seat= (:seat ai)
@@ -48,7 +53,7 @@
     (go
       (try
         (when (won-bidding? ai)
-          (play-card ai))
+          (<! (play-card ai)))
         (catch Throwable t
           (.printStackTrace t))))
     #_(go-loop [bids (list)]
