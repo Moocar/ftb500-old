@@ -33,26 +33,45 @@
       :else ;; Load entities
       
       (let [seat (datomic/find db :seat/id seat-id)
+            game (first (:game/_seats seat))
             _         (log/log log "loading cards")
             cards (load-cards db cards)]
         (log/log log {:loaded [(:card/rank (first cards))
                                (:card/suit (first cards))
                                (:card.rank/name (:card/rank (first cards)))
                                (select-keys (first cards) [:card/suit :card/rank])]})
-        (log/log log "after")
-        
-        (cond 
-         
+        (cond
+
          (not (= 3 (count cards))) :failed-to-load-3-cards
          (not (every? card? cards)) :failed-to-load-cards
-         
+         (not game) :could-not-find-game
+
          :main
-         
-         (let [a 1]
+
+         (let [game-id (:db/id game)
+               current-kitty (:game.kitty/cards game)
+               _ (assert (= 3 (count current-kitty)))
+               retract-tx (map #(vector :db/retract game-id
+                                        :game.kitty/cards (:db/id %))
+                               current-kitty)
+               add-tx (map #(vector :db/add game-id
+                                    :game.kitty/cards (:db/id %))
+                           cards)]
            (log/log log {:exchanging cards})
+           @(datomic/transact-action datomic retract-tx (:game/id game) :action/exchange-kitty)
+           @(datomic/transact-action datomic add-tx (:game/id game) :action/exchange-kitty)
            [:success])))))))
 
 (defrecord ExchangeKitty [datomic log]
   routes/Route
   (serve [this db request]
     (implementation this db request)))
+
+(defrecord ExchangeKittyTxHandler [engine-transport log]
+  tx-handler/TxHandler
+  (handle [this user-ids tx]
+    (log/log log "Handling exchange")
+    (doseq [user-id user-ids]
+      (let [msg {:route :exchange-kitty
+                 :body {}}]
+        (transport/send! engine-transport user-id msg)))))

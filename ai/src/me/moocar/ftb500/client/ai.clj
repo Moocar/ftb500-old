@@ -30,7 +30,10 @@
                                  :request msg})]
              (log this error)
              error)
-           response)))))
+           (if (instance? Throwable response)
+             (do (log this response)
+                 nil)
+             response))))))
 
 (defn start
   [this]
