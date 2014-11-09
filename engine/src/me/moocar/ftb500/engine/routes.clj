@@ -80,4 +80,5 @@
      :routes/join-game
      :routes/login
      :routes/logout
-     :routes/signup]))
+     :routes/signup
+     :routes/exchange-kitty]))
