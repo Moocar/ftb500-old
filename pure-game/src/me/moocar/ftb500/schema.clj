@@ -128,6 +128,16 @@
 (def bid-scores
   (map :bid/score bids))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fns
+
+(defn touch-card
+  [card]
+  (first (filter #(and (= (:card.suit/name (:card/suit card))
+                          (:card.suit/name (:card/suit %)))
+                       (= (:card.rank/name (:card/rank card))
+                          (:card.rank/name (:card/rank %))))
+                 cards)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Checkers
@@ -167,12 +177,26 @@
   `(fn [thing#]
      (check-map thing# ~checks)))
 
-(def suit?
-  (map-checker {:card.suit/name (set suit-names)
-                :card.suit/color (set suit-colors)}))
+(defn suit? [suit]
+  (check suit [(comp (set suits)
+                     #(select-keys % [:card.suit/name :card.suit/color]))]))
+
+(defn rank? [rank]
+  (check rank [(comp (set ranks)
+                     #(select-keys % [:card.rank/name :card.rank/no-trumps-order]))]))
 
 (defn card? [card]
-  (check (dissoc card :db/id) [(set cards)]))
+  (when (:card/suit card)
+    (check card [(comp suit? :card/suit)]))
+  (check card [(comp rank? :card/rank)]))
+
+(defn ext-card? [card]
+  (let [{:keys [card/suit card/rank]} card]
+    (check card [(comp (set rank-names) :card.rank/name :card/rank)
+                 (fn [card]
+                   (if (joker-rank? rank)
+                     true
+                     ((set suit-names) (:card.suit/name (:card/suit card)))))])))
 
 (def deck?
   (map-checker {:deck/num-players number?}))
