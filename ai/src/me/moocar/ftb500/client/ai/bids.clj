@@ -62,20 +62,16 @@
   (let [{:keys [game hand]} ai
         bids (:game/bids game)]
     (go
-      (log ai {:msg "In kitty game now"
-               :bids (count bids)})
+      (log ai {:msg "In kitty game now"})
       (if (seat= (:seat ai)
                  (:player-bid/seat (bids/winning-bid bids)))
         (do (log ai "Waiting for kitty")
             (let [kitty-cards (map schema/touch-card (:cards (:body (<! kitty-ch))))]
-              (log ai {:kitty-cards kitty-cards})
               (assert (every? card? kitty-cards))
               (let [all-shuffled (shuffle (concat kitty-cards hand))
                     [new-kitty-cards hand] (split-at 3 all-shuffled)]
-                (log ai {:exchange-kiytt new-kitty-cards})
                 (let [response (<! (client/send! ai :exchange-kitty {:cards new-kitty-cards
                                                                      :seat/id (:seat/id (:seat ai))}))]
-                 (log ai {:kitty-response response})
                  (if-not (keyword? response)
                    (assoc ai :hand (set hand))
                    (throw (ex-info "Failed to exchange kitty"
@@ -111,7 +107,6 @@
               (when (bids/your-go? game seats new-bids seat)
                 (log ai "My go")
                 (let [response (<! (play-bid ai game new-bids))]
-                  (log ai {:response response})
                   (when-not (= [:success] response)
                     (throw (ex-info "Bid unsuccessfull" {:response response})))))
               (recur new-bids))))))))

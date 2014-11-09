@@ -4,13 +4,9 @@
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
-            [me.moocar.ftb500.engine.routes.game-info :as game-info]
             [me.moocar.ftb500.engine.transport :as transport]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
-            [me.moocar.ftb500.engine.tx-listener :as tx-listener]
-            [me.moocar.ftb500.schema :as schema :refer [uuid? card?]]
-            [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.seats :as seats]))
+            [me.moocar.ftb500.schema :as schema :refer [uuid? card?]]))
 
 (defn load-cards [db cards]
   (map #(card/find db %) cards))
@@ -19,7 +15,6 @@
   (let [{:keys [datomic log]} this
         {:keys [logged-in-user-id body callback]} request
         {cards :cards seat-id :seat/id} body]
-    (log/log log "handling kitty request")
     (callback
      (cond 
       
@@ -34,12 +29,8 @@
       
       (let [seat (datomic/find db :seat/id seat-id)
             game (first (:game/_seats seat))
-            _         (log/log log "loading cards")
             cards (load-cards db cards)]
-        (log/log log {:loaded [(:card/rank (first cards))
-                               (:card/suit (first cards))
-                               (:card.rank/name (:card/rank (first cards)))
-                               (select-keys (first cards) [:card/suit :card/rank])]})
+
         (cond
 
          (not (= 3 (count cards))) :failed-to-load-3-cards
@@ -69,7 +60,6 @@
 (defrecord ExchangeKittyTxHandler [engine-transport log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
-    (log/log log "Handling exchange")
     (doseq [user-id user-ids]
       (let [msg {:route :exchange-kitty
                  :body {}}]
