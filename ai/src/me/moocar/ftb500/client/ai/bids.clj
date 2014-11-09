@@ -1,13 +1,14 @@
 (ns me.moocar.ftb500.client.ai.bids
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
-            [me.moocar.log :as log]
-            [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.client :as client]
+            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card?]]
-            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.seats :as seats :refer [seat=]]))
+            [me.moocar.ftb500.seats :as seats :refer [seat=]]
+            [me.moocar.ftb500.trick :as trick]
+            [me.moocar.log :as log]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -82,7 +83,7 @@
   [ai]
   {:pre [(ai? ai)]}
   (let [{:keys [route-pub-ch seat game]} ai
-        seats (:game/seats game)
+        {:keys [game/seats]} game
         position (:seat/position seat)
         bids-ch (async/chan)
         kitty-ch (async/chan)]
@@ -102,7 +103,13 @@
               new-bids (conj bids player-bid)]
           (player-bid? player-bid)
           (if (bids/finished? game new-bids)
-            (kitty-game (assoc-in ai [:game :game/bids] new-bids) kitty-ch)
+            (let [new-game (assoc game
+                             :game/bids new-bids)
+                  contract (trick/new-contract new-game (bids/winning-bid new-bids))]
+              (-> ai
+                  (assoc :game (assoc new-game :contract-style contract))
+                  (kitty-game kitty-ch)
+                  <!))
             (do
               (when (bids/your-go? game seats new-bids seat)
                 (log ai "My go")

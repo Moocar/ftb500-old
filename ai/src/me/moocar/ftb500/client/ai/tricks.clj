@@ -2,41 +2,44 @@
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.bid :as bids]
+            [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.schema :as schema
-             :refer [player-bid? game? bid? seat? card?]]
+             :refer [player-bid? game? bid? seat? card? trick-game?]]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.trick :as trick]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
 
-#_(defn calc-next-card
+(defn calc-next-card
   [ai]
-  (let [{:kes [game hand]} ai 
+  {:pre [(trick-game? (:game ai))]}
+  (let [{:keys [game hand]} ai
         {:keys [game/tricks]} game
         last-trick (last tricks)]
     (if (empty? last-trick)
       (rand-nth (vec hand))
-      #_(let [leading-suit (:suit (:card (last last-trick)))]
-        (or (when-let [suit-cards (seq (filter (suit= leading-suit) hand))]
+      (let [leading-suit (trick/find-leading-suit (last-trick))]
+        (or (when-let [suit-cards (seq (filter #(= leading-suit (:card/suit %)) hand))]
               (rand-nth suit-cards))
             (rand-nth (vec hand)))))))
 
-#_(defn play-card [ai]
+(defn play-card [ai]
   {:pre [(ai? ai)]}
   (let [card (calc-next-card ai)]
     (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
                                  :trick.play/card card})))
 
-#_(defn won-bidding? [ai]
+(defn won-bidding? [ai]
   (seat= (:seat ai)
          (:player-bid/seat (bid/winning-bid (:game/bids (:game ai))))))
 
-#_(defn start
+(defn start
   [ai]
-  {:pre [(ai? ai)]}
+  {:pre [(ai? ai)
+         (trick-game? (:game ai))]}
   (let [{:keys [route-pub-ch game]} ai
         bids (:game/bids game)
         trick-ch (async/chan)]

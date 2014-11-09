@@ -2,17 +2,8 @@
   (:require [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.schema
-             :refer [trick-game? player-bid? card? play? trick? seat?]]
+             :refer [trick-game? player-bid? card? play? trick? seat? game? bid?]]
             [me.moocar.ftb500.protocols :as protocols]))
-
-(defn your-go? [game seats tricks last-trick current-plays seat game-bids plays]
-  (or (and (empty? tricks)
-           (= seat (:seat (bid/winning-bid game-bids))))))
-
-(defn trick-finished?
-  [game trick]
-  (= (count (:game/seats game))
-     (count (:trick/plays trick))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Trumps Contract
@@ -77,7 +68,7 @@
   (let [cards (:deck/cards deck)
         trump-color (:card.suit/color trump-suit)]
     (first
-     (filter (fn [{:keys [card/suit]} card]
+     (filter (fn [{:keys [card/suit] :as card}]
                (and (= (:card.suit/color suit) trump-color)
                     (not= suit trump-suit)))
              cards))))
@@ -92,7 +83,7 @@
   A, Left Bower, Right Bower, Joker "
   [deck trump-suit]
   (let [deck-cards (:deck/cards deck)
-        trump-left-suit (find-trump-left-suit trump-suit)
+        trump-left-suit (find-trump-left-suit deck trump-suit)
         trump-left-cards (filter #(= trump-left-suit (:card/suit %)) deck-cards)
         raw-trump-cards (->> deck-cards
                              (filter #(= trump-suit (:card/suit %)))
@@ -117,10 +108,12 @@
 (defn new-contract
   "Returns a new contract object for the game and winning-bid"
   [game winning-bid]
-  {:pre [(trick-game? game)
+  {:pre [(game? game)
          (player-bid? winning-bid)]}
   (let [{:keys [player-bid/bid]} winning-bid
         {:keys [bid/contract-style]} bid]
+    (assert (bid? bid))
+    (assert contract-style)
     (if (= :bid.contract-style/trumps contract-style)
       (new-trumps-contract (:game/deck game) (:bid/suit bid))
       (throw (ex-info "Unsupported Contract"

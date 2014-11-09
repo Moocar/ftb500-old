@@ -259,10 +259,10 @@
 
 (defn trick-game? [game]
   (game? game)
-  (check game [(comp not-empty :game/bids)
-               (comp #(every? player-bid? %) :game/bids)])
-  (check-map game {:contract-style #(instance? protocols/ContractStyle %)})
   (when (:game/tricks game)
-    (check-map game {:game/tricks #(every? trick? %)})))
+    (check-map game {:game/tricks #(every? trick? %)}))
+  (check game [(comp not-empty :game/bids)
+               (comp #(every? player-bid? %) :game/bids)
+               #(contains? % :contract-style)]))
 
 
