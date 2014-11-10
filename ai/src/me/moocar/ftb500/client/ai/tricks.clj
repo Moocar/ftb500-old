@@ -52,8 +52,10 @@
     (async/sub route-pub-ch :trick trick-ch)
     (go
       (try
-        (when (won-bidding? ai)
-          (<! (play-card ai)))
+        (if (won-bidding? ai)
+          (do (<! (play-card ai))
+              ai)
+          ai)
         (catch Throwable t
           (.printStackTrace t))))
     #_(go-loop [bids (list)]

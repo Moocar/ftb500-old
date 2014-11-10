@@ -7,7 +7,8 @@
             [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
             [me.moocar.ftb500.engine.system :as engine-system]
             [me.moocar.ftb500.client :as client]
-            [me.moocar.ftb500.client.ai :as ai]))
+            [me.moocar.ftb500.client.ai :as ai]
+            [me.moocar.ftb500.schema :as schema]))
 
 (defn dev-config
   []
@@ -31,30 +32,41 @@
         log (:log engine)]
     (try
       (let [clients (<!!all (map ai/start clients))]
-        (go (<! (async/timeout 2000))
-            (log/log log "!!!!!!!!! Timeout and shutdown !!!!!!!!!!")
+        (go (<! (async/timeout 3000))
+            (log/log log "Shutting down engine after bad timeout")
+            (component/stop engine))
+        (let [clients (<!!
+                       (async/thread
+                         (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
+                           (let [game-id (:game/id (second response))]
+                             (<!!all (map #(ai/start-playing % game-id) clients))))))]
+          (Thread/sleep 100)
+          (let [timeout (async/timeout 2000)
+                [clients port] (async/alts!! [(async/into [] 
+                                                          (async/take (count clients) 
+                                                                      (async/merge (map ai/stop clients))))
+                                        timeout])]
             (doseq [client clients]
               (component/stop client))
-            (component/stop engine))
-        (<!!
-         (go
-           (let [response (<! (client/send! (first clients) :add-game {:num-players 4}))]
-             (let [game-id (:game/id (second response))]
-               (<!!all (map #(ai/start-playing % game-id) clients)))))))
+            (if (= timeout port)
+              (log/log log "Failed to shutdown all clients")
+              (log/log log "Successfully shutdown all clients")))))
       (catch Throwable t
         (log/log (:log engine) t))
       (finally
-        (doseq [client clients]
-          (component/stop client))
+        (log/log log "Shutting down engine")
         (component/stop engine)))
 
     (doseq [client clients]
       (println)
-      (async/alts!! [(go-loop []
-                        (when-let [msg (<! (:output-ch (:log client)))]
-                          (println msg)
-                          (recur)))
-                     (async/timeout 1000)]))))
+      (let [timeout (async/timeout 2000) 
+            [v port] (async/alts!! [(go-loop []
+                                      (if-let [msg (<! (:output-ch (:log client)))]
+                                        (do (println msg)
+                                            (recur))
+                                        true))
+                                    timeout])]
+        (println "Finished client logs" (= timeout port))))))
 
 (defn reset []
   (refresh :after 'me.moocar.ftb500.client.transport.inline.play/play))

@@ -55,8 +55,13 @@
                    :user/id user-id})))))
 
 (defn stop
-  [this]
-  (send! this :logout {}))
+  [ai]
+  {:pre [(ai? ai)]}
+  (go
+    (log ai "Stopping ai client")
+    (<! (send! ai :logout {}))
+    (log ai "Stopped ai client")
+    ai))
 
 (defn touch-game
   [game]
