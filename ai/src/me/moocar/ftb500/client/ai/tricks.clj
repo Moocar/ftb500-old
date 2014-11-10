@@ -41,34 +41,38 @@
   (seat= (:seat ai)
          (:player-bid/seat (bid/winning-bid (:game/bids (:game ai))))))
 
+(defn touch-play
+  [game play-card]
+  {:pre [(trick-game? game)]}
+  (-> play-card
+      (update-in [:trick.play/card] schema/touch-card)
+      (update-in [:trick.play/seat] seats/find game)))
+
+(defn main-play-loop 
+  [ai play-card-ch]
+  (log ai "Playing trick game")
+  (go-loop [ai ai]
+    (let [{:keys [game seat]} ai]
+      (log ai (str "Cards in hand" (count (:hand seat))))
+      (if-let [play (:body (<! play-card-ch))]
+        (let [play (touch-play game play)]
+          (if (seat= seat (:trick.play/seat play))
+            (recur (update-in ai [:seat :hand] dissoc (:trick.play/card play)))))
+        ai))))
+
 (defn start
   [ai]
   {:pre [(ai? ai)
          (trick-game? (:game ai))]}
-  (let [{:keys [route-pub-ch game]} ai
-        bids (:game/bids game)
-        trick-ch (async/chan)]
+  (let [{:keys [route-pub-ch game seat]} ai
+        {:keys [game/bids]} game
+        play-card-ch (async/chan)]
     (log ai "starting tricks ")
-    (async/sub route-pub-ch :trick trick-ch)
+    (async/sub route-pub-ch :play-card play-card-ch)
     (go
       (try
-        (if (won-bidding? ai)
-          (do (<! (play-card ai))
-              ai)
-          ai)
+        (when (won-bidding? ai)
+          (<! (play-card ai)))
         (catch Throwable t
           (.printStackTrace t))))
-    #_(go-loop [bids (list)]
-      (when-let [bid (<! bids-ch)]
-        (let [player-bid (touch-bid game (:bid (:body bid)))
-              new-bids (conj bids player-bid)]
-          (player-bid? player-bid)
-          (if (bids/finished? game new-bids)
-            (kitty-game (assoc-in ai [:game :game/bids] new-bids) kitty-ch)
-            (do
-              (when (bids/your-go? game seats new-bids seat)
-                (log ai "My go")
-                (let [response (<! (play-bid ai game new-bids))]
-                  (when-not (= [:success] response)
-                    (throw (ex-info "Bid unsuccessfull" {:response response})))))
-              (recur new-bids))))))))
+    (main-play-loop ai play-card-ch)))

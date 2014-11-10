@@ -1,6 +1,14 @@
 (ns me.moocar.ftb500.seats
-  (:require [me.moocar.ftb500.schema :refer [seat? player?]])
-  (:refer-clojure :exclude [next]))
+  (:require [me.moocar.ftb500.schema :refer [seat? player? game? uuid?]])
+  (:refer-clojure :exclude [next find]))
+
+(defn find
+  [partial-seat game]
+  {:pre [(game? game)
+         (uuid? (:seat/id partial-seat))]}
+  (first (filter #(= (:seat/id %)
+                     (:seat/id partial-seat))
+                 (:game/seats game))))
 
 (defn player=
   [player1 player2]

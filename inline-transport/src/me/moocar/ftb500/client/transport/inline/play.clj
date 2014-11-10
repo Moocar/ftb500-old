@@ -24,6 +24,12 @@
        (map <!!)
        (doall)))
 
+(defn clients-thread [clients]
+  (async/thread
+    (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
+      (let [game-id (:game/id (second response))]
+        (<!!all (map #(ai/start-playing % game-id) clients))))))
+
 (defn play
   []
   (let [config (dev-config)
@@ -35,17 +41,16 @@
         (go (<! (async/timeout 3000))
             (log/log log "Shutting down engine after bad timeout")
             (component/stop engine))
-        (let [clients (<!!
-                       (async/thread
-                         (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
-                           (let [game-id (:game/id (second response))]
-                             (<!!all (map #(ai/start-playing % game-id) clients))))))]
-          (Thread/sleep 100)
+        (let [timeout (async/timeout 2000) 
+              [clients port] (async/alts!! [(clients-thread clients) timeout])]
+          (log/log log (str "Main client loops finished: " (when (= timeout port) "[Timed out]")))
+          (log/log log "Shutting down clients")
           (let [timeout (async/timeout 2000)
                 [clients port] (async/alts!! [(async/into [] 
                                                           (async/take (count clients) 
                                                                       (async/merge (map ai/stop clients))))
-                                        timeout])]
+                                              timeout])]
+            (log/log log "Out of alts")
             (doseq [client clients]
               (component/stop client))
             (if (= timeout port)

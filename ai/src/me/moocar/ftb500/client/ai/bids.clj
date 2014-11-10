@@ -50,12 +50,8 @@
   [game player-bid]
   {:pre [(game? game)]}
   (assert (= 4 (count (:game/seats game))))
-  (let [seat (first (filter #(= (:seat/id %)
-                                (:seat/id (:player-bid/seat player-bid)))
-                            (:game/seats game)))]
-    (seat? seat)
-    (assoc player-bid
-      :player-bid/seat seat)))
+  (-> player-bid
+      (update-in [:player-bid/seat] seats/find game)))
 
 (defn kitty-game
   [ai kitty-ch]
