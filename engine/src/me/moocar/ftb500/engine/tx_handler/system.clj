@@ -19,7 +19,7 @@
    {:tx-handler/create-game    [:engine-transport]
     :tx-handler/join-game      [:engine-transport]
     :tx-handler/deal-cards     [:engine-transport]
-    :tx-handler/bid            [:engine-transport :log]
+    :tx-handler/bid            [:engine-transport :log :datomic]
     :tx-handler/exchange-kitty [:engine-transport :log]
     :tx-handler/play-card      [:engine-transport :log]
     :tx-handlers [:tx-handler/create-game

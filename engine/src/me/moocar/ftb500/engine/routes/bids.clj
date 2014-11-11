@@ -107,7 +107,21 @@
   [db seat]
   (:user/id (:seat/player seat)))
 
-(defn handle-last-bid [tx game connected-user-ids]
+(defn- hand-cards-to-seat-tx [seat cards]
+  (map #(vector :db/add (:db/id seat)
+                :seat/cards (:db/id %))
+       cards))
+
+(defn add-kitty-to-hand-tx
+  [game seat]
+  (let [kitty-cards (:game.kitty/cards game)
+        retract-kitty-tx (map #(vector :db/retract (:db/id game)
+                                       :game.kitty/cards (:db/id %))
+                              kitty-cards)
+        add-to-hand-tx (hand-cards-to-seat-tx seat kitty-cards)]
+    (concat retract-kitty-tx add-to-hand-tx)))
+
+(defn handle-last-bid [datomic tx game connected-user-ids]
   (let [{:keys [game/bids]} game
         _ (assert bids)
         winning-bid (bid/winning-bid bids)
@@ -117,13 +131,15 @@
         winning-seat-user-id (:user/id (:seat/player winning-seat))]
     (assert winning-seat-user-id)
     (when (contains? (set connected-user-ids) winning-seat-user-id)
-      (let [db (:db-after tx)
-            kitty-cards (:game.kitty/cards game)
-            msg {:route :kitty
-                 :body {:cards (map card/ext-form kitty-cards)}}]
-        [[winning-seat-user-id msg]]))))
+      (let [conn (:conn datomic)
+            tx (add-kitty-to-hand-tx game winning-seat)]
+        @(d/transact conn tx)
+        (let [kitty-cards (:game.kitty/cards game)
+              msg {:route :kitty
+                   :body {:cards (map card/ext-form kitty-cards)}}]
+          [[winning-seat-user-id msg]])))))
 
-(defrecord BidTxHandler [engine-transport log]
+(defrecord BidTxHandler [datomic engine-transport log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [bid (datomic/get-attr tx :player-bid/seat)
@@ -135,6 +151,6 @@
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game (:game/bids game))
-                                (concat (handle-last-bid tx game user-ids))))]
+                                (concat (handle-last-bid datomic tx game user-ids))))]
       (doseq [[user-id msg] user-msgs]
         (transport/send! engine-transport user-id msg)))))

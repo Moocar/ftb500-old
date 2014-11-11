@@ -41,15 +41,15 @@
 
          (let [game-id (:db/id game)
                current-kitty (:game.kitty/cards game)
-               _ (assert (= 3 (count current-kitty)))
-               retract-tx (map #(vector :db/retract game-id
-                                        :game.kitty/cards (:db/id %))
-                               current-kitty)
+               _ (assert (= 0 (count current-kitty)))
+               retract-tx (map #(vector :db/retract (:db/id seat)
+                                        :seat/cards (:db/id %))
+                               cards)
                add-tx (map #(vector :db/add game-id
                                     :game.kitty/cards (:db/id %))
-                           cards)]
-           @(datomic/transact-action datomic retract-tx (:game/id game) :action/exchange-kitty)
-           @(datomic/transact-action datomic add-tx (:game/id game) :action/exchange-kitty)
+                           cards)
+               tx (concat retract-tx add-tx)]
+           @(datomic/transact-action datomic tx (:game/id game) :action/exchange-kitty)
            [:success])))))))
 
 (defrecord ExchangeKitty [datomic log]

@@ -99,7 +99,7 @@
   (let [first-seat (:game/first-seat body)]
     (every? card? (map schema/touch-card (:cards body)))
     (-> ai
-        (assoc :hand (map schema/touch-card (:cards body)))
+        (assoc :hand (set (map schema/touch-card (:cards body))))
         (as-> ai
               (let [seat (find-seat (:game/seats (:game ai)) (:seat/id first-seat))]
                 (assoc-in ai [:game :game/first-seat] seat))))))

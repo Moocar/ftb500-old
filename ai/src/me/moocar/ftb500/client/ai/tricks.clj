@@ -5,7 +5,7 @@
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.schema :as schema
-             :refer [player-bid? game? bid? seat? card? trick-game?]]
+             :refer [player-bid? game? bid? seat? card? trick-game? play?]]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.ftb500.trick :as trick]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]))
@@ -21,7 +21,7 @@
         last-trick (last tricks)]
     (if (empty? last-trick)
       (rand-nth (vec hand))
-      (let [leading-suit (trick/find-leading-suit (last-trick))]
+      (let [leading-suit (trick/find-leading-suit last-trick)]
         (or (when-let [suit-cards (seq (filter #(= leading-suit (:card/suit %)) hand))]
               (rand-nth suit-cards))
             (rand-nth (vec hand)))))))
@@ -48,16 +48,44 @@
       (update-in [:trick.play/card] schema/touch-card)
       (update-in [:trick.play/seat] seats/find game)))
 
+(defn update-tricks
+  [game play]
+  {:pre [(game? game)
+         (play? play)]}
+  (let [{:keys [game/seats game/tricks]} game
+        num-players (count seats)
+        current-trick (last tricks)
+        new-tricks (if (empty? tricks)
+                     [{:trick/plays [play]}]
+                     (if (= num-players (count current-trick))
+                       (conj tricks {:trick/plays [play]})
+                       (update-in tricks [(dec (count tricks)) :trick/plays] conj play)))]
+    (assoc game :game/tricks new-tricks)))
+
 (defn main-play-loop 
   [ai play-card-ch]
   (log ai "Playing trick game")
   (go-loop [ai ai]
-    (let [{:keys [game seat]} ai]
-      (log ai (str "Cards in hand" (count (:hand seat))))
+    (let [{:keys [game hand seat]} ai
+          {:keys [game/tricks]} game]
       (if-let [play (:body (<! play-card-ch))]
-        (let [play (touch-play game play)]
-          (if (seat= seat (:trick.play/seat play))
-            (recur (update-in ai [:seat :hand] dissoc (:trick.play/card play)))))
+        (let [play (touch-play game play)
+              played-card (:trick.play/card play)
+              hand (if (seat= seat (:trick.play/seat play))
+                     (disj hand played-card)
+                     hand)
+              game (update-tricks game play)
+              ai (assoc ai
+                   :hand hand
+                   :game game)]
+          (if (empty? hand)
+            (do (log ai "Hand is empty")
+                ai)
+            (do
+              (when (trick/your-go? game seat)
+                (log ai "My turn to play a card")
+                (<! (play-card ai)))
+              (recur ai))))
         ai))))
 
 (defn start

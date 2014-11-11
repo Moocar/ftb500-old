@@ -31,9 +31,10 @@
     play2))
 
 (defn find-leading-suit
-  [plays]
-  {:pre [(every? play? plays)]}
-  (get-in (first plays) [:trick.play/card :card/suit]))
+  [trick]
+  {:pre [(trick? trick)]}
+  (get-in (first (:trick/plays trick))
+          [:trick.play/card :card/suit]))
 
 (defrecord TrumpsContract [trump-suit trump-order]
   protocols/ContractStyle

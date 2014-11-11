@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.engine.routes.play-card
   (:require [datomic.api :as d]
             [me.moocar.ftb500.bid :as bids]
+            [me.moocar.ftb500.card :refer [card=]]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
@@ -25,7 +26,9 @@
 
 (defn own-card?
   [seat card]
-  (contains? (:seat/cards seat) card))
+  {:pre [(seat? seat)
+         (card? card)]}
+  (some #(card= card %) (:seat/cards seat)))
 
 (defn can-follow-suit?
   [seat suit]
@@ -46,7 +49,7 @@
         (when-not (trick/finished? game trick)
           (let [{:keys [trick/plays]} trick
                 leading-play (first plays)
-                leading-suit (trick/find-leading-suit plays)]
+                leading-suit (trick/find-leading-suit trick)]
             (and (can-follow-suit? seat leading-suit)
                  (not= (:card/suit card) leading-suit))))))))
 
@@ -56,7 +59,10 @@
 (defn sort-tricks
   [tricks]
   (->> tricks
-       (map #(update-in % [:trick/plays] sort-plays))
+       (map (fn [trick]
+              (-> (into {} trick)
+                  (update-in [:trick/plays] sort-plays)
+                  (assoc :db/id (:db/id trick)))))
        (sort-by :db/id)))
 
 (defn touch-game
@@ -91,8 +97,6 @@
             winning-bid (bids/winning-bid bids)
             contract-style (trick/new-contract game winning-bid)
             game (assoc game :contract-style contract-style)]
-
-        (log/log log "Loaded")
 
         (cond
          
