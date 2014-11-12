@@ -15,7 +15,7 @@
   {:pre [(every? player-bid? player-bids)
          (seat? seat)]}
   (boolean
-   (some #(and (= (seat= (:player-bid/seat %) seat))
+   (some #(and (seat= (:player-bid/seat %) seat)
                (pass? %))
          player-bids)))
 
@@ -31,30 +31,27 @@
    (> (:bid/score bid)
       previous-max)))
 
-(defn your-go?
-  "Returns true if the `seat` is next in line to bid. I.e
-  - if bidding has not commenced and seat is the first player
-  - Or, if seat has not passed and the last bid was from the player to
-  the left"
-  [game seat]
-  {:pre [(game? game)
-         (seat? seat)]}
-  (let [player-bids (:game/bids game)
-        seats (:game/seats game)]
-    (or (and (empty? player-bids)
-             (game/first-player? game seat))
-        (and (not (passed? player-bids seat))
-             (let [last-seat (:player-bid/seat (first player-bids))]
-               (loop [next-seat (seats/next seats last-seat)]
-                 (or (seats/seat= next-seat seat)
-                     (when (passed? player-bids next-seat)
-                       (recur (seats/next seats next-seat))))))))))
+(defn next-seat
+  "Finds the next seat that hasn't yet passed. If no bids have been placed,
+  returns :game/first-seat. Returns nil if bidding has finished (all
+  players have passed)"
+  [game]
+  {:pre [(game? game)]}
+  (let [{:keys [game/seats game/bids]} game
+        last-bid-seat (:player-bid/seat (first bids))]
+    (if (empty? bids)
+      (:game/first-seat game)
+      (loop [seat (seats/next seats last-bid-seat)]
+        (when-not (seat= seat last-bid-seat)
+          (if-not (passed? bids seat)
+            seat
+            (recur (seats/next seats seat))))))))
 
 (defn finished?
-  [game player-bids]
-  {:pre [(game? game)
-         (every? player-bid? player-bids)]}
-  (let [num-players (game/num-players game)]
+  [game]
+  {:pre [(game? game)]}
+  (let [player-bids (:game/bids game)
+        num-players (game/num-players game)]
     (= (dec num-players) (count (filter pass? player-bids)))))
 
 (defn winning-bid

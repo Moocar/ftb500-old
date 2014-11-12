@@ -7,7 +7,8 @@
             [me.moocar.ftb500.engine.routes :as routes]
             [me.moocar.ftb500.engine.transport :as transport]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
-            [me.moocar.ftb500.schema :refer [bid-names]]))
+            [me.moocar.ftb500.schema :refer [bid-names]]
+            [me.moocar.ftb500.seats :refer [seat=]]))
 
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
@@ -83,7 +84,7 @@
          ;; Game validations
 
          (bid/passed? bids seat) :you-have-already-passed
-         (not (bid/your-go? game seat)) :its-not-your-go
+         (not (seat= (bid/next-seat game) seat)) :its-not-your-go
          (and bid-name (not (bid/positive-score? bids bid))) :score-not-high-enough
                                         ;           (bid/finished? game bids) :bidding-already-finished
 
@@ -150,7 +151,7 @@
                                     bid (assoc :player-bid/bid (ext-form bid)))}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
-                        (cond-> (bid/finished? game (:game/bids game))
+                        (cond-> (bid/finished? game)
                                 (concat (handle-last-bid datomic tx game user-ids))))]
       (doseq [[user-id msg] user-msgs]
         (transport/send! engine-transport user-id msg)))))

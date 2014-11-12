@@ -36,11 +36,11 @@
         (rand-nth))))
 
 (defn play-bid
-  [ai game player-bids]
+  [ai game]
   {:pre [(ai? ai)
-         (game? game)
-         (every? player-bid? player-bids)]}
-  (let [my-bid (calc-bid ai game player-bids)]
+         (game? game)]}
+  (let [player-bids (:game/bids game)
+        my-bid (calc-bid ai game player-bids)]
     (log ai {:my-bid {:seat/id (:seat/id (:seat ai))
                       :bid/name (:bid/name my-bid)}})
     (client/send! ai :bid {:seat/id (:seat/id (:seat ai))
@@ -76,6 +76,15 @@
                               {:reason response})))))
         ai))))
 
+(defn new-kitty-game
+  [ai game kitty-ch]
+  (let [contract (trick/new-contract game (bids/winning-bid (:game/bids game)))]
+    (go
+      (-> ai
+          (assoc :game (assoc game :contract-style contract))
+          (kitty-game kitty-ch)
+          <!))))
+
 (defn start
   [ai]
   {:pre [(ai? ai)]}
@@ -83,33 +92,21 @@
         position (:seat/position seat)
         bids-ch (async/chan)
         kitty-ch (async/chan)]
-    (log ai (str "starting bidding " (:hand ai)))
+    (log ai  (str "(" position ") " "starting bidding "))
     (async/sub route-pub-ch :bid bids-ch)
     (async/sub route-pub-ch :kitty kitty-ch)
-    (go
-      (try
-        (when (game/first-player? game seat)
-          (log ai "first player playing")
-          (<! (play-bid ai game nil)))
-        (catch Throwable t
-          (.printStackTrace t))))
-    (go-loop [bids (list)]
+
+    (go-loop [game (assoc game :game/bids (list))]
+      (let [next-seat (bids/next-seat game (:log ai))]
+        (when (seat= next-seat seat)
+          (log ai "My go")
+          (let [response (<! (play-bid ai game))]
+            (when-not (= [:success] response)
+              (throw (ex-info "Bid unsuccessfull" {:response response}))))))
       (when-let [bid (<! bids-ch)]
         (let [player-bid (touch-bid game (:bid (:body bid)))
-              new-bids (conj bids player-bid)]
+              game (update-in game [:game/bids] conj player-bid)]
           (player-bid? player-bid)
-          (let [new-game (assoc game
-                           :game/bids new-bids)]
-            (if (bids/finished? game new-bids)
-              (let [contract (trick/new-contract new-game (bids/winning-bid new-bids))]
-                (-> ai
-                    (assoc :game (assoc new-game :contract-style contract))
-                    (kitty-game kitty-ch)
-                    <!))
-              (do
-                (when (bids/your-go? new-game seat)
-                  (log ai "My go")
-                  (let [response (<! (play-bid ai new-game new-bids))]
-                    (when-not (= [:success] response)
-                      (throw (ex-info "Bid unsuccessfull" {:response response})))))
-                (recur new-bids)))))))))
+          (if (bids/finished? game)
+            (<! (new-kitty-game ai game kitty-ch))
+            (recur game)))))))

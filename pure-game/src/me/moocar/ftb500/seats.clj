@@ -32,9 +32,10 @@
 
 (defn seat= 
   [seat1 seat2]
-  {:pre [(seat? seat1)
-         (seat? seat2)]}
-  (apply = (map :seat/id [seat1 seat2])))
+  (when (and seat1 seat2)
+    (assert (seat? seat1))
+    (assert (seat? seat2))
+    (apply = (map :seat/id [seat1 seat2]))))
 
 (defn next
   [seats seat]
