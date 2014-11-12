@@ -19,17 +19,14 @@
                (pass? %))
          player-bids)))
 
-(defn positive-score?
-  "Returns true if the bid is higher than all previous bids"
-  [player-bids bid]
-  {:pre [(every? player-bid? player-bids)
-         (bid? bid)]}
-  (let [previous-max (reduce max
-                             0
-                             (keep (comp :bid/score :player-bid/bid)
-                                   player-bids))]
-   (> (:bid/score bid)
-      previous-max)))
+(defn highest-score
+  "Returns the score of the highest bid played so far"
+  [player-bids]
+  {:pre [(every? player-bid? player-bids)]}
+  (reduce max
+          0
+          (keep (comp :bid/score :player-bid/bid)
+                player-bids)))
 
 (defn next-seat
   "Finds the next seat that hasn't yet passed. If no bids have been placed,
