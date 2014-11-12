@@ -80,7 +80,6 @@
   [ai]
   {:pre [(ai? ai)]}
   (let [{:keys [route-pub-ch seat game]} ai
-        {:keys [game/seats]} game
         position (:seat/position seat)
         bids-ch (async/chan)
         kitty-ch (async/chan)]
@@ -99,18 +98,18 @@
         (let [player-bid (touch-bid game (:bid (:body bid)))
               new-bids (conj bids player-bid)]
           (player-bid? player-bid)
-          (if (bids/finished? game new-bids)
-            (let [new-game (assoc game
-                             :game/bids new-bids)
-                  contract (trick/new-contract new-game (bids/winning-bid new-bids))]
-              (-> ai
-                  (assoc :game (assoc new-game :contract-style contract))
-                  (kitty-game kitty-ch)
-                  <!))
-            (do
-              (when (bids/your-go? game seats new-bids seat)
-                (log ai "My go")
-                (let [response (<! (play-bid ai game new-bids))]
-                  (when-not (= [:success] response)
-                    (throw (ex-info "Bid unsuccessfull" {:response response})))))
-              (recur new-bids))))))))
+          (let [new-game (assoc game
+                           :game/bids new-bids)]
+            (if (bids/finished? game new-bids)
+              (let [contract (trick/new-contract new-game (bids/winning-bid new-bids))]
+                (-> ai
+                    (assoc :game (assoc new-game :contract-style contract))
+                    (kitty-game kitty-ch)
+                    <!))
+              (do
+                (when (bids/your-go? new-game seat)
+                  (log ai "My go")
+                  (let [response (<! (play-bid ai new-game new-bids))]
+                    (when-not (= [:success] response)
+                      (throw (ex-info "Bid unsuccessfull" {:response response})))))
+                (recur new-bids)))))))))

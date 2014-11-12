@@ -1,7 +1,7 @@
 (ns me.moocar.ftb500.bid
   (:require [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :refer [player-bid? bid? seat? game?]]
-            [me.moocar.ftb500.seats :as seats]))
+            [me.moocar.ftb500.seats :as seats :refer [seat=]]))
 
 (defn pass?
   "Returns true if the bid is a pass"
@@ -15,32 +15,40 @@
   {:pre [(every? player-bid? player-bids)
          (seat? seat)]}
   (boolean
-   (some #(and (= (:seat/id (:player-bid/seat %))
-                  (:seat/id seat))
+   (some #(and (= (seat= (:player-bid/seat %) seat))
                (pass? %))
          player-bids)))
 
 (defn positive-score?
+  "Returns true if the bid is higher than all previous bids"
   [player-bids bid]
   {:pre [(every? player-bid? player-bids)
          (bid? bid)]}
-  (> (:bid/score bid)
-     (reduce max 0 (keep (comp :bid/score :player-bid/bid) player-bids))))
+  (let [previous-max (reduce max
+                             0
+                             (keep (comp :bid/score :player-bid/bid)
+                                   player-bids))]
+   (> (:bid/score bid)
+      previous-max)))
 
 (defn your-go?
-  [game seats player-bids seat]
+  "Returns true if the `seat` is next in line to bid. I.e
+  - if bidding has not commenced and seat is the first player
+  - Or, if seat has not passed and the last bid was from the player to
+  the left"
+  [game seat]
   {:pre [(game? game)
-         (every? seat? seats)
-         (every? player-bid? player-bids)
          (seat? seat)]}
-  (or (and (empty? player-bids)
-           (game/first-player? game seat))
-      (and (not (passed-already? player-bids seat))
-           (let [last-seat (:player-bid/seat (first player-bids))]
-             (loop [next-seat (seats/next seats last-seat)]
-               (or (seats/seat= next-seat seat)
-                   (when (passed-already? player-bids next-seat)
-                     (recur (seats/next seats next-seat)))))))))
+  (let [player-bids (:game/bids game)
+        seats (:game/seats game)]
+    (or (and (empty? player-bids)
+             (game/first-player? game seat))
+        (and (not (passed-already? player-bids seat))
+             (let [last-seat (:player-bid/seat (first player-bids))]
+               (loop [next-seat (seats/next seats last-seat)]
+                 (or (seats/seat= next-seat seat)
+                     (when (passed-already? player-bids next-seat)
+                       (recur (seats/next seats next-seat))))))))))
 
 (defn finished?
   [game player-bids]
