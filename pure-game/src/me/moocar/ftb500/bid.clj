@@ -9,7 +9,7 @@
   {:pre [(player-bid? player-bid)]}
   (not (contains? player-bid :player-bid/bid)))
 
-(defn passed-already?
+(defn passed?
   "Returns whether the seat has passed already in this bidding round"
   [player-bids seat]
   {:pre [(every? player-bid? player-bids)
@@ -43,11 +43,11 @@
         seats (:game/seats game)]
     (or (and (empty? player-bids)
              (game/first-player? game seat))
-        (and (not (passed-already? player-bids seat))
+        (and (not (passed? player-bids seat))
              (let [last-seat (:player-bid/seat (first player-bids))]
                (loop [next-seat (seats/next seats last-seat)]
                  (or (seats/seat= next-seat seat)
-                     (when (passed-already? player-bids next-seat)
+                     (when (passed? player-bids next-seat)
                        (recur (seats/next seats next-seat))))))))))
 
 (defn finished?

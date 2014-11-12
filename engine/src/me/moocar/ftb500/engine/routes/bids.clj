@@ -82,7 +82,7 @@
 
          ;; Game validations
 
-         (bid/passed-already? bids seat) :you-have-already-passed
+         (bid/passed? bids seat) :you-have-already-passed
          (not (bid/your-go? game seat)) :its-not-your-go
          (and bid-name (not (bid/positive-score? bids bid))) :score-not-high-enough
                                         ;           (bid/finished? game bids) :bidding-already-finished
