@@ -97,7 +97,7 @@
     (async/sub route-pub-ch :kitty kitty-ch)
 
     (go-loop [game (assoc game :game/bids (list))]
-      (let [next-seat (bids/next-seat game (:log ai))]
+      (let [next-seat (bids/next-seat game)]
         (when (seat= next-seat seat)
           (log ai "My go")
           (let [response (<! (play-bid ai game))]
