@@ -29,14 +29,24 @@
     (= (dec num-players)
        (count (filter pass? bids)))))
 
-(defn highest-score
-  "Returns the score of the highest bid played so far"
-  [player-bids]
-  {:pre [(every? player-bid? player-bids)]}
-  (reduce max
-          0
-          (keep (comp :bid/score :player-bid/bid)
-                player-bids)))
+(defn last-bid
+  "Returns the last bid. A pass is not a bid"
+  [game]
+  {:pre [(game? game)]}
+  (->> game
+       :game/bids
+       reverse
+       (remove pass?)
+       first))
+
+(defn valid?
+  "Returns true if the bid is higher than the last bid (not including
+  passes). If no bids have been placed, returns true"
+  [game bid]
+  {:pre [(game? game)
+         (bid? bid)]}
+  (> (:bid/score bid)
+     (get-in (last-bid game) [:player-bid/bid :bid/score] 0)))
 
 (defn next-seat
   "Finds the next seat that hasn't yet passed. If no bids have been placed,
@@ -53,16 +63,6 @@
           (if-not (passed? bids seat)
             seat
             (recur (seats/next seats seat))))))))
-
-(defn last-bid
-  "Returns the last bid. A pass is not a bid"
-  [game]
-  {:pre [(game? game)]}
-  (->> game
-       :game/bids
-       reverse
-       (remove pass?)
-       first))
 
 (defn winner
   "Returns the winning bid. Expects game to have been finished"

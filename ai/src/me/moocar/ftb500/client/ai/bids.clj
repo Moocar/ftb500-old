@@ -14,21 +14,18 @@
   (log/log (:log this) msg))
 
 (defn calc-bid
-  [ai game player-bids]
-  {:pre [(game? game)
-         (every? player-bid? player-bids)]}
-  (let [max-score (get-in (bids/last-bid game) [:player-bid/bid :bid/score] 0)]
-    (-> schema/trumps-and-no-trumps
-        (->> (drop-while #(<= (:bid/score %) max-score)))
-        (conj nil) ;pass
-        (rand-nth))))
+  [ai game]
+  {:pre [(game? game)]}
+  (-> schema/trumps-and-no-trumps
+      (->> (drop-while #(not (bids/valid? game %))))
+      (conj nil) ;pass
+      (rand-nth)))
 
 (defn play-bid
   [ai game]
   {:pre [(ai? ai)
          (game? game)]}
-  (let [player-bids (:game/bids game)
-        my-bid (calc-bid ai game player-bids)]
+  (let [my-bid (calc-bid ai game)]
     (log ai {:my-bid {:seat/id (:seat/id (:seat ai))
                       :bid/name (:bid/name my-bid)}})
     (client/send! ai :bid {:seat/id (:seat/id (:seat ai))

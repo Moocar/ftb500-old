@@ -85,9 +85,7 @@
 
          (bid/passed? bids seat) :you-have-already-passed
          (not (seat= (bid/next-seat game) seat)) :its-not-your-go
-         (and bid-name
-              (<= (:bid/score bid)
-                  (bid/highest-score bids))) :score-not-high-enough
+         (and bid-name (not (bid/valid? game bid))) :score-not-high-enough
 
          :else ;; Perform actual transaction
 
