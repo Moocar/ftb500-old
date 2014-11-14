@@ -65,17 +65,6 @@
        (remove pass?)
        first))
 
-(defn last-bid?
-  "Returns the last bid placed by seat"
-  [player-bids seat]
-  {:pre [(every? player-bid? player-bids)
-         (seat? seat)]}
-  (->> player-bids
-       (filter #(= (:seat/id (:player-bid/seat %))
-                   (:seat/id seat)))
-       first
-       :player-bid/bid))
-
 (defn find-score
   "Given a bid table and a bid, find the score of the bid. A bid table
   is a seq of {:bid/rank keyword, :bid/suit keyword, :bid/name
