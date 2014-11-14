@@ -11,13 +11,13 @@
 
 (defn passed?
   "Returns whether the seat has passed already in this bidding round"
-  [player-bids seat]
-  {:pre [(every? player-bid? player-bids)
+  [game seat]
+  {:pre [(game? game)
          (seat? seat)]}
   (boolean
    (some #(and (seat= (:player-bid/seat %) seat)
                (pass? %))
-         player-bids)))
+         (:game/bids game))))
 
 (defn finished?
   "Returns true if the bidding round is finished. I.e if 3 players
@@ -60,7 +60,7 @@
       (:game/first-seat game)
       (loop [seat (seats/next seats last-bid-seat)]
         (when-not (seat= seat last-bid-seat)
-          (if-not (passed? bids seat)
+          (if-not (passed? game seat)
             seat
             (recur (seats/next seats seat))))))))
 

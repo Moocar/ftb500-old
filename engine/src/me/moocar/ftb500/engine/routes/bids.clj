@@ -71,8 +71,7 @@
       (let [bid (when bid-name (find-bid db bid-name))
             seat (datomic/find db :seat/id seat-id)
             pre-game (first (:game/_seats seat))
-            game (touch-game pre-game)
-            {:keys [game/seats game/bids]} game]
+            game (touch-game pre-game)]
 
         (cond
 
@@ -83,7 +82,7 @@
 
          ;; Game validations
 
-         (bid/passed? bids seat) :you-have-already-passed
+         (bid/passed? game seat) :you-have-already-passed
          (not (seat= (bid/next-seat game) seat)) :its-not-your-go
          (and bid-name (not (bid/valid? game bid))) :score-not-high-enough
 
