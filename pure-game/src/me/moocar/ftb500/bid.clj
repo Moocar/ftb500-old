@@ -9,16 +9,6 @@
   {:pre [(player-bid? player-bid)]}
   (not (contains? player-bid :player-bid/bid)))
 
-(defn passed?
-  "Returns whether the seat has passed already in this bidding round"
-  [game seat]
-  {:pre [(game? game)
-         (seat? seat)]}
-  (boolean
-   (some #(and (seat= (:player-bid/seat %) seat)
-               (pass? %))
-         (:game/bids game))))
-
 (defn finished?
   "Returns true if the bidding round is finished. I.e if 3 players
   have passed"
@@ -39,14 +29,15 @@
        (remove pass?)
        first))
 
-(defn valid?
-  "Returns true if the bid is higher than the last bid (not including
-  passes). If no bids have been placed, returns true"
-  [game bid]
+(defn passed?
+  "Returns whether the seat has passed already in this bidding round"
+  [game seat]
   {:pre [(game? game)
-         (bid? bid)]}
-  (> (:bid/score bid)
-     (get-in (last-bid game) [:player-bid/bid :bid/score] 0)))
+         (seat? seat)]}
+  (boolean
+   (some #(and (seat= (:player-bid/seat %) seat)
+               (pass? %))
+         (:game/bids game))))
 
 (defn next-seat
   "Finds the next seat that hasn't yet passed. If no bids have been placed,
@@ -63,6 +54,15 @@
           (if-not (passed? game seat)
             seat
             (recur (seats/next seats seat))))))))
+
+(defn valid?
+  "Returns true if the bid is higher than the last bid (not including
+  passes). If no bids have been placed, returns true"
+  [game bid]
+  {:pre [(game? game)
+         (bid? bid)]}
+  (> (:bid/score bid)
+     (get-in (last-bid game) [:player-bid/bid :bid/score] 0)))
 
 (defn winner
   "Returns the winning bid. Expects game to have been finished"
