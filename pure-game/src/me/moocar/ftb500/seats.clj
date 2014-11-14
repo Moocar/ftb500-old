@@ -2,7 +2,15 @@
   (:require [me.moocar.ftb500.schema :refer [seat? player? game? uuid?]])
   (:refer-clojure :exclude [next find]))
 
+(defn seat=
+  [seat1 seat2]
+  (when (and seat1 seat2)
+    (assert (seat? seat1))
+    (assert (seat? seat2))
+    (apply = (map :seat/id [seat1 seat2]))))
+
 (defn find
+  "Find the full seat for the partial seat ({:seat/id ...})"
   [partial-seat game]
   {:pre [(game? game)
          (uuid? (:seat/id partial-seat))]}
@@ -30,13 +38,6 @@
   (and (taken? seat)
        (player= player (:seat/player seat))))
 
-(defn seat= 
-  [seat1 seat2]
-  (when (and seat1 seat2)
-    (assert (seat? seat1))
-    (assert (seat? seat2))
-    (apply = (map :seat/id [seat1 seat2]))))
-
 (defn next
   [seats seat]
   {:pre [(every? seat? seats)
@@ -44,6 +45,5 @@
          (seat? seat)]}
   (let [next-seat-position (mod (inc (:seat/position seat))
                                 (count seats))]
-    (->> seats
-         (filter #(= next-seat-position (:seat/position %)))
-         (first))))
+    (first (filter #(= next-seat-position (:seat/position %))
+                   seats))))
