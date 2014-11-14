@@ -45,18 +45,25 @@
             (recur (seats/next seats seat))))))))
 
 (defn finished?
+  "Returns true if the bidding round is finished. I.e if 3 players
+  have passed"
   [game]
   {:pre [(game? game)]}
-  (let [player-bids (:game/bids game)
+  (let [bids (:game/bids game)
         num-players (game/num-players game)]
-    (= (dec num-players) (count (filter pass? player-bids)))))
+    (= (dec num-players)
+       (count (filter pass? bids)))))
 
 (defn winning-bid
-  [player-bids]
-  {:pre [(every? player-bid? player-bids)]}
-  (->> player-bids
+  "Returns the winning bid"
+  [game]
+  {:pre [(game? game)
+         (finished? game)]
+   :post [player-bid?]}
+  (->> game
+       :game/bids
        (remove pass?)
-       (first)))
+       first))
 
 (defn last-bid?
   "Returns the last bid placed by seat"

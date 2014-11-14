@@ -56,12 +56,11 @@
 (defn kitty-game
   [ai kitty-ch]
   {:pre [(ai? ai)]}
-  (let [{:keys [game hand]} ai
-        {:keys [game/bids]} game]
+  (let [{:keys [game hand]} ai]
     (go
       (log ai {:msg "In kitty game now"})
       (if (seat= (:seat ai)
-                 (:player-bid/seat (bids/winning-bid bids)))
+                 (:player-bid/seat (bids/winning-bid game)))
         (do 
           (log ai "Waiting for kitty")
           (let [kitty-cards (map schema/touch-card (:cards (:body (<! kitty-ch))))
@@ -78,7 +77,7 @@
 
 (defn new-kitty-game
   [ai game kitty-ch]
-  (let [contract (trick/new-contract game (bids/winning-bid (:game/bids game)))]
+  (let [contract (trick/new-contract game (bids/winning-bid game))]
     (go
       (-> ai
           (assoc :game (assoc game :contract-style contract))

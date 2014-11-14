@@ -162,8 +162,8 @@
   [game seat]
   {:pre [(trick-game? game)
          (seat? seat)]}
-  (let [{:keys [game/tricks game/bids]} game
-        winning-bid (bid/winning-bid bids)]
+  (let [{:keys [game/tricks]} game
+        winning-bid (bid/winning-bid game)]
     (or (and (empty? tricks)
              (seat= seat (:player-bid/seat winning-bid)))
         (if (empty? (last tricks))

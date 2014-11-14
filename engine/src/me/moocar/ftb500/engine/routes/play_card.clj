@@ -92,9 +92,9 @@
       (let [card (card/find db card)
             seat (datomic/find db :seat/id seat-id)
             game (touch-game (first (:game/_seats seat)))
-            {:keys [game/seats game/bids game/tricks game/deck]} game
+            {:keys [game/seats game/tricks game/deck]} game
             last-trick (last tricks)
-            winning-bid (bids/winning-bid bids)
+            winning-bid (bids/winning-bid game)
             contract-style (trick/new-contract game winning-bid)
             game (assoc game :contract-style contract-style)]
 

@@ -124,9 +124,7 @@
     (concat retract-kitty-tx add-to-hand-tx)))
 
 (defn handle-last-bid [datomic tx game connected-user-ids]
-  (let [{:keys [game/bids]} game
-        _ (assert bids)
-        winning-bid (bid/winning-bid bids)
+  (let [winning-bid (bid/winning-bid game)
         _ (assert winning-bid)
         winning-seat (:player-bid/seat winning-bid)
         _ (assert winning-seat)
