@@ -46,7 +46,7 @@
   [game]
   {:pre [(game? game)]}
   (let [{:keys [game/seats game/bids]} game
-        last-bid-seat (:player-bid/seat (first bids))]
+        last-bid-seat (:player-bid/seat (last bids))]
     (if (empty? bids)
       (:game/first-seat game)
       (loop [seat (seats/next seats last-bid-seat)]
