@@ -48,7 +48,7 @@
   [game]
   (-> game
       (->> (into {}))
-      (update-in [:game/bids] #(reverse (sort-by :db/id %)))
+      (update-in [:game/bids] #(sort-by :db/id %))
       (update-in [:game/seats] #(sort-by :seat/position %))
       (assoc :db/id (:db/id game))))
 
@@ -114,7 +114,7 @@
                 :seat/cards (:db/id %))
        cards))
 
-(defn add-kitty-to-hand-tx
+(defn- add-kitty-to-hand-tx
   [game seat]
   (let [kitty-cards (:game.kitty/cards game)
         retract-kitty-tx (map #(vector :db/retract (:db/id game)
@@ -124,7 +124,7 @@
     (concat retract-kitty-tx add-to-hand-tx)))
 
 (defn handle-last-bid [datomic tx game connected-user-ids]
-  (let [winning-bid (bid/winning-bid game)
+  (let [winning-bid (bid/winner game)
         _ (assert winning-bid)
         winning-seat (:player-bid/seat winning-bid)
         _ (assert winning-seat)

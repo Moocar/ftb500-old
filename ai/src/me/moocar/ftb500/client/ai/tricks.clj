@@ -39,7 +39,7 @@
 
 (defn won-bidding? [ai]
   (seat= (:seat ai)
-         (:player-bid/seat (bid/winning-bid (:game ai)))))
+         (:player-bid/seat (bid/winner (:game ai)))))
 
 (defn touch-play
   [game play-card]

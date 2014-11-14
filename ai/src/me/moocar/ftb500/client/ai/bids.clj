@@ -13,25 +13,13 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
-(defn find-normal-bids
-  "Returns bids that are neither no trumps or misere"
-  [bids]
-  {:pre [(every? bid? bids)]}
-  (filter (comp #{:bid.contract-style/trumps :bid.contract-style/no-trumps}
-                :bid/contract-style)
-          bids))
-
 (defn calc-bid
   [ai game player-bids]
   {:pre [(game? game)
          (every? player-bid? player-bids)]}
-  (let [{:keys [bid-table]} ai
-        max-score (or (when-let [last-non-pass (first (remove bids/pass? player-bids))]
-                        (:bid/score (:player-bid/bid last-non-pass)))
-                      0)]
-    (-> bid-table
+  (let [max-score (get-in (bids/last-bid game) [:player-bid/bid :bid/score] 0)]
+    (-> schema/trumps-and-no-trumps
         (->> (drop-while #(<= (:bid/score %) max-score)))
-        (find-normal-bids)
         (conj nil) ;pass
         (rand-nth))))
 
@@ -60,7 +48,7 @@
     (go
       (log ai {:msg "In kitty game now"})
       (if (seat= (:seat ai)
-                 (:player-bid/seat (bids/winning-bid game)))
+                 (:player-bid/seat (bids/winner game)))
         (do 
           (log ai "Waiting for kitty")
           (let [kitty-cards (map schema/touch-card (:cards (:body (<! kitty-ch))))
@@ -77,7 +65,7 @@
 
 (defn new-kitty-game
   [ai game kitty-ch]
-  (let [contract (trick/new-contract game (bids/winning-bid game))]
+  (let [contract (trick/new-contract game (bids/winner game))]
     (go
       (-> ai
           (assoc :game (assoc game :contract-style contract))
@@ -95,7 +83,7 @@
     (async/sub route-pub-ch :bid bids-ch)
     (async/sub route-pub-ch :kitty kitty-ch)
 
-    (go-loop [game (assoc game :game/bids (list))]
+    (go-loop [game (assoc game :game/bids [])]
       (let [next-seat (bids/next-seat game)]
         (when (seat= next-seat seat)
           (log ai "My go")

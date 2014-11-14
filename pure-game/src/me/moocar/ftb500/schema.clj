@@ -130,6 +130,12 @@
           (range 40 520 20))
      miseres)))
 
+(def trumps-and-no-trumps
+  (filter (comp #{:bid.contract-style/trumps :bid.contract-style/no-trumps}
+                :bid/contract-style)
+          bids))
+
+
 (def bid-names
   (set (map :bid/name bids)))
 

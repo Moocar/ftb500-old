@@ -69,7 +69,7 @@
   [game]
   (-> (into {} game)
       (update-in [:game/tricks] sort-tricks)
-      (update-in [:game/bids] #(reverse (sort-by :db/id %)))
+      (update-in [:game/bids] #(sort-by :db/id %))
       (update-in [:game/seats] #(sort-by :seat/position %))
       (assoc :db/id (:db/id game))))
 
@@ -94,7 +94,7 @@
             game (touch-game (first (:game/_seats seat)))
             {:keys [game/seats game/tricks game/deck]} game
             last-trick (last tricks)
-            winning-bid (bids/winning-bid game)
+            winning-bid (bids/winner game)
             contract-style (trick/new-contract game winning-bid)
             game (assoc game :contract-style contract-style)]
 

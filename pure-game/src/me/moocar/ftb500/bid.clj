@@ -19,6 +19,16 @@
                (pass? %))
          player-bids)))
 
+(defn finished?
+  "Returns true if the bidding round is finished. I.e if 3 players
+  have passed"
+  [game]
+  {:pre [(game? game)]}
+  (let [bids (:game/bids game)
+        num-players (game/num-players game)]
+    (= (dec num-players)
+       (count (filter pass? bids)))))
+
 (defn highest-score
   "Returns the score of the highest bid played so far"
   [player-bids]
@@ -44,23 +54,18 @@
             seat
             (recur (seats/next seats seat))))))))
 
-(defn finished?
-  "Returns true if the bidding round is finished. I.e if 3 players
-  have passed"
+(defn last-bid
+  "Returns the last bid. A pass is not a bid"
   [game]
   {:pre [(game? game)]}
-  (let [bids (:game/bids game)
-        num-players (game/num-players game)]
-    (= (dec num-players)
-       (count (filter pass? bids)))))
-
-(defn winning-bid
-  "Returns the winning bid"
-  [game]
-  {:pre [(game? game)
-         (finished? game)]
-   :post [player-bid?]}
   (->> game
        :game/bids
+       reverse
        (remove pass?)
        first))
+
+(defn winner
+  "Returns the winning bid. Expects game to have been finished"
+  [game]
+  {:pre [(finished? game)]}
+  (last-bid game))
