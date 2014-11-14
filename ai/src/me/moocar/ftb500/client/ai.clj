@@ -122,11 +122,6 @@
     (update-in bid [:bid/suit] find-suit)
     bid))
 
-(defn get-bid-table
-  [ai]
-  (go
-    (map touch-suit (<! (send! ai :bid-table {})))))
-
 (defn ready-game
   [ai game-id]
   {:pre [(uuid? game-id)]}
@@ -135,7 +130,6 @@
       (-> ai
           (assoc :game (<! (game-info ai game-id)))
           (as-> ai
-                (assoc ai :bid-table (<! (get-bid-table ai)))
                 (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
 
 (defn join-game-and-wait-for-others
