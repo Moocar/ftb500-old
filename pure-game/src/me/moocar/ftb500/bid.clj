@@ -64,9 +64,3 @@
        :game/bids
        (remove pass?)
        first))
-
-(defn last-non-pass-bid
-  "Returns the last bid that was not a pass. Bids is a seq of Bids"
-  [player-bids]
-  {:pre [(every? player-bid? player-bids)]}
-  (first (remove pass? player-bids)))

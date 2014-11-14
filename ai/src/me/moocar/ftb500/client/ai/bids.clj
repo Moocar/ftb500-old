@@ -26,7 +26,7 @@
   {:pre [(game? game)
          (every? player-bid? player-bids)]}
   (let [{:keys [bid-table]} ai
-        max-score (or (when-let [last-non-pass (bids/last-non-pass-bid player-bids)]
+        max-score (or (when-let [last-non-pass (first (remove bids/pass? player-bids))]
                         (:bid/score (:player-bid/bid last-non-pass)))
                       0)]
     (-> bid-table
