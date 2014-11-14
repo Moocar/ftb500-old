@@ -65,20 +65,6 @@
        (remove pass?)
        first))
 
-(defn find-score
-  "Given a bid table and a bid, find the score of the bid. A bid table
-  is a seq of {:bid/rank keyword, :bid/suit keyword, :bid/name
-  keyword :bid/contract-style :keyword :bid/score Number} ordered by score"
-  [bid-table player-bid]
-  {:pre [(every? bid? bid-table)
-         (player-bid? player-bid)]}
-  (->> bid-table
-       (filter (fn [bid-table-bid]
-                 (= (:bid/name bid-table-bid)
-                    (:bid/name (:player-bid/bid player-bid)))))
-       first
-       :bid/score))
-
 (defn last-non-pass-bid
   "Returns the last bid that was not a pass. Bids is a seq of Bids"
   [player-bids]
