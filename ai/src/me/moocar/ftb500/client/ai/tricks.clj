@@ -1,14 +1,15 @@
 (ns me.moocar.ftb500.client.ai.tricks
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
-            [me.moocar.log :as log]
-            [me.moocar.ftb500.game :as game]
+            [me.moocar.async :refer [<?]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
+            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card? trick-game? play?]]
-            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.trick :as trick]
-            [me.moocar.ftb500.seats :as seats :refer [seat=]]))
+            [me.moocar.log :as log]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -31,7 +32,7 @@
   (go
     (let [card (calc-next-card ai)]
       (log ai (str "Sending card: " card))
-      (let [result (<! (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
+      (let [result (<? (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
                                                     :trick.play/card card}))]
         (log ai (str "Result: " result))
         (if (keyword? result)
@@ -68,7 +69,7 @@
   (go-loop [ai ai]
     (let [{:keys [game hand seat]} ai
           {:keys [game/tricks]} game]
-      (if-let [play (:body (<! play-card-ch))]
+      (if-let [play (:body (<? play-card-ch))]
         (let [play (touch-play game play)
               played-card (:trick.play/card play)
               hand (if (seat= seat (:trick.play/seat play))
@@ -84,7 +85,7 @@
             (do
               (when (seat= seat (trick/next-seat game))
                 (log ai "My turn to play a card")
-                (<! (play-card ai)))
+                (<? (play-card ai)))
               (recur ai))))
         ai))))
 
@@ -100,7 +101,7 @@
     (go
       (try
         (when (won-bidding? ai)
-          (<! (play-card ai)))
+          (<? (play-card ai)))
         (catch Throwable t
           (.printStackTrace t))))
     (main-play-loop ai play-card-ch)))

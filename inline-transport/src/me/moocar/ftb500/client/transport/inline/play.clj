@@ -3,12 +3,13 @@
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
-            [me.moocar.log :as log]
-            [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
-            [me.moocar.ftb500.engine.system :as engine-system]
+            [me.moocar.async :refer [<?]]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.ai :as ai]
-            [me.moocar.ftb500.schema :as schema]))
+            [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
+            [me.moocar.ftb500.engine.system :as engine-system]
+            [me.moocar.ftb500.schema :as schema]
+            [me.moocar.log :as log]))
 
 (defn dev-config
   []
@@ -38,7 +39,7 @@
         log (:log engine)]
     (try
       (let [clients (<!!all (map ai/start clients))]
-        (go (<! (async/timeout 3000))
+        (go (<? (async/timeout 3000))
             (log/log log "Shutting down engine after bad timeout")
             (component/stop engine))
         (let [timeout (async/timeout 2000) 
@@ -66,7 +67,7 @@
       (println)
       (let [timeout (async/timeout 2000) 
             [v port] (async/alts!! [(go-loop []
-                                      (if-let [msg (<! (:output-ch (:log client)))]
+                                      (if-let [msg (<? (:output-ch (:log client)))]
                                         (do (println msg)
                                             (recur))
                                         true))

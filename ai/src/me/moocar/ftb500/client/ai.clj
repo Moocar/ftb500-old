@@ -1,7 +1,7 @@
 (ns me.moocar.ftb500.client.ai
   (:require [clojure.core.async :as async :refer [go <! put! go-loop]]
             [clojure.set :refer [rename-keys]]
-            [me.moocar.log :as log]
+            [me.moocar.async :refer [<?]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.transport :as transport]
@@ -10,7 +10,8 @@
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.ftb500.seats :as seats]
             [me.moocar.ftb500.schema :as schema
-             :refer [game? seat? bid? player? uuid? ext-card? card?]]))
+             :refer [game? seat? bid? player? uuid? ext-card? card?]]
+            [me.moocar.log :as log]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
@@ -23,18 +24,15 @@
      (client/send! this route msg dont-send))
   ([this route msg]
      (go
-       (let [response (<! (client/send! this route msg))]
+       (let [response (<? (client/send! this route msg))]
          (if (keyword? response)
            (let [error (ex-info "Error in Send"
                                 {:error response
                                  :route route
                                  :request msg})]
              (log this error)
-             error)
-           (if (instance? Throwable response)
-             (do (log this response)
-                 nil)
-             response))))))
+             (throw ex-info))
+           response)))))
 
 (defn start
   [this]
@@ -47,8 +45,8 @@
           user-id (uuid)]
       (async/tap mult tapped-ch)
       (go
-        (and (<! (send! this :signup {:user-id user-id}))
-             (<! (send! this :login {:user-id user-id})))
+        (and (<? (send! this :signup {:user-id user-id}))
+             (<? (send! this :login {:user-id user-id})))
         (assoc this
           :route-pub-ch route-pub-ch
           :player {:player/name "Anthony"
@@ -70,7 +68,7 @@
 
 (defn game-info
   [this game-id]
-  (go (touch-game (second (<! (send! this :game-info {:game-id game-id}))))))
+  (go (touch-game (second (<? (send! this :game-info {:game-id game-id}))))))
 
 (defn find-players-seat [player seats]
   (first (filter #(seats/taken-by? % player) seats)))
@@ -85,9 +83,9 @@
     (go-loop [{:keys [game/seats]} (:game ai)]
       (or (find-players-seat player seats)
           (when-let [seat (find-available-seat seats)]
-            (do (<! (send! ai :join-game {:game/id game-id
+            (do (<? (send! ai :join-game {:game/id game-id
                                           :seat/id (:seat/id seat)}))
-                (recur (<! (game-info ai game-id)))))))))
+                (recur (<? (game-info ai game-id)))))))))
 
 (defn find-seat [seats seat-id]
   (first (filter #(= seat-id (:seat/id %)) seats)))
@@ -110,7 +108,7 @@
   (go (->> join-game-ch
            (async/take (:game/num-players ai))
            (async/into [])
-           (<!)
+           (<?)
            (map :body)
            (sort-by :seat/position))))
 
@@ -128,7 +126,7 @@
   (let [{:keys [route-pub-ch]} ai]
     (go
       (-> ai
-          (assoc :game (<! (game-info ai game-id)))
+          (assoc :game (<? (game-info ai game-id)))
           (as-> ai
                 (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
 
@@ -142,21 +140,21 @@
     (async/sub route-pub-ch :deal-cards deal-cards-ch)
     (go
       (as-> ai ai
-            (assoc ai :seat (<! (join-game ai)))
-            (assoc-in ai [:game :game/seats] (<! (wait-on-joins join-game-ch ai)))
-            (get-deal-cards ai (<! deal-cards-ch))))))
+            (assoc ai :seat (<? (join-game ai)))
+            (assoc-in ai [:game :game/seats] (<? (wait-on-joins join-game-ch ai)))
+            (get-deal-cards ai (<? deal-cards-ch))))))
 
 (defn start-playing
   [ai game-id]
   (go
     (-> (ready-game ai game-id)
-        <!
+        <?
         (join-game-and-wait-for-others)
-        <!
+        <?
         (bids/start)
-        <!
+        <?
         (tricks/start)
-        <!)))
+        <?)))
 
 (defn new-client-ai
   [this]

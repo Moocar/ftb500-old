@@ -27,6 +27,7 @@
  :source-paths
  ["src"
   "../ai/src"
+  "../async/src"
   "../client/src"
   "../engine/src"
   "../generators/src"
