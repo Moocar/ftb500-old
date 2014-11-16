@@ -2,5 +2,5 @@
   :description "Generators for ftb500 schema objects"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0-alpha1"]
+  :dependencies [[org.clojure/clojure "1.7.0-alpha4"]
                  [org.clojure/test.check "0.5.9"]])

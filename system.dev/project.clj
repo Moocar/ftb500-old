@@ -20,10 +20,9 @@
   [me.moocar.ftb500/engine "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/generators "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/pure-game "0.1.0-SNAPSHOT"]
-  [org.clojure/clojure "1.7.0-alpha1"]
+  [org.clojure/clojure "1.7.0-alpha4"]
   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
   [org.clojure/test.check "0.5.9"]
-  [prismatic/schema "0.3.1"]
   [ring/ring-core "1.3.1"]]
  :source-paths
  ["src"
