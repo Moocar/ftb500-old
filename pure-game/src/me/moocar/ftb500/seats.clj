@@ -38,6 +38,14 @@
   (and (taken? seat)
        (player= player (:seat/player seat))))
 
+(defn find-assigned
+  "Returns the seat that is assigned to player"
+  [game player]
+  {:pre [(game? game)
+         (player? player)]}
+  (first (filter #(player= player (:seat/player %))
+                 (:game/seats game))))
+
 (defn next
   [seats seat]
   {:pre [(every? seat? seats)

@@ -20,16 +20,21 @@
   (component/start (merge engine (inline-client-system/new-system config))))
 
 (defn <!!all [s]
-  (->> s
-       (doall)
-       (map <!!)
-       (doall)))
+  (let [responses (->> s
+                       (doall)
+                       (map <!!)
+                       (doall))]
+    (if-let [ex (first (filter #(instance? Throwable %) responses))]
+      (throw ex)
+      responses)))
 
 (defn clients-thread [clients]
   (async/thread
-    (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
-      (let [game-id (:game/id (second response))]
-        (<!!all (map #(ai/start-playing % game-id) clients))))))
+    (try
+      (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
+        (let [game-id (:game/id (second response))]
+          (<!!all (map #(ai/start-playing % game-id) clients))))
+      (catch Throwable t t))))
 
 (defn play
   []
@@ -39,26 +44,31 @@
         log (:log engine)]
     (try
       (let [clients (<!!all (map ai/start clients))]
-        (go (<? (async/timeout 3000))
+
+        (go (<! (async/timeout 3000))
             (log/log log "Shutting down engine after bad timeout")
             (component/stop engine))
+
         (let [timeout (async/timeout 2000) 
               [clients port] (async/alts!! [(clients-thread clients) timeout])]
+
+          (when (instance? Throwable clients)
+            (throw clients))
           (log/log log (str "Main client loops finished: " (when (= timeout port) "[Timed out]")))
+
           (log/log log "Shutting down clients")
           (let [timeout (async/timeout 2000)
                 [clients port] (async/alts!! [(async/into [] 
                                                           (async/take (count clients) 
                                                                       (async/merge (map ai/stop clients))))
                                               timeout])]
+
             (log/log log "Out of alts")
             (doseq [client clients]
               (component/stop client))
             (if (= timeout port)
               (log/log log "Failed to shutdown all clients")
               (log/log log "Successfully shutdown all clients")))))
-      (catch Throwable t
-        (log/log (:log engine) t))
       (finally
         (log/log log "Shutting down engine")
         (component/stop engine)))

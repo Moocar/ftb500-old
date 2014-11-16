@@ -1,7 +1,7 @@
 (ns me.moocar.ftb500.client.ai
   (:require [clojure.core.async :as async :refer [go <! put! go-loop]]
             [clojure.set :refer [rename-keys]]
-            [me.moocar.async :refer [<?]]
+            [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.transport :as transport]
@@ -23,7 +23,7 @@
   ([this route msg dont-send]
      (client/send! this route msg dont-send))
   ([this route msg]
-     (go
+     (go-try
        (let [response (<? (client/send! this route msg))]
          (if (keyword? response)
            (let [error (ex-info "Error in Send"
@@ -44,7 +44,7 @@
           route-pub-ch (async/pub tapped-ch :route)
           user-id (uuid)]
       (async/tap mult tapped-ch)
-      (go
+      (go-try
         (and (<? (send! this :signup {:user-id user-id}))
              (<? (send! this :login {:user-id user-id})))
         (assoc this
@@ -55,39 +55,45 @@
 (defn stop
   [ai]
   {:pre [(ai? ai)]}
-  (go
-    (log ai "Stopping ai client")
-    (<! (send! ai :logout {}))
-    (log ai "Stopped ai client")
-    ai))
+  (go-try
+   (log ai "Stopping ai client")
+   (<? (send! ai :logout {}))
+   (log ai "Stopped ai client")
+   ai))
 
 (defn touch-game
   [game]
-  (-> game
-      (update-in [:game/deck :deck/cards] #(map schema/touch-card %))))
+  (update-in game [:game/deck :deck/cards] #(map schema/touch-card %)))
 
 (defn game-info
   [this game-id]
-  (go (touch-game (second (<? (send! this :game-info {:game-id game-id}))))))
+  (go-try (touch-game (second (<? (send! this :game-info {:game-id game-id}))))))
 
-(defn find-players-seat [player seats]
-  (first (filter #(seats/taken-by? % player) seats)))
-
-(defn find-available-seat [seats]
+(defn find-available-seat
+  "Returns the first seat that has not been taken yet"
+  [seats]
   (first (remove seats/taken? seats)))
 
 (defn join-game
+  "Attempts to join the game in [:game :game/id]. If player is already
+  joined, the seat they are assigned to is immediately returned.
+  Otherwise, an available seat is selected and an attempt to join the
+  game is made. If successful, the seat is returned, otherwise a new
+  seat is selected and tried again, in a loop"
   [{:keys [player game] :as ai}]
   {:pre [(ai? ai)]}
   (let [game-id (:game/id game)]
-    (go-loop [{:keys [game/seats]} (:game ai)]
-      (or (find-players-seat player seats)
-          (when-let [seat (find-available-seat seats)]
-            (do (<? (send! ai :join-game {:game/id game-id
+    (go-try
+      (loop [{:keys [game/seats]} (:game ai)]
+        (or (seats/find-assigned game player)
+            (when-let [seat (find-available-seat seats)]
+              (do
+                (<? (send! ai :join-game {:game/id game-id
                                           :seat/id (:seat/id seat)}))
-                (recur (<? (game-info ai game-id)))))))))
+                (recur (<? (game-info ai game-id))))))))))
 
-(defn find-seat [seats seat-id]
+(defn find-seat
+  [seats seat-id]
   (first (filter #(= seat-id (:seat/id %)) seats)))
 
 (defn get-deal-cards
@@ -105,12 +111,13 @@
 (defn wait-on-joins
   [join-game-ch ai]
   {:pre [(ai? ai)]}
-  (go (->> join-game-ch
-           (async/take (:game/num-players ai))
-           (async/into [])
-           (<?)
-           (map :body)
-           (sort-by :seat/position))))
+  (go-try 
+   (->> join-game-ch
+        (async/take (:game/num-players ai))
+        (async/into [])
+        (<?)
+        (map :body)
+        (sort-by :seat/position))))
 
 (defn find-suit [suit-name]
   (first (filter #(= suit-name (:card.suit/name %)) schema/suits)))
@@ -124,11 +131,11 @@
   [ai game-id]
   {:pre [(uuid? game-id)]}
   (let [{:keys [route-pub-ch]} ai]
-    (go
-      (-> ai
-          (assoc :game (<? (game-info ai game-id)))
-          (as-> ai
-                (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
+    (go-try
+     (-> ai
+         (assoc :game (<? (game-info ai game-id)))
+         (as-> ai
+               (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
 
 (defn join-game-and-wait-for-others
   [ai]
@@ -138,23 +145,23 @@
         deal-cards-ch (async/chan)]
     (async/sub route-pub-ch :join-game join-game-ch)
     (async/sub route-pub-ch :deal-cards deal-cards-ch)
-    (go
-      (as-> ai ai
-            (assoc ai :seat (<? (join-game ai)))
-            (assoc-in ai [:game :game/seats] (<? (wait-on-joins join-game-ch ai)))
-            (get-deal-cards ai (<? deal-cards-ch))))))
+    (go-try
+     (as-> ai ai
+           (assoc ai :seat (<? (join-game ai)))
+           (assoc-in ai [:game :game/seats] (<? (wait-on-joins join-game-ch ai)))
+           (get-deal-cards ai (<? deal-cards-ch))))))
 
 (defn start-playing
   [ai game-id]
-  (go
-    (-> (ready-game ai game-id)
-        <?
-        (join-game-and-wait-for-others)
-        <?
-        (bids/start)
-        <?
-        (tricks/start)
-        <?)))
+  (go-try
+   (-> (ready-game ai game-id)
+       <?
+       (join-game-and-wait-for-others)
+       <?
+       (bids/start)
+       <?
+       (tricks/start)
+       <?)))
 
 (defn new-client-ai
   [this]
