@@ -21,7 +21,7 @@
     (or (= (:card/suit card) leading-suit)
         (trump? trumps-contract card))))
 
-(defn winning-play
+(defn play>
   "Given 2 plays, returns the play that played the winning card"
   [trumps-contract play1 play2]
   (if (protocols/card> trumps-contract
@@ -57,7 +57,7 @@
           plays-that-matter (->> (rest plays)
                                  (filter #(relevant-play? this leading-suit %))
                                  (cons leading-play))]
-      (reduce (partial winning-play this)
+      (reduce (partial play> this)
               plays-that-matter))))
 
 (defn find-trump-left-suit
@@ -137,40 +137,15 @@
   (let [num-players (count (:game/seats game))]
     (= num-players (count trick))))
 
-(defn find-last-full-trick
-  "Returns the last full trick that was played. Or nil if play has
-  just started"
+(defn next-seat
+  "Returns the next seat expected to play a card"
   [game]
   {:pre [(trick-game? game)]}
-  (first
-   (take-while #(finished? game %)
-               (reverse (:game/tricks game)))))
-
-(defn last-trick-winner
-  "Returns the winning play of the last full trick, or nil If there
-  hasn't been a full trick yet. E.g play has just started"
-  [game]
-  {:pre [(trick-game? game)]
-   :post [#(or (nil? %) (play? %))]}
-  (when-let [last-trick (find-last-full-trick game)]
-    (trick-winner game last-trick)))
-
-(defn your-go?
-  "Returns true if seat is the next that should play in this trick.
-  This is true if seat won the last trick, or if all players have not
-  played an the last play was the seat to the left of `seat`"
-  [game seat]
-  {:pre [(trick-game? game)
-         (seat? seat)]}
-  (let [{:keys [game/tricks]} game
+  (let [{:keys [game/tricks game/seats]} game
         winning-bid (bid/winner game)]
-    (or (and (empty? tricks)
-             (seat= seat (:player-bid/seat winning-bid)))
-        (if (empty? (last tricks))
-          (when-let [last-winner (last-trick-winner game)]
-            (seat= seat (:trick.play/seat last-winner)))
-          (when-not (finished? game (last tricks))
-            (let [last-play (last (:trick/plays (last tricks)))]
-              (seat= seat (seats/next (:game/seats game)
-                                      (:trick.play/seat last-play)))))))))
+    (if (empty? tricks)
+      (:player-bid/seat (bid/winner game))
+      (if (empty? (last tricks))
+        (trick-winner game (last tricks))
+        (seats/next seats (:trick.play/seat (last (:trick/plays (last tricks)))))))))
 

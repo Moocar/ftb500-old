@@ -82,7 +82,7 @@
             (do (log ai "Hand is empty")
                 ai)
             (do
-              (when (trick/your-go? game seat)
+              (when (seat= seat (trick/next-seat game))
                 (log ai "My turn to play a card")
                 (<! (play-card ai)))
               (recur ai))))

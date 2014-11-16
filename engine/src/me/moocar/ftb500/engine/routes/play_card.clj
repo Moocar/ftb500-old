@@ -110,7 +110,7 @@
 
          (not (kitty-exchanged? db game)) :kitty-not-exchanged-yet
 
-         (not (trick/your-go? game seat)) :not-your-go
+         (not (seat= seat (trick/next-seat game))) :not-your-go
 
          (not (own-card? seat card)) :you-dont-own-that-card
 
