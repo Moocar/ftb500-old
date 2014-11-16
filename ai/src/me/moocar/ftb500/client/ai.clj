@@ -84,13 +84,16 @@
   {:pre [(ai? ai)]}
   (let [game-id (:game/id game)]
     (go-try
-      (loop [{:keys [game/seats]} (:game ai)]
+      (loop [{:keys [game/seats] :as game} game]
         (or (seats/find-assigned game player)
-            (when-let [seat (find-available-seat seats)]
+            (if-let [seat (find-available-seat seats)]
               (do
                 (<? (send! ai :join-game {:game/id game-id
                                           :seat/id (:seat/id seat)}))
-                (recur (<? (game-info ai game-id))))))))))
+                (recur (<? (game-info ai game-id))))
+              (throw (ex-info "No more seats available"
+                              {:seats seats
+                               :my-player player}))))))))
 
 (defn find-seat
   [seats seat-id]

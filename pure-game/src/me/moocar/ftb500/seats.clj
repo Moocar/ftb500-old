@@ -43,7 +43,7 @@
   [game player]
   {:pre [(game? game)
          (player? player)]}
-  (first (filter #(player= player (:seat/player %))
+  (first (filter #(= (:user/id player) (:user/id (:seat/player %)))
                  (:game/seats game))))
 
 (defn next
