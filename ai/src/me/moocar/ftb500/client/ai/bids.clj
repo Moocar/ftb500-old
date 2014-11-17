@@ -70,6 +70,10 @@
            (throw (ex-info "Bid unsuccessfull" {:response response}))))))))
 
 (defn start
+  "Starts the bidding round. Waits for each bid and if it is this
+  player's turn, plays a bid. At the end of bidding, if this player
+  won, then waits for kitty and swaps 3 cards, handing back to the
+  dealer. Finally, returns the new ai map"
   [ai]
   {:pre [(ai? ai)]}
   (let [{:keys [route-pub-ch seat game]} ai

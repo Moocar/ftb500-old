@@ -31,6 +31,7 @@
     play2))
 
 (defn find-leading-suit
+  "Finds the suit of the leading card in this trick"
   [trick]
   {:pre [(trick? trick)]}
   (get-in (first (:trick/plays trick))

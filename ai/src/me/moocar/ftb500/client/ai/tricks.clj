@@ -14,27 +14,28 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
-(defn calc-next-card
-  [ai]
-  {:pre [(trick-game? (:game ai))]}
-  (let [{:keys [game hand]} ai
-        {:keys [game/tricks]} game
+(defn get-follow-cards
+  "Returns the cards from the hand that follow suit"
+  [hand suit]
+  (seq (filter #(= suit (:card/suit %)) hand)))
+
+(defn suggest
+  "Suggest a card to play. Presumably based on amazing AI"
+  [{:keys [game hand] :as ai}]
+  {:pre [(trick-game? game)]}
+  (let [{:keys [game/tricks]} game
         last-trick (last tricks)]
     (if (empty? last-trick)
       (rand-nth (vec hand))
       (let [leading-suit (trick/find-leading-suit last-trick)]
-        (or (when-let [suit-cards (seq (filter #(= leading-suit (:card/suit %)) hand))]
-              (rand-nth suit-cards))
-            (rand-nth (vec hand)))))))
+        (rand-nth (or (get-follow-cards hand leading-suit)
+                      (vec hand)))))))
 
 (defn play-card
+  "Suggest and play a new card"
   [{:keys [seat] :as ai}]
   {:pre [(ai? ai)]}
-  (go-try
-    (let [card (calc-next-card ai)]
-      (let [result (<? (game-send! ai :play-card {:trick.play/card card}))]
-        (if (keyword? result)
-          (log ai (str "Play card failure: " result)))))))
+  (game-send! ai :play-card {:trick.play/card (suggest ai)}))
 
 (defn won-bidding? [ai]
   (seat= (:seat ai)
@@ -83,7 +84,6 @@
                   ai)
               (do
                 (when (seat= seat (trick/next-seat game))
-                  (log ai "My turn to play a card")
                   (<? (play-card ai)))
                 (recur ai))))
           ai)))))
