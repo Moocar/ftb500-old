@@ -61,14 +61,10 @@
                               {:reason response})))))
         ai))))
 
-(defn new-kitty-game
-  [ai game kitty-ch]
-  (let [contract (trick/new-contract game (bids/winner game))]
-    (go-try
-      (-> ai
-          (assoc :game (assoc game :contract-style contract))
-          (kitty-game kitty-ch)
-          <?))))
+(defn finalize-bidding
+  [ai]
+  {:pre [(ai? ai)]}
+  (update-in ai [:game] trick/update-contract))
 
 (defn play-if-turn
   "If the next seat to play is this player, then play a bid"
@@ -102,5 +98,5 @@
                  ai (update-in ai [:game :game/bids] conj player-bid)]
              (player-bid? player-bid)
              (if (bids/finished? (:game ai))
-               (<? (new-kitty-game ai (:game ai) kitty-ch))
+               (<? (kitty-game (finalize-bidding ai) kitty-ch))
                (recur ai)))))))))

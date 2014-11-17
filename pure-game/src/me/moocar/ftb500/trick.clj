@@ -2,7 +2,7 @@
   (:require [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.schema
-             :refer [trick-game? player-bid? card? play? trick? seat? game? bid?]]
+             :refer [trick-game? player-bid? card? play? trick? seat? game? bid? trick-game?]]
             [me.moocar.ftb500.protocols :as protocols]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -108,10 +108,10 @@
 
 (defn new-contract
   "Returns a new contract object for the game and winning-bid"
-  [game winning-bid]
+  [game]
   {:pre [(game? game)
-         (player-bid? winning-bid)]}
-  (let [{:keys [player-bid/bid]} winning-bid
+         (bid/finished? game)]}
+  (let [{:keys [player-bid/bid]} (bid/winner game)
         {:keys [bid/contract-style]} bid]
     (assert (bid? bid))
     (assert contract-style)
@@ -119,6 +119,10 @@
       (new-trumps-contract (:game/deck game) (:bid/suit bid))
       (throw (ex-info "Unsupported Contract"
                       {:contract-style contract-style})))))
+
+(defn update-contract
+  [game]
+  (assoc game :contract-style (new-contract game)))
 
 (defn trick-winner
   "Returns the winning play for a trick. Returns nil if trick is not

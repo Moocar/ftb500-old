@@ -94,9 +94,7 @@
             game (touch-game (first (:game/_seats seat)))
             {:keys [game/seats game/tricks game/deck]} game
             last-trick (last tricks)
-            winning-bid (bids/winner game)
-            contract-style (trick/new-contract game winning-bid)
-            game (assoc game :contract-style contract-style)]
+            game (trick/update-contract game)]
 
         (cond
          
