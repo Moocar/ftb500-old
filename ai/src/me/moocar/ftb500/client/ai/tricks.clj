@@ -1,12 +1,9 @@
 (ns me.moocar.ftb500.client.ai.tricks
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
             [me.moocar.async :refer [<? go-try]]
-            [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
-            [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.schema :as schema
-             :refer [player-bid? game? bid? seat? card? trick-game? play?]]
+            [me.moocar.ftb500.schema :as schema :refer [game? trick-game? play?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.trick :as trick]
             [me.moocar.log :as log]))
@@ -31,16 +28,6 @@
         (rand-nth (or (get-follow-cards hand leading-suit)
                       (vec hand)))))))
 
-(defn play-card
-  "Suggest and play a new card"
-  [{:keys [seat] :as ai}]
-  {:pre [(ai? ai)]}
-  (game-send! ai :play-card {:trick.play/card (suggest ai)}))
-
-(defn won-bidding? [ai]
-  (seat= (:seat ai)
-         (:player-bid/seat (bid/winner (:game ai)))))
-
 (defn touch-play
   [game play-card]
   {:pre [(trick-game? game)]}
@@ -49,6 +36,7 @@
       (update-in [:trick.play/seat] seats/find game)))
 
 (defn update-tricks
+  "Updates the game's trick state with the latest play"
   [game play]
   {:pre [(game? game)
          (play? play)]}
@@ -62,14 +50,33 @@
                        (update-in tricks [(dec (count tricks)) :trick/plays] conj play)))]
     (assoc game :game/tricks new-tricks)))
 
-(defn main-play-loop 
-  [ai play-card-ch]
-  (log ai "Playing trick game")
+(defn play-if-go
+  "If it is this player's turn, suggest and play a card"
+  [{:keys [game seat] :as ai}]
+  {:pre [(ai? ai)]}
   (go-try
+   (let [next-seat (trick/next-seat game)]
+     (when (seat= next-seat seat)
+       (<? (game-send! ai :play-card {:trick.play/card (suggest ai)}))))))
+
+(defn start
+  "Waits until it is this player's turn and then plays a card, then
+  listens for all other card plays until it is this player's turn
+  again, and repeats"
+  [ai]
+  {:pre [(ai? ai)
+         (trick-game? (:game ai))]}
+  (let [{:keys [route-pub-ch game seat]} ai
+        {:keys [game/bids]} game
+        play-card-ch (async/chan)]
+    (log ai "starting tricks ")
+    (async/sub route-pub-ch :play-card play-card-ch)
+    (go-try
     (loop [ai ai]
       (let [{:keys [game hand seat]} ai
             {:keys [game/tricks]} game]
-        (if-let [play (:body (<? play-card-ch))]
+        (<? (play-if-go ai))
+        (when-let [play (:body (<? play-card-ch))]
           (let [play (touch-play game play)
                 played-card (:trick.play/card play)
                 hand (if (seat= seat (:trick.play/seat play))
@@ -79,28 +86,6 @@
                 ai (assoc ai
                      :hand hand
                      :game game)]
-            (if (empty? hand)
-              (do (log ai "Hand is empty")
-                  ai)
-              (do
-                (when (seat= seat (trick/next-seat game))
-                  (<? (play-card ai)))
-                (recur ai))))
-          ai)))))
-
-(defn start
-  [ai]
-  {:pre [(ai? ai)
-         (trick-game? (:game ai))]}
-  (let [{:keys [route-pub-ch game seat]} ai
-        {:keys [game/bids]} game
-        play-card-ch (async/chan)]
-    (log ai "starting tricks ")
-    (async/sub route-pub-ch :play-card play-card-ch)
-    (go
-      (try
-        (when (won-bidding? ai)
-          (<? (play-card ai)))
-        (catch Throwable t
-          (.printStackTrace t))))
-    (main-play-loop ai play-card-ch)))
+            (if (trick/all-finished? game)
+              ai
+              (recur ai)))))))))

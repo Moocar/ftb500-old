@@ -64,10 +64,7 @@
   (go-try
    (let [next-seat (bids/next-seat game)]
      (when (seat= next-seat seat)
-       (log ai "My go")
-       (let [response (<? (play-bid ai))]
-         (when-not (= [:success] response)
-           (throw (ex-info "Bid unsuccessfull" {:response response}))))))))
+       (<? (play-bid ai))))))
 
 (defn start
   "Starts the bidding round. Waits for each bid and if it is this

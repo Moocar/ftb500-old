@@ -142,6 +142,12 @@
   (let [num-players (count (:game/seats game))]
     (= num-players (count trick))))
 
+(defn all-finished?
+  "Returns true if all tricks are finished. I.e the game has ended"
+  [{:keys [game/tricks] :as game}]
+  (and (= 10 (count tricks))
+       (every? #(finished? game %) tricks)))
+
 (defn next-seat
   "Returns the next seat expected to play a card"
   [game]
