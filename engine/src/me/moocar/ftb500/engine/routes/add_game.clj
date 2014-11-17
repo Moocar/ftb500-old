@@ -22,30 +22,23 @@
      [[:db/add game-db-id :game/id game-id]
       [:db/add game-db-id :game/deck (:db/id deck)]])))
 
-(defn check-logged-in
-  [request]
-  (when-not (:logged-in-user-id request)
-    :must-be-logged-in))
-
-(defn check-num-players
-  [request]
-  (let [{:keys [body callback]} request
-        {:keys [num-players]} body]
-    (cond (not num-players) :num-players-required
-          (not (number? num-players)) :num-players-must-be-number)))
-
 (defrecord AddGame [datomic log]
   routes/Route
   (serve [this db request]
-    (let [{:keys [body callback]} request
-          {:keys [num-players]} body
-          response (or ((some-fn check-logged-in check-num-players) request)
-                       (let [deck (card/find-deck db num-players)
-                             game-id (d/squuid)
-                             tx (new-game-tx game-id deck)]
-                         @(datomic/transact-action datomic tx game-id :action/create-game)
-                         [:success {:game/id game-id}]))]
-      (callback response))))
+    (let [{:keys [body callback logged-in-user-id]} request
+          {:keys [num-players]} body]
+      (callback
+       (cond
+        (not num-players) :num-players-required
+        (not (number? num-players)) :num-players-must-be-number
+        (not logged-in-user-id) :must-be-logged-in
+        
+        :else
+        (let [deck (card/find-deck db num-players)
+              game-id (d/squuid)
+              tx (new-game-tx game-id deck)]
+          @(datomic/transact-action datomic tx game-id :action/create-game)
+          [:success {:game/id game-id}]))))))
 
 (defrecord AddGameTxHandler [engine-transport]
   tx-handler/TxHandler
