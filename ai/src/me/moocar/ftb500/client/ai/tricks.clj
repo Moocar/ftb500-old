@@ -3,7 +3,7 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.client.ai.transport :refer [send!]]
+            [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card? trick-game? play?]]
@@ -32,10 +32,7 @@
   {:pre [(ai? ai)]}
   (go-try
     (let [card (calc-next-card ai)]
-      (log ai (str "Sending card: " card))
-      (let [result (<? (send! ai :play-card {:seat/id (:seat/id seat)
-                                             :trick.play/card card}))]
-        (log ai (str "Result: " result))
+      (let [result (<? (game-send! ai :play-card {:trick.play/card card}))]
         (if (keyword? result)
           (log ai (str "Play card failure: " result)))))))
 

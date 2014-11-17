@@ -4,7 +4,7 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
-            [me.moocar.ftb500.client.ai.transport :refer [send!]]
+            [me.moocar.ftb500.client.ai.transport :refer [game-send! send!]]
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.client.ai.tricks :as tricks]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
@@ -68,8 +68,8 @@
         (or (seats/find-assigned game player)
             (if-let [seat (seats/find-available game)]
               (do
-                (<! (send! ai :join-game {:game/id game-id
-                                          :seat/id (:seat/id seat)}))
+                (<! (game-send! (assoc ai :seat seat)
+                                :join-game {:game/id game-id}))
                 (recur (<? (game-info ai game-id))))
               (throw (ex-info "No more seats available"))))))))
 

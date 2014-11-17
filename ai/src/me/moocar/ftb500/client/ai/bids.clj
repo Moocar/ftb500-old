@@ -3,7 +3,7 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.client.ai.transport :refer [send!]]
+            [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card?]]
@@ -27,10 +27,7 @@
   [ai]
   {:pre [(ai? ai)]}
   (let [my-bid (suggest-bid ai)]
-    (log ai {:my-bid {:seat/id (:seat/id (:seat ai))
-                      :bid/name (:bid/name my-bid)}})
-    (send! ai :bid {:seat/id (:seat/id (:seat ai))
-                    :bid/name (:bid/name my-bid)})))
+    (game-send! ai :bid {:bid/name (:bid/name my-bid)})))
 
 (defn touch-bid
   [game player-bid]
@@ -51,8 +48,7 @@
            _ (assert (every? card? kitty-cards))
            all-shuffled (shuffle (concat kitty-cards hand))
            [new-kitty-cards hand] (split-at (count kitty-cards) all-shuffled)]
-       (<? (send! ai :exchange-kitty {:cards new-kitty-cards
-                                      :seat/id (:seat/id seat)}))
+       (<? (game-send! ai :exchange-kitty {:cards new-kitty-cards}))
        (assoc ai :hand (set hand)))
      ai)))
 
