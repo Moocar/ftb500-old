@@ -2,8 +2,8 @@
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
-            [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.client.ai.transport :refer [send!]]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card? trick-game? play?]]
@@ -27,13 +27,14 @@
               (rand-nth suit-cards))
             (rand-nth (vec hand)))))))
 
-(defn play-card [ai]
+(defn play-card
+  [{:keys [seat] :as ai}]
   {:pre [(ai? ai)]}
   (go-try
     (let [card (calc-next-card ai)]
       (log ai (str "Sending card: " card))
-      (let [result (<? (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
-                                                    :trick.play/card card}))]
+      (let [result (<? (send! ai :play-card {:seat/id (:seat/id seat)
+                                             :trick.play/card card}))]
         (log ai (str "Result: " result))
         (if (keyword? result)
           (log ai (str "Play card failure: " result)))))))

@@ -4,7 +4,7 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
-            [me.moocar.ftb500.client.transport :as transport]
+            [me.moocar.ftb500.client.ai.transport :refer [send!]]
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.client.ai.tricks :as tricks]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
@@ -18,21 +18,6 @@
 
 (defn uuid []
   (java.util.UUID/randomUUID))
-
-(defn send!
-  ([this route msg dont-send]
-     (client/send! this route msg dont-send))
-  ([this route msg]
-     (go-try
-       (let [response (<? (client/send! this route msg))]
-         (if (keyword? response)
-           (let [error (ex-info "Error in Send"
-                                {:error response
-                                 :route route
-                                 :request msg})]
-             (log this error)
-             (throw ex-info))
-           response)))))
 
 (defn start
   [this]

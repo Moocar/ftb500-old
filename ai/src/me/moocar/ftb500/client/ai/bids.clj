@@ -2,8 +2,8 @@
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bids]
-            [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
+            [me.moocar.ftb500.client.ai.transport :refer [send!]]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card?]]
@@ -29,8 +29,8 @@
   (let [my-bid (suggest-bid ai)]
     (log ai {:my-bid {:seat/id (:seat/id (:seat ai))
                       :bid/name (:bid/name my-bid)}})
-    (client/send! ai :bid {:seat/id (:seat/id (:seat ai))
-                           :bid/name (:bid/name my-bid)})))
+    (send! ai :bid {:seat/id (:seat/id (:seat ai))
+                    :bid/name (:bid/name my-bid)})))
 
 (defn touch-bid
   [game player-bid]
@@ -40,26 +40,21 @@
       (update-in [:player-bid/seat] seats/find game)))
 
 (defn kitty-game
-  [ai kitty-ch]
+  "If this player won the bidding, waits for kitty to be handed over
+  and then selects 3 cards to swap out. Returns the new ai map"
+  [{:keys [game hand seat] :as ai}
+   kitty-ch]
   {:pre [(ai? ai)]}
-  (let [{:keys [game hand]} ai]
-    (go-try
-      (log ai {:msg "In kitty game now"})
-      (if (seat= (:seat ai)
-                 (:player-bid/seat (bids/winner game)))
-        (do 
-          (log ai "Waiting for kitty")
-          (let [kitty-cards (map schema/touch-card (:cards (:body (<? kitty-ch))))
-                _ (assert (every? card? kitty-cards))
-                all-shuffled (shuffle (concat kitty-cards hand))
-                [new-kitty-cards hand] (split-at 3 all-shuffled)
-                response (<? (client/send! ai :exchange-kitty {:cards new-kitty-cards
-                                                               :seat/id (:seat/id (:seat ai))}))]
-            (if-not (keyword? response)
-              (assoc ai :hand (set hand))
-              (throw (ex-info "Failed to exchange kitty"
-                              {:reason response})))))
-        ai))))
+  (go-try
+   (if (seat= seat (:player-bid/seat (bids/winner game)))
+     (let [kitty-cards (map schema/touch-card (:cards (:body (<? kitty-ch))))
+           _ (assert (every? card? kitty-cards))
+           all-shuffled (shuffle (concat kitty-cards hand))
+           [new-kitty-cards hand] (split-at (count kitty-cards) all-shuffled)]
+       (<? (send! ai :exchange-kitty {:cards new-kitty-cards
+                                      :seat/id (:seat/id seat)}))
+       (assoc ai :hand (set hand)))
+     ai)))
 
 (defn finalize-bidding
   [ai]
