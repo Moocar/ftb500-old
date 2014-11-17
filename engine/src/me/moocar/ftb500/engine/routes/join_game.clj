@@ -19,13 +19,13 @@
        cards))
 
 (defn- new-deal-cards-tx [game]
-  (let [deck (:game/deck game)
-        seats (:game/seats game)
+  (let [{:keys [game/deck game/seats]} game
         deck-cards (shuffle (:deck/cards deck))
         {:keys [hands kitty]} (card/partition-hands deck-cards)
         first-seat (:db/id (rand-nth (vec seats)))]
     (assert (= 3 (count kitty))
-            (str "kitty has " (count kitty) " cards. Deck count: " (count deck-cards)))
+            (format "kitty has %s cards. Deck count: %s"
+                    (count kitty) (count deck-cards)))
     (assert game)
     (assert (coll? seats))
     (assert (coll? hands))
@@ -34,11 +34,6 @@
      (mapcat #(vector [:db/add (:db/id game) :game.kitty/cards (:db/id %)]) kitty)
      (mapcat hand-cards-to-seat-tx seats hands)
      [[:db/add (:db/id game) :game/first-seat first-seat]])))
-
-(defn- deal-cards [this game]
-  (let [{:keys [datomic log]} this
-        tx (new-deal-cards-tx game)]
-    @(datomic/transact-action datomic tx (:game/id game) :action/deal-cards)))
 
 (defrecord JoinGame [datomic log tx-listener deal-cards-delay]
   routes/Route
@@ -72,7 +67,8 @@
                    {:keys [db-after]} tx-result
                    game (d/entity db-after (:db/id game))]
                (when (game/full? game)
-                 (deal-cards this game))
+                 (let [tx (new-deal-cards-tx game)]
+                   @(datomic/transact-action datomic tx game-id :action/deal-cards)))
                [:success])))))))))
 
 (defrecord JoinGameTxHandler [engine-transport]

@@ -3,7 +3,7 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
-            [me.moocar.ftb500.schema :as schema :refer [game? trick-game? play?]]
+            [me.moocar.ftb500.schema :as schema :refer [game? trick-game? play? card? suit?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.trick :as trick]
             [me.moocar.log :as log]))
@@ -14,6 +14,8 @@
 (defn get-follow-cards
   "Returns the cards from the hand that follow suit"
   [hand suit]
+  {:pre [(every? card? hand)
+         (suit? suit)]}
   (seq (filter #(= suit (:card/suit %)) hand)))
 
 (defn suggest
@@ -45,7 +47,7 @@
         current-trick (last tricks)
         new-tricks (if (empty? tricks)
                      [{:trick/plays [play]}]
-                     (if (= num-players (count current-trick))
+                     (if (= num-players (count (:trick/plays current-trick)))
                        (conj tricks {:trick/plays [play]})
                        (update-in tricks [(dec (count tricks)) :trick/plays] conj play)))]
     (assoc game :game/tricks new-tricks)))
@@ -73,8 +75,7 @@
     (async/sub route-pub-ch :play-card play-card-ch)
     (go-try
     (loop [ai ai]
-      (let [{:keys [game hand seat]} ai
-            {:keys [game/tricks]} game]
+      (let [{:keys [game hand seat]} ai]
         (<? (play-if-go ai))
         (when-let [play (:body (<? play-card-ch))]
           (let [play (touch-play game play)
@@ -86,6 +87,8 @@
                 ai (assoc ai
                      :hand hand
                      :game game)]
+            
             (if (trick/all-finished? game)
-              ai
+              (do (log ai "All tricks finished!")
+                  ai)
               (recur ai)))))))))

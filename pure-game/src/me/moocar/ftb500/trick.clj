@@ -140,7 +140,7 @@
   {:pre [(trick-game? game)
          (trick? trick)]}
   (let [num-players (count (:game/seats game))]
-    (= num-players (count trick))))
+    (= num-players (count (:trick/plays trick)))))
 
 (defn all-finished?
   "Returns true if all tricks are finished. I.e the game has ended"

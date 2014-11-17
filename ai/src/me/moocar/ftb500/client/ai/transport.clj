@@ -11,12 +11,11 @@
   (go-try
    (let [response (<? (client/send! ai route msg))]
      (if (keyword? response)
-       (let [error (ex-info "Error in Send"
-                            {:error response
-                             :route route
-                             :request msg})]
-         (log ai error)
-         (throw ex-info))
+       (do (log ai {:ERROR response})
+           (throw (ex-info "Error in Send"
+                           {:error response
+                            :route route
+                            :request msg})))
        response))))
 
 (defn game-send!

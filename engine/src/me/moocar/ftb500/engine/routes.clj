@@ -24,35 +24,18 @@
        [:bad-args {:msg errors#}]
        (do ~@body))))
 
-(def replace-fns
-  {:seat/id (fn [db args id]
-              (let [seat (db/find db :seat/id id)]
-                (assoc args
-                  :seat seat
-                  :game (first (:game/_seats seat)))))
-   :game/id (fn [db args id]
-              (assoc args :game (db/find db :game/id id)))
-   :user/id (fn [db args id]
-                (assoc args :player (db/find db :user/id id)))
-   :bid-k (fn [db args id]
-            (assoc args :bid (db/find db :bid/name id)))
-   :card (fn [db args card]
-           (assoc args :card (card/find db card)))})
-
-(defn load-arg-entities
-  [db args]
-  {:pre [db (map? args)]}
-  (reduce-kv
-   (fn [m k v]
-     (if-let [f (get replace-fns k)]
-       (f db m v)
-       (assoc m k v)))
-   {}
-   args))
+(defn logged-callback
+  [this message]
+  (fn [& args]
+    (when (keyword? (first args))
+      (log/log (:log this) {:ERROR (first args)
+                            :request message}))
+    (apply (:callback message) args)))
 
 (defn route
   [this message]
-  (let [{:keys [body logged-in-user-id client-id route callback]} message
+  (let [message (assoc message :callback (logged-callback this message))
+        {:keys [body logged-in-user-id client-id route callback]} message
         route-ns-keyword (keyword "routes" (name route))]
     (log/log (:log this) (format "%8.8s:%8.8s %-10.10s %s"
                                  (if logged-in-user-id
