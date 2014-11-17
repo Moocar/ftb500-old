@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.client.ai.bids
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
-            [me.moocar.async :refer [<?]]
+            [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
@@ -43,7 +43,7 @@
   [ai kitty-ch]
   {:pre [(ai? ai)]}
   (let [{:keys [game hand]} ai]
-    (go
+    (go-try
       (log ai {:msg "In kitty game now"})
       (if (seat= (:seat ai)
                  (:player-bid/seat (bids/winner game)))
@@ -64,7 +64,7 @@
 (defn new-kitty-game
   [ai game kitty-ch]
   (let [contract (trick/new-contract game (bids/winner game))]
-    (go
+    (go-try
       (-> ai
           (assoc :game (assoc game :contract-style contract))
           (kitty-game kitty-ch)
@@ -81,17 +81,18 @@
     (async/sub route-pub-ch :bid bids-ch)
     (async/sub route-pub-ch :kitty kitty-ch)
 
-    (go-loop [game (assoc game :game/bids [])]
-      (let [next-seat (bids/next-seat game)]
-        (when (seat= next-seat seat)
-          (log ai "My go")
-          (let [response (<? (play-bid ai game))]
-            (when-not (= [:success] response)
-              (throw (ex-info "Bid unsuccessfull" {:response response}))))))
-      (when-let [bid (<? bids-ch)]
-        (let [player-bid (touch-bid game (:bid (:body bid)))
-              game (update-in game [:game/bids] conj player-bid)]
-          (player-bid? player-bid)
-          (if (bids/finished? game)
-            (<? (new-kitty-game ai game kitty-ch))
-            (recur game)))))))
+    (go-try
+     (loop [game (assoc game :game/bids [])]
+       (let [next-seat (bids/next-seat game)]
+         (when (seat= next-seat seat)
+           (log ai "My go")
+           (let [response (<? (play-bid ai game))]
+             (when-not (= [:success] response)
+               (throw (ex-info "Bid unsuccessfull" {:response response}))))))
+       (when-let [bid (<? bids-ch)]
+         (let [player-bid (touch-bid game (:bid (:body bid)))
+               game (update-in game [:game/bids] conj player-bid)]
+           (player-bid? player-bid)
+           (if (bids/finished? game)
+             (<? (new-kitty-game ai game kitty-ch))
+             (recur game))))))))
