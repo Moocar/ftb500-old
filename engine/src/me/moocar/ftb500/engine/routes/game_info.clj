@@ -9,13 +9,6 @@
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
 
-(defn check-game-id
-  [request]
-  (let [{:keys [body callback]} request
-        {:keys [game-id]} body]
-    (cond (not game-id) :game-id-required
-          (not (uuid? game-id)) :game-id-must-be-uuid)))
-
 (defn find
   [db game-id]
   (datomic/find db :game/id game-id))
@@ -47,8 +40,12 @@
   routes/Route
   (serve [this db request]
     (let [{:keys [body callback]} request
-          {:keys [game-id]} body
-          response (or (check-game-id request)
-                       (let [game (d/touch (find db game-id))]
-                         [:success (ext-form game)]))]
-      (callback response))))
+          {:keys [game-id]} body]
+      (callback
+       (cond
+        (not game-id) :game-id-required
+        (not (uuid? game-id)) :game-id-must-be-uuid
+
+        :else
+        (let [game (d/touch (find db game-id))]
+          [:success (ext-form game)]))))))
