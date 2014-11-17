@@ -103,6 +103,17 @@
         (assoc :hand hand)
         (assoc-in [:game :game/first-seat] first-seat))))
 
+(defn ready-game
+  "Initiates the ai map with the basic game information"
+  [ai game-id]
+  {:pre [(uuid? game-id)]}
+  (let [{:keys [route-pub-ch]} ai]
+    (go-try
+     (-> ai
+         (assoc :game (<? (game-info ai game-id)))
+         (as-> ai
+               (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
+
 (defn wait-on-joins
   "Waits for all players to join the game and returns all the seats"
   [join-game-ch ai]
@@ -115,18 +126,9 @@
         (map :body)
         (sort-by :seat/position))))
 
-(defn ready-game
-  "Initiates the ai map with the basic game information"
-  [ai game-id]
-  {:pre [(uuid? game-id)]}
-  (let [{:keys [route-pub-ch]} ai]
-    (go-try
-     (-> ai
-         (assoc :game (<? (game-info ai game-id)))
-         (as-> ai
-               (assoc ai :game/num-players (count (:game/seats (:game ai)))))))))
-
 (defn join-game-and-wait-for-others
+  "Joins the game in ai and waits for all players to join the game,
+  and for the hand to be dealt"
   [ai]
   {:pre [(ai? ai)]}
   (let [{:keys [route-pub-ch]} ai
@@ -141,6 +143,8 @@
            (get-deal-cards ai (<? deal-cards-ch))))))
 
 (defn start-playing
+  "Join a game, wait for all players to join, run the bidding round,
+  and then the tricks roundq"
   [ai game-id]
   (go-try
    (-> (ready-game ai game-id)

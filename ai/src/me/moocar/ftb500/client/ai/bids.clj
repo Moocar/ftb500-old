@@ -14,19 +14,19 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
-(defn calc-bid
-  [ai game]
-  {:pre [(game? game)]}
+(defn suggest-bid
+  "Determines the next bid to play"
+  [ai]
+  {:pre [(ai? ai)]}
   (-> schema/trumps-and-no-trumps
-      (->> (drop-while #(not (bids/valid? game %))))
+      (->> (drop-while #(not (bids/valid? (:game ai) %))))
       (conj nil) ;pass
       (rand-nth)))
 
 (defn play-bid
-  [ai game]
-  {:pre [(ai? ai)
-         (game? game)]}
-  (let [my-bid (calc-bid ai game)]
+  [ai]
+  {:pre [(ai? ai)]}
+  (let [my-bid (suggest-bid ai)]
     (log ai {:my-bid {:seat/id (:seat/id (:seat ai))
                       :bid/name (:bid/name my-bid)}})
     (client/send! ai :bid {:seat/id (:seat/id (:seat ai))
@@ -70,6 +70,18 @@
           (kitty-game kitty-ch)
           <?))))
 
+(defn play-if-turn
+  "If the next seat to play is this player, then play a bid"
+  [{:keys [game seat] :as ai}]
+  {:pre [(ai? ai)]}
+  (go-try
+   (let [next-seat (bids/next-seat game)]
+     (when (seat= next-seat seat)
+       (log ai "My go")
+       (let [response (<? (play-bid ai))]
+         (when-not (= [:success] response)
+           (throw (ex-info "Bid unsuccessfull" {:response response}))))))))
+
 (defn start
   [ai]
   {:pre [(ai? ai)]}
@@ -80,19 +92,15 @@
     (log ai  (str "(" position ") " "starting bidding "))
     (async/sub route-pub-ch :bid bids-ch)
     (async/sub route-pub-ch :kitty kitty-ch)
-
     (go-try
-     (loop [game (assoc game :game/bids [])]
-       (let [next-seat (bids/next-seat game)]
-         (when (seat= next-seat seat)
-           (log ai "My go")
-           (let [response (<? (play-bid ai game))]
-             (when-not (= [:success] response)
-               (throw (ex-info "Bid unsuccessfull" {:response response}))))))
-       (when-let [bid (<? bids-ch)]
-         (let [player-bid (touch-bid game (:bid (:body bid)))
-               game (update-in game [:game/bids] conj player-bid)]
-           (player-bid? player-bid)
-           (if (bids/finished? game)
-             (<? (new-kitty-game ai game kitty-ch))
-             (recur game))))))))
+     (loop [ai (assoc-in ai [:game :game/bids] [])]
+       (let [{:keys [game]} ai
+             next-seat (bids/next-seat game)]
+         (<? (play-if-turn ai))
+         (when-let [bid (<? bids-ch)]
+           (let [player-bid (touch-bid game (:bid (:body bid)))
+                 ai (update-in ai [:game :game/bids] conj player-bid)]
+             (player-bid? player-bid)
+             (if (bids/finished? (:game ai))
+               (<? (new-kitty-game ai (:game ai) kitty-ch))
+               (recur ai)))))))))
