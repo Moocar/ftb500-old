@@ -88,23 +88,23 @@
                 (recur (<? (game-info ai game-id))))
               (throw (ex-info "No more seats available"))))))))
 
-(defn find-seat
-  [seats seat-id]
-  (first (filter #(= seat-id (:seat/id %)) seats)))
-
 (defn get-deal-cards
-  [ai {:keys [body] :as deal-cards}]
-  {:pre [(ai? ai)
-         (every? ext-card? (:cards body))]}
-  (let [first-seat (:game/first-seat body)]
-    (every? card? (map schema/touch-card (:cards body)))
+  "Takes the deal-cards message and retrieves the first-seat and dealt
+  hand and associates them back into the ai map"
+  [ai deal-cards]
+  {:pre [(ai? ai)]}
+  (let [{:keys [game]} ai
+        {:keys [body]} deal-cards
+        {:keys [cards]} body
+        _ (assert (every? ext-card? cards))
+        first-seat (seats/find (:game/first-seat body) game)
+        hand (set (map schema/touch-card cards))]
     (-> ai
-        (assoc :hand (set (map schema/touch-card (:cards body))))
-        (as-> ai
-              (let [seat (find-seat (:game/seats (:game ai)) (:seat/id first-seat))]
-                (assoc-in ai [:game :game/first-seat] seat))))))
+        (assoc :hand hand)
+        (assoc-in [:game :game/first-seat] first-seat))))
 
 (defn wait-on-joins
+  "Waits for all players to join the game and returns all the seats"
   [join-game-ch ai]
   {:pre [(ai? ai)]}
   (go-try 
@@ -115,15 +115,8 @@
         (map :body)
         (sort-by :seat/position))))
 
-(defn find-suit [suit-name]
-  (first (filter #(= suit-name (:card.suit/name %)) schema/suits)))
-
-(defn touch-suit [bid]
-  (if (contains? bid :bid/suit)
-    (update-in bid [:bid/suit] find-suit)
-    bid))
-
 (defn ready-game
+  "Initiates the ai map with the basic game information"
   [ai game-id]
   {:pre [(uuid? game-id)]}
   (let [{:keys [route-pub-ch]} ai]

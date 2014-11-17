@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.card
-  (:require [me.moocar.ftb500.schema :refer [card?]]))
+  (:require [me.moocar.ftb500.schema :as schema :refer [card?]]))
 
 (defn- rank-name [card]
   (:card.rank/name (:card/rank card)))
