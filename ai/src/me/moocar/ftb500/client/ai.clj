@@ -69,11 +69,6 @@
   [this game-id]
   (go-try (touch-game (second (<? (send! this :game-info {:game-id game-id}))))))
 
-(defn find-available-seat
-  "Returns the first seat that has not been taken yet"
-  [seats]
-  (first (remove seats/taken? seats)))
-
 (defn join-game
   "Attempts to join the game in [:game :game/id]. If player is already
   joined, the seat they are assigned to is immediately returned.
@@ -84,16 +79,14 @@
   {:pre [(ai? ai)]}
   (let [game-id (:game/id game)]
     (go-try
-      (loop [{:keys [game/seats] :as game} game]
+      (loop [game game]
         (or (seats/find-assigned game player)
-            (if-let [seat (find-available-seat seats)]
+            (if-let [seat (seats/find-available game)]
               (do
-                (<? (send! ai :join-game {:game/id game-id
+                (<! (send! ai :join-game {:game/id game-id
                                           :seat/id (:seat/id seat)}))
                 (recur (<? (game-info ai game-id))))
-              (throw (ex-info "No more seats available"
-                              {:seats seats
-                               :my-player player}))))))))
+              (throw (ex-info "No more seats available"))))))))
 
 (defn find-seat
   [seats seat-id]

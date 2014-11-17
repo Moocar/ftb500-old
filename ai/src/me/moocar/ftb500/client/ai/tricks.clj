@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.client.ai.tricks
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
-            [me.moocar.async :refer [<?]]
+            [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
@@ -29,7 +29,7 @@
 
 (defn play-card [ai]
   {:pre [(ai? ai)]}
-  (go
+  (go-try
     (let [card (calc-next-card ai)]
       (log ai (str "Sending card: " card))
       (let [result (<? (client/send! ai :play-card {:seat/id (:seat/id (:seat ai))
@@ -66,28 +66,29 @@
 (defn main-play-loop 
   [ai play-card-ch]
   (log ai "Playing trick game")
-  (go-loop [ai ai]
-    (let [{:keys [game hand seat]} ai
-          {:keys [game/tricks]} game]
-      (if-let [play (:body (<? play-card-ch))]
-        (let [play (touch-play game play)
-              played-card (:trick.play/card play)
-              hand (if (seat= seat (:trick.play/seat play))
-                     (disj hand played-card)
-                     hand)
-              game (update-tricks game play)
-              ai (assoc ai
-                   :hand hand
-                   :game game)]
-          (if (empty? hand)
-            (do (log ai "Hand is empty")
-                ai)
-            (do
-              (when (seat= seat (trick/next-seat game))
-                (log ai "My turn to play a card")
-                (<? (play-card ai)))
-              (recur ai))))
-        ai))))
+  (go-try
+    (loop [ai ai]
+      (let [{:keys [game hand seat]} ai
+            {:keys [game/tricks]} game]
+        (if-let [play (:body (<? play-card-ch))]
+          (let [play (touch-play game play)
+                played-card (:trick.play/card play)
+                hand (if (seat= seat (:trick.play/seat play))
+                       (disj hand played-card)
+                       hand)
+                game (update-tricks game play)
+                ai (assoc ai
+                     :hand hand
+                     :game game)]
+            (if (empty? hand)
+              (do (log ai "Hand is empty")
+                  ai)
+              (do
+                (when (seat= seat (trick/next-seat game))
+                  (log ai "My turn to play a card")
+                  (<? (play-card ai)))
+                (recur ai))))
+          ai)))))
 
 (defn start
   [ai]

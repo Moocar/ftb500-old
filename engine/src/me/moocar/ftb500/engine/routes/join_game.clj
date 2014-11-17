@@ -9,7 +9,7 @@
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.engine.tx-listener :as tx-listener]
             [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.seats :as seats]))
+            [me.moocar.ftb500.seats :as seats :refer [seat=]]))
 
 (defn uuid? [thing]
   (instance? java.util.UUID thing))
@@ -46,30 +46,34 @@
     (let [{:keys [logged-in-user-id body callback]} request
           {game-id :game/id seat-id :seat/id} body]
       (callback
-       (cond (not logged-in-user-id) :must-be-logged-in
-             (not game-id) :game-id-required
-             (not seat-id) :seat-id-required
-             (not (uuid? game-id)) :game-id-must-be-uuid
-             (not (uuid? seat-id)) :seat-id-must-be-uuid
+       (cond 
+        (not logged-in-user-id) :must-be-logged-in
+        (not game-id) :game-id-required
+        (not seat-id) :seat-id-required
+        (not (uuid? game-id)) :game-id-must-be-uuid
+        (not (uuid? seat-id)) :seat-id-must-be-uuid
 
-             :main
-             (let [game (datomic/find db :game/id game-id)
-                   seat (datomic/find db :seat/id seat-id)
-                   player (datomic/find db :user/id logged-in-user-id)]
-               (cond (not game) :game-does-not-exist
-                     (not seat) :game-does-not-exist
-                     (game/full? game) :game-is-already-full
-                     (seats/taken-by? seat player) :seat-taken
+        :main
+        (let [game (datomic/find db :game/id game-id)
+              seat (datomic/find db :seat/id seat-id)
+              player (datomic/find db :user/id logged-in-user-id)]
 
-                     :main
-                     (let [tx [[:join-game (:db/id player) (:db/id game)]]]
-                       (tx-listener/register-user-for-game tx-listener game-id logged-in-user-id)
-                       (let [tx-result @(datomic/transact-action datomic tx game-id :action/join-game)
-                             {:keys [db-after]} tx-result
-                             game (d/entity db-after (:db/id game))]
-                         (when (game/full? game)
-                           (deal-cards this game))
-                         [:success])))))))))
+          (cond 
+           (not game) :game-does-not-exist
+           (not seat) :seat-does-not-exist
+           (game/full? game) :game-is-already-full
+           (seat= (seats/find-assigned game player) seat) [:success]
+           (seats/taken? seat) :seat-taken
+
+           :main
+           (let [tx [[:join-game (:db/id player) (:db/id game)]]]
+             (tx-listener/register-user-for-game tx-listener game-id logged-in-user-id)
+             (let [tx-result @(datomic/transact-action datomic tx game-id :action/join-game)
+                   {:keys [db-after]} tx-result
+                   game (d/entity db-after (:db/id game))]
+               (when (game/full? game)
+                 (deal-cards this game))
+               [:success])))))))))
 
 (defrecord JoinGameTxHandler [engine-transport]
   tx-handler/TxHandler

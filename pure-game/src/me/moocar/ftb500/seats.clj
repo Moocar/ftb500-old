@@ -30,14 +30,6 @@
   {:pre [(seat? seat)]}
   (contains? seat :seat/player))
 
-(defn taken-by?
-  "Returns true if the seat is already taken by player"
-  [seat player]
-  {:pre [(seat? seat)
-         (player? player)]}
-  (and (taken? seat)
-       (player= player (:seat/player seat))))
-
 (defn find-assigned
   "Returns the seat that is assigned to player"
   [game player]
@@ -45,6 +37,12 @@
          (player? player)]}
   (first (filter #(= (:user/id player) (:user/id (:seat/player %)))
                  (:game/seats game))))
+
+(defn find-available
+  "Returns the first seat that has not been taken yet"
+  [game]
+  {:pre [(game? game)]}
+  (first (remove taken? (:game/seats game))))
 
 (defn next
   [seats seat]
