@@ -85,8 +85,7 @@
     (async/sub route-pub-ch :kitty kitty-ch)
     (go-try
      (loop [ai (assoc-in ai [:game :game/bids] [])]
-       (let [{:keys [game]} ai
-             next-seat (bids/next-seat game)]
+       (let [{:keys [game]} ai]
          (<? (play-if-turn ai))
          (when-let [bid (<? bids-ch)]
            (let [player-bid (touch-bid game (:bid (:body bid)))
