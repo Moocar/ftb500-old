@@ -28,13 +28,7 @@
   [seat card]
   {:pre [(seat? seat)
          (card? card)]}
-  (some #(card= card %) (:seat/cards seat)))
-
-(defn can-follow-suit?
-  [seat suit]
-  {:pre [(seat? seat)
-         (suit? suit)]}
-  (some #(= suit (:card/suit %))
+  (some #(card= card %)
         (:seat/cards seat)))
 
 (defn could-have-followed-lead-suit?
@@ -50,7 +44,7 @@
           (let [{:keys [trick/plays]} trick
                 leading-play (first plays)
                 leading-suit (trick/find-leading-suit trick)]
-            (and (can-follow-suit? seat leading-suit)
+            (and (seats/get-follow-cards seat leading-suit)
                  (not= (:card/suit card) leading-suit))))))))
 
 (defn sort-plays [plays]

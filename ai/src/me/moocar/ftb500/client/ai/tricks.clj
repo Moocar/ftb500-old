@@ -12,14 +12,6 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
-(defn get-follow-cards
-  "Returns the cards from the hand that follow suit"
-  [seat suit]
-  {:pre [(seat? seat)
-         (suit? suit)]}
-  (seq (filter #(= suit (:card/suit %))
-               (:seat/cards seat))))
-
 (defn suggest
   "Suggest a card to play. Presumably based on amazing AI"
   [{:keys [game seat] :as ai}]
@@ -29,7 +21,7 @@
     (if (empty? last-trick)
       (rand-nth (vec (:seat/cards seat)))
       (let [leading-suit (trick/find-leading-suit last-trick)]
-        (rand-nth (or (get-follow-cards seat leading-suit)
+        (rand-nth (or (seats/get-follow-cards seat leading-suit)
                       (vec (:seat/cards seat))))))))
 
 (defn touch-play

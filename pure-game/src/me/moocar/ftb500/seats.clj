@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.seats
-  (:require [me.moocar.ftb500.schema :refer [seat? player? game? uuid?]])
+  (:require [me.moocar.ftb500.schema :refer [seat? player? game? uuid? suit?]])
   (:refer-clojure :exclude [next find]))
 
 (defn seat=
@@ -53,3 +53,12 @@
                                 (count seats))]
     (first (filter #(= next-seat-position (:seat/position %))
                    seats))))
+
+(defn get-follow-cards
+  "Returns the cards from the seat's hand that follow suit"
+  [seat suit]
+  {:pre [(seat? seat)
+         (suit? suit)]}
+  (seq (filter #(= suit (:card/suit %))
+               (:seat/cards seat))))
+
