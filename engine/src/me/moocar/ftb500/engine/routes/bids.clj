@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.routes.bids
   (:require [datomic.api :as d]
+            [me.moocar.lang :refer [uuid?]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.engine.card :as card]
@@ -10,9 +11,6 @@
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.schema :refer [bid-names]]
             [me.moocar.ftb500.seats :refer [seat=]]))
-
-(defn uuid? [thing]
-  (instance? java.util.UUID thing))
 
 (defn log [this msg]
   (log/log (:log this) msg))

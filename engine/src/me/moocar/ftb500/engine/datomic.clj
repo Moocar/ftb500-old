@@ -3,6 +3,7 @@
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
+            [me.moocar.lang :refer [uuid?]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.datomic.schema :as db-schema])
   (:import [java.io PushbackReader])
@@ -13,9 +14,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
-
-(defn uuid? [s]
-  (instance? java.util.UUID s))
 
 (defn get-attr
   [tx attr-k]
