@@ -47,16 +47,7 @@
   (follows-suit? [this suit play]
     (let [{:keys [trick.play/card]} play]
       (or (= (:card/suit card) suit)
-          (trump? this card))))
-  (-trick-winner [this plays]
-    {:pre [(every? play? plays)]}
-    (let [leading-play (first plays)
-          leading-suit (find-leading-suit plays)
-          plays-that-matter (->> (rest plays)
-                                 (filter #(protocols/follows-suit? this leading-suit %))
-                                 (cons leading-play))]
-      (reduce (partial play> this)
-              plays-that-matter))))
+          (trump? this card)))))
 
 (defn find-trump-left-suit
   "Returns the left trump suit. E.g if trumps are hearts, the left
@@ -125,11 +116,19 @@
 (defn trick-winner
   "Returns the winning play for a trick. Returns nil if trick is not
   finished"
-  [game trick]
+  [{:keys [contract-style] :as game}
+   {:keys [trick/plays] :as trick}]
   {:pre [(trick-game? game)
          (trick? trick)]}
-  (protocols/-trick-winner (:contract-style game)
-                           (:trick/plays trick)))
+  (let [leading-play (first plays)
+        leading-suit (find-leading-suit plays)
+        plays-that-matter (->> (rest plays)
+                               (filter #(protocols/follows-suit? contract-style
+                                                                 leading-suit
+                                                                 %))
+                               (cons leading-play))]
+    (reduce (partial play> contract-style)
+            plays-that-matter)))
 
 (defn finished?
   "Returns true if trick is finished. I.e all cards have been played"

@@ -7,7 +7,4 @@
   (card> [this card1 card2]
     "Should return true if card1 is of a higher value that card2")
   (follows-suit? [this suit play]
-    "Returns true if the play follows suit")
-  (-trick-winner [this plays]
-    "Given trick plays, should return the winning play, or nil if the
-    trick is not finished yet"))
+    "Returns true if the play follows suit"))
