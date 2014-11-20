@@ -4,6 +4,7 @@
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
+            [me.moocar.ftb500.engine.datomic.schema :as db-schema]
             [me.moocar.ftb500.engine.routes :as routes]
             [me.moocar.ftb500.engine.transport :as transport]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
@@ -44,14 +45,6 @@
       ffirst
       (->> (d/entity db))))
 
-(defn touch-game
-  [game]
-  (-> game
-      (->> (into {}))
-      (update-in [:game/bids] #(sort-by :db/id %))
-      (update-in [:game/seats] #(sort-by :seat/position %))
-      (assoc :db/id (:db/id game))))
-
 (defn implementation [this db request]
   (let [{:keys [datomic log]} this
         {:keys [body logged-in-user-id callback]} request
@@ -71,7 +64,7 @@
       (let [bid (when bid-name (find-bid db bid-name))
             seat (datomic/find db :seat/id seat-id)
             pre-game (first (:game/_seats seat))
-            game (touch-game pre-game)]
+            game (db-schema/touch-game pre-game)]
 
         (cond
 
@@ -140,7 +133,7 @@
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [bid (datomic/get-attr tx :player-bid/seat)
-          game (touch-game (datomic/get-attr tx :game/bids))
+          game (db-schema/touch-game (datomic/get-attr tx :game/bids))
           {:keys [player-bid/bid player-bid/seat]} bid
           msg {:route :bid
                :body  {:bid (cond-> {:player-bid/seat {:seat/id (:seat/id seat)}}

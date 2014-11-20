@@ -63,3 +63,27 @@
             [deck]
             deck-4-players-cards
             bids)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Touching
+
+(defn sort-plays [plays]
+  (sort-by :db/id plays))
+
+(defn touch-trick [trick]
+  (-> (into {} trick)
+      (update-in [:trick/plays] sort-plays)
+      (assoc :db/id (:db/id trick))))
+
+(defn sort-tricks [tricks]
+  (->> tricks
+       (map touch-trick)
+       (sort-by :db/id)))
+
+(defn touch-game
+  [{:keys [game/tricks game/bids game/seats db/id] :as game}]
+  (-> (into {} game)
+      (cond-> tricks (update-in [:game/tricks] sort-tricks)
+              bids   (update-in [:game/bids] #(sort-by :db/id %))
+              seats  (update-in [:game/seats] #(sort-by :seat/position %)))
+      (assoc :db/id id)))

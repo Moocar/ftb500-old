@@ -3,6 +3,7 @@
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
+            [me.moocar.ftb500.engine.datomic.schema :as db-schema]
             [me.moocar.ftb500.engine.routes :as routes]
             [me.moocar.ftb500.engine.transport :as transport]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
@@ -24,6 +25,7 @@
         (not= 3))))
 
 (defn could-have-followed-lead-suit?
+  "Returns true if the seat did not follow suit"
   [game seat card]
   {:pre [(trick-game? game)
          (seat? seat)
@@ -38,26 +40,6 @@
                 leading-suit (trick/find-leading-suit trick)]
             (and (seats/get-follow-cards seat leading-suit)
                  (not= (:card/suit card) leading-suit))))))))
-
-(defn sort-plays [plays]
-  (sort-by :db/id plays))
-
-(defn sort-tricks
-  [tricks]
-  (->> tricks
-       (map (fn [trick]
-              (-> (into {} trick)
-                  (update-in [:trick/plays] sort-plays)
-                  (assoc :db/id (:db/id trick)))))
-       (sort-by :db/id)))
-
-(defn touch-game
-  [game]
-  (-> (into {} game)
-      (update-in [:game/tricks] sort-tricks)
-      (update-in [:game/bids] #(sort-by :db/id %))
-      (update-in [:game/seats] #(sort-by :seat/position %))
-      (assoc :db/id (:db/id game))))
 
 (defn implementation [this db request]
   (let [{:keys [datomic log]} this
@@ -77,7 +59,7 @@
 
       (let [card (card/find db card)
             seat (datomic/find db :seat/id seat-id)
-            game (touch-game (first (:game/_seats seat)))
+            game (db-schema/touch-game (first (:game/_seats seat)))
             {:keys [game/seats game/tricks game/deck]} game
             last-trick (last tricks)
             game (trick/update-contract game)]
