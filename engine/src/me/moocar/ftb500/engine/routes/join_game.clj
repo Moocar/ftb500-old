@@ -4,6 +4,7 @@
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
+            [me.moocar.ftb500.engine.datomic.schema :as db-schema]
             [me.moocar.ftb500.engine.routes :as routes]
             [me.moocar.ftb500.engine.routes.game-info :as game-info]
             [me.moocar.ftb500.engine.transport :as transport]
@@ -95,6 +96,6 @@
             player (datomic/find db :user/id user-id)
             seat (get-seat player)
             msg {:route :deal-cards
-                 :body {:cards (map card/ext-form (:seat/cards seat))
+                 :body {:cards (map db-schema/card-ext-form (:seat/cards seat))
                         :game/first-seat (select-keys (:game/first-seat game) [:seat/id])}}]
         (transport/send! engine-transport user-id msg)))))

@@ -17,17 +17,6 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
-(defn ext-form
-  [bid]
-  (-> bid
-      (select-keys [:bid/name
-                    :bid/tricks
-                    :bid/suit
-                    :bid/contract-style
-                    :bid/score])
-      (cond-> (:bid/suit bid)
-              (update-in [:bid/suit] card/suit-ext-form))))
-
 (defrecord BidTable [datomic log]
   routes/Route
   (serve [this db request]
@@ -35,7 +24,7 @@
       (callback
        (->> (datomic/find db :bid/name)
             (sort-by :bid/score)
-            (map ext-form))))))
+            (map db-schema/bid-ext-form))))))
 
 (defn find-bid [db bid-name]
   (-> '[:find ?bid
@@ -126,7 +115,7 @@
         @(d/transact conn tx)
         (let [kitty-cards (:game.kitty/cards game)
               msg {:route :kitty
-                   :body {:cards (map card/ext-form kitty-cards)}}]
+                   :body {:cards (map db-schema/card-ext-form kitty-cards)}}]
           [[winning-seat-user-id msg]])))))
 
 (defrecord BidTxHandler [datomic engine-transport log]
@@ -137,7 +126,7 @@
           {:keys [player-bid/bid player-bid/seat]} bid
           msg {:route :bid
                :body  {:bid (cond-> {:player-bid/seat {:seat/id (:seat/id seat)}}
-                                    bid (assoc :player-bid/bid (ext-form bid)))}}
+                                    bid (assoc :player-bid/bid (db-schema/bid-ext-form bid)))}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game)

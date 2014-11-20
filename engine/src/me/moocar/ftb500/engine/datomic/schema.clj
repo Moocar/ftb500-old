@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.engine.datomic.schema
-  (:require [datomic.api :as d] 
+  (:require [datomic.api :as d]
             [me.moocar.ftb500.schema :as schema]))
 
 (def tempid #(d/tempid :db.part/user))
@@ -87,3 +87,51 @@
               bids   (update-in [:game/bids] #(sort-by :db/id %))
               seats  (update-in [:game/seats] #(sort-by :seat/position %)))
       (assoc :db/id id)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## External form
+
+(defn suit-ext-form
+  [suit]
+  suit)
+
+(defn card-ext-form
+  [card]
+  (-> card
+      (select-keys [:card/suit :card/rank])
+      (update-in [:card/suit] select-keys [:card.suit/name])
+      (update-in [:card/rank] select-keys [:card.rank/name])))
+
+(defn bid-ext-form [bid]
+  (-> bid
+      (select-keys [:bid/name
+                    :bid/tricks
+                    :bid/suit
+                    :bid/contract-style
+                    :bid/score])
+      (cond-> (:bid/suit bid)
+              (update-in [:bid/suit] suit-ext-form))))
+
+(defn deck-ext-form [deck]
+  (-> deck
+      (->> (into {}))
+      (update-in [:deck/cards] #(map card-ext-form %))))
+
+(defn seat-ext-form [seat]
+  (-> seat
+      d/touch
+      (select-keys [:seat/id :seat/position :seat/player :seat/cards :seat/team])
+      (dissoc :seat/cards)
+      (cond-> (contains? seat :seat/player)
+              (update-in [:seat/player] select-keys [:user/id :player/name]))))
+
+(defn game-ext-form
+  [game]
+  (-> game
+      (select-keys [:game/id :game/deck :game/seats :game/first-seat])
+      (update-in [:game/deck] deck-ext-form)
+      (update-in [:game/seats] #(map seat-ext-form %))
+      (cond-> (contains? game :game/first-seat)
+              (update-in [:game/first-seat] select-keys [:seat/id]))
+      (assoc :game/bids [])))
+

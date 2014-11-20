@@ -1,40 +1,16 @@
 (ns me.moocar.ftb500.engine.routes.game-info
   (:require [datomic.api :as d]
+            [me.moocar.lang :refer [uuid?]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
+            [me.moocar.ftb500.engine.datomic.schema :as db-schema]
             [me.moocar.ftb500.engine.routes :as routes])
   (:refer-clojure :exclude [find]))
-
-(defn uuid? [thing]
-  (instance? java.util.UUID thing))
 
 (defn find
   [db game-id]
   (datomic/find db :game/id game-id))
-
-(defn deck-ext-form [deck]
-  (-> deck
-      (->> (into {}))
-      (update-in [:deck/cards] #(map card/ext-form %))))
-
-(defn seat-ext-form [seat]
-  (-> seat
-      d/touch
-      (select-keys [:seat/id :seat/position :seat/player :seat/cards :seat/team])
-      (dissoc :seat/cards)
-      (cond-> (contains? seat :seat/player)
-              (update-in [:seat/player] select-keys [:user/id :player/name]))))
-
-(defn ext-form
-  [game]
-  (-> game
-      (select-keys [:game/id :game/deck :game/seats :game/first-seat])
-      (update-in [:game/deck] deck-ext-form)
-      (update-in [:game/seats] #(map seat-ext-form %))
-      (cond-> (contains? game :game/first-seat)
-              (update-in [:game/first-seat] select-keys [:seat/id]))
-      (assoc :game/bids [])))
 
 (defrecord GameInfo [datomic log]
   routes/Route
@@ -48,4 +24,4 @@
 
         :else
         (let [game (d/touch (find db game-id))]
-          [:success (ext-form game)]))))))
+          [:success (db-schema/game-ext-form game)]))))))

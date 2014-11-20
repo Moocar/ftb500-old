@@ -116,7 +116,7 @@
           trick (datomic/get-attr tx :trick.play/card)
           {:keys [trick.play/card trick.play/seat]} trick
           msg {:route :play-card
-               :body {:trick.play/card (card/ext-form card)
+               :body {:trick.play/card (db-schema/card-ext-form card)
                       :trick.play/seat {:seat/id (:seat/id seat)}}}]
       (doseq [user-id user-ids]
         (transport/send! engine-transport user-id msg)))))

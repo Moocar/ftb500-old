@@ -3,17 +3,6 @@
             [me.moocar.ftb500.schema :as schema :refer [ext-card?]])
   (:refer-clojure :exclude [find]))
 
-(defn suit-ext-form
-  [suit]
-  suit)
-
-(defn ext-form
-  [card]
-  (-> card
-      (select-keys [:card/suit :card/rank])
-      (update-in [:card/suit] select-keys [:card.suit/name])
-      (update-in [:card/rank] select-keys [:card.rank/name])))
-
 (defn partition-hands
   "Partitions a deck an into 4 hands of 10 cards each. Returns a map
   of :hands and :kitty"
