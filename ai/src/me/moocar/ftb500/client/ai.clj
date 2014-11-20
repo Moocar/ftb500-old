@@ -83,7 +83,7 @@
         first-seat (seats/find (:game/first-seat body) game)
         hand (set (map schema/touch-card cards))]
     (-> ai
-        (assoc :hand hand)
+        (assoc-in [:seat :seat/cards] hand)
         (assoc-in [:game :game/first-seat] first-seat))))
 
 (defn ready-game

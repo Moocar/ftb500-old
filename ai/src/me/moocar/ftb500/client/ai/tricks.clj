@@ -3,7 +3,8 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
-            [me.moocar.ftb500.schema :as schema :refer [game? trick-game? play? card? suit?]]
+            [me.moocar.ftb500.schema :as schema
+             :refer [game? trick-game? play? card? suit? seat?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.trick :as trick]
             [me.moocar.log :as log]))
@@ -13,22 +14,23 @@
 
 (defn get-follow-cards
   "Returns the cards from the hand that follow suit"
-  [hand suit]
-  {:pre [(every? card? hand)
+  [seat suit]
+  {:pre [(seat? seat)
          (suit? suit)]}
-  (seq (filter #(= suit (:card/suit %)) hand)))
+  (seq (filter #(= suit (:card/suit %))
+               (:seat/cards seat))))
 
 (defn suggest
   "Suggest a card to play. Presumably based on amazing AI"
-  [{:keys [game hand] :as ai}]
+  [{:keys [game seat] :as ai}]
   {:pre [(trick-game? game)]}
   (let [{:keys [game/tricks]} game
         last-trick (last tricks)]
     (if (empty? last-trick)
-      (rand-nth (vec hand))
+      (rand-nth (vec (:seat/cards seat)))
       (let [leading-suit (trick/find-leading-suit last-trick)]
-        (rand-nth (or (get-follow-cards hand leading-suit)
-                      (vec hand)))))))
+        (rand-nth (or (get-follow-cards seat leading-suit)
+                      (vec (:seat/cards seat))))))))
 
 (defn touch-play
   [game play-card]
@@ -75,18 +77,18 @@
     (async/sub route-pub-ch :play-card play-card-ch)
     (go-try
     (loop [ai ai]
-      (let [{:keys [game hand seat]} ai]
+      (let [{:keys [game seat]} ai]
         (<? (play-if-go ai))
         (when-let [play (:body (<? play-card-ch))]
           (let [play (touch-play game play)
                 played-card (:trick.play/card play)
                 hand (if (seat= seat (:trick.play/seat play))
-                       (disj hand played-card)
-                       hand)
+                       (disj (:seat/cards seat) played-card)
+                       (:seat/cards seat))
                 game (update-tricks game play)
-                ai (assoc ai
-                     :hand hand
-                     :game game)]
+                ai (-> ai
+                       (assoc :game game)
+                       (assoc-in [:seat :seat/cards] hand))]
             
             (if (trick/all-finished? game)
               (do (log ai "All tricks finished!")

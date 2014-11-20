@@ -39,17 +39,17 @@
 (defn kitty-game
   "If this player won the bidding, waits for kitty to be handed over
   and then selects 3 cards to swap out. Returns the new ai map"
-  [{:keys [game hand seat] :as ai}
+  [{:keys [game seat] :as ai}
    kitty-ch]
   {:pre [(ai? ai)]}
   (go-try
    (if (seat= seat (:player-bid/seat (bids/winner game)))
      (let [kitty-cards (map schema/touch-card (:cards (:body (<? kitty-ch))))
            _ (assert (every? card? kitty-cards))
-           all-shuffled (shuffle (concat kitty-cards hand))
+           all-shuffled (shuffle (concat kitty-cards (:seat/cards seat)))
            [new-kitty-cards hand] (split-at (count kitty-cards) all-shuffled)]
        (<? (game-send! ai :exchange-kitty {:cards new-kitty-cards}))
-       (assoc ai :hand (set hand)))
+       (assoc-in ai [:seat :seat/cards] (set hand)))
      ai)))
 
 (defn finalize-bidding
