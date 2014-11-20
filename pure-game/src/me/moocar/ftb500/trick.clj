@@ -102,26 +102,6 @@
   (->TrumpsContract trump-suit (trump-order deck trump-suit)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ## No Trumps Contract
-
-#_(defrecord TrumpsContract []
-  protocols/ContractStyle
-  (card> [this card1 card2]
-    {:pre [(card? card1) (card? card2)]}
-    (> (:card.rank/no-trumps-order (:card/rank card1))
-       (:card.rank/no-trumps-order (:card/rank card2))))
-  (-trick-winner [this plays]
-    {:pre [(every? play? plays)]}
-    (let [leading-play (first plays)
-          leading-suit (find-leading-suit plays)
-          plays-that-matter (->> (rest plays)
-                                 (filter #(= (:card/suit card) leading-suit))
-                                 (filter #(relevant-play? this leading-suit %))
-                                 (cons leading-play))]
-      (reduce (partial play> this)
-              plays-that-matter))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General Trick
 
 (defn new-contract
