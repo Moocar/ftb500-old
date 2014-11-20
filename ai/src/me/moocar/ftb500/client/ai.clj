@@ -11,13 +11,11 @@
             [me.moocar.ftb500.seats :as seats]
             [me.moocar.ftb500.schema :as schema
              :refer [game? seat? bid? player? uuid? ext-card? card?]]
+            [me.moocar.lang :refer [uuid]]
             [me.moocar.log :as log]))
 
 (defn log [this msg]
   (log/log (:log this) msg))
-
-(defn uuid []
-  (java.util.UUID/randomUUID))
 
 (defn start
   [this]

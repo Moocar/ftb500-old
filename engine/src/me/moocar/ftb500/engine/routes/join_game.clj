@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.routes.join-game
   (:require [datomic.api :as d]
+            [me.moocar.lang :refer [uuid?]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
@@ -11,10 +12,8 @@
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]))
 
-(defn uuid? [thing]
-  (instance? java.util.UUID thing))
-
-(defn- hand-cards-to-seat-tx [seat cards]
+(defn- hand-cards-to-seat-tx
+  [seat cards]
   (map #(vector :db/add (:db/id seat) :seat/cards (:db/id %))
        cards))
 
@@ -24,7 +23,7 @@
         {:keys [hands kitty]} (card/partition-hands deck-cards)
         first-seat (:db/id (rand-nth (vec seats)))]
     (assert (= 3 (count kitty))
-            (format "kitty has %s cards. Deck count: %s"
+            (format "kitty has [%s] cards. Deck count: [%s]"
                     (count kitty) (count deck-cards)))
     (assert game)
     (assert (coll? seats))

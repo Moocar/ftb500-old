@@ -7,6 +7,7 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [com.datomic/datomic-free "0.9.4899"]
                  [com.stuartsierra/component "0.2.2"]
+                 [me.moocar/lang "0.1.0-SNAPSHOT"]
                  [me.moocar/log "0.1.0-SNAPSHOT"]
                  [me.moocar.ftb500/pure-game "0.1.0-SNAPSHOT"]]
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.5.9"]]}})

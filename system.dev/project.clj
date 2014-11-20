@@ -15,6 +15,7 @@
   [com.datomic/datomic-free "0.9.4899"]
   [com.stuartsierra/component "0.2.2"]
   [com.taoensso/sente "1.2.0"]
+  [me.moocar/lang "0.1.0-SNAPSHOT"]
   [me.moocar/log "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/client "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/engine "0.1.0-SNAPSHOT"]
@@ -33,6 +34,7 @@
   "../generators/src"
   "../http/src"
   "../inline-transport/src"
+  "../lang/src"
   "../log/src"
   "../pure-game/src"
   "../sente-client/src"]
