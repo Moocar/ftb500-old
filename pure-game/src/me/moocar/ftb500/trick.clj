@@ -2,17 +2,9 @@
   (:require [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
             [me.moocar.ftb500.schema
-             :refer [trick-game? player-bid? card? play? trick? seat? game? bid? trick-game?]]
+             :refer [trick-game? player-bid? card? play? trick? seat? game? bid?
+                     deck?]]
             [me.moocar.ftb500.protocols :as protocols]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ## Trumps Contract
-
-(defn trump?
-  "Returns true if card is a trump. Including jokers and left/right bowers"
-  [trumps-contract card]
-  {:pre [(card? card)]}
-  (contains? (set (:trump-order trumps-contract)) card))
 
 (defn play>
   "Given 2 plays, returns the play that played the winning card"
@@ -29,6 +21,31 @@
   {:pre [(trick? trick)]}
   (get-in (first (:trick/plays trick))
           [:trick.play/card :card/suit]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## No Trumps
+
+(defrecord NoTrumpsContract []
+  protocols/ContractStyle
+  (card> [this card1 card2]
+    {:pre [(card? card1) (card? card2)]}
+    (> (:card.rank/no-trumps-order (:card/rank card1))
+       (:card.rank/no-trumps-order (:card/rank card2))))
+  (follows-suit? [this suit play]
+    (= (:card/suit (:trick.play/card play)) suit)))
+
+(defn new-no-trumps-contract
+  [deck trump-suit]
+  (->NoTrumpsContract))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Trumps Contract
+
+(defn trump?
+  "Returns true if card is a trump. Including jokers and left/right bowers"
+  [trumps-contract card]
+  {:pre [(card? card)]}
+  (contains? (set (:trump-order trumps-contract)) card))
 
 (defrecord TrumpsContract [trump-suit trump-order]
   protocols/ContractStyle
@@ -88,30 +105,39 @@
             [left-bower right-bower]
             [joker])))
 
-(defn new-trumps-contract
-  [deck trump-suit]
-  (->TrumpsContract trump-suit (trump-order deck trump-suit)))
+(def new-trumps-contract
+  (memoize
+   (fn [deck trump-suit]
+     (->TrumpsContract trump-suit (trump-order deck trump-suit)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General Trick
 
-(defn new-contract
+(def new-contract
   "Returns a new contract object for the game and winning-bid"
-  [game]
-  {:pre [(game? game)
-         (bid/finished? game)]}
-  (let [{:keys [player-bid/bid]} (bid/winner game)
-        {:keys [bid/contract-style]} bid]
-    (assert (bid? bid))
-    (assert contract-style)
-    (if (= :bid.contract-style/trumps contract-style)
-      (new-trumps-contract (:game/deck game) (:bid/suit bid))
-      (throw (ex-info "Unsupported Contract"
-                      {:contract-style contract-style})))))
+  (memoize
+   (fn [deck winning-bid]
+     {:pre [(deck? deck)]}
+     (let [{:keys [player-bid/bid]} winning-bid
+           {:keys [bid/contract-style]} bid]
+       (assert (bid? bid))
+       (assert contract-style)
+
+       (case contract-style
+
+         :bid.contract-style/trumps
+         (new-trumps-contract deck (:bid/suit bid))
+
+         :bid.contract-style/no-trumps
+         (new-no-trumps-contract)
+
+         (throw (ex-info "Unsupported Contract"
+                         {:contract-style contract-style})))))))
 
 (defn update-contract
   [game]
-  (assoc game :contract-style (new-contract game)))
+  (assoc game :contract-style (new-contract (:game/deck game)
+                                            (bid/winner game))))
 
 (defn trick-winner
   "Returns the winning play for a trick. Returns nil if trick is not
