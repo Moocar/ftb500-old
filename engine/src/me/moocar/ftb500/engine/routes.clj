@@ -9,22 +9,9 @@
 (defprotocol Route
   (serve [this db request]))
 
-(defmacro bad-args?
-  [forms]
-  `(when-not (empty? (keep (fn [rule#]
-                             (when-not rule#
-                               true))
-                           ~forms))
-     '~forms))
-
-(defmacro with-bad-args
-  [args & body]
-  `(let [errors# (bad-args? ~args)]
-     (if (not (empty? errors#))
-       [:bad-args {:msg errors#}]
-       (do ~@body))))
-
 (defn logged-callback
+  "Updates the callback in the message to log an ERROR when the
+  callback is called with a keyword"
   [this message]
   (fn [& args]
     (when (keyword? (first args))
@@ -34,7 +21,8 @@
 
 (defn route
   [this message]
-  (let [message (assoc message :callback (logged-callback this message))
+  (let [message (assoc message
+                  :callback (logged-callback this message))
         {:keys [body logged-in-user-id client-id route callback]} message
         route-ns-keyword (keyword "routes" (name route))]
     (log/log (:log this) (format "%8.8s:%8.8s %-10.10s %s"
