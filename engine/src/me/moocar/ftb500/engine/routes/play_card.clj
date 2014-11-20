@@ -1,7 +1,6 @@
 (ns me.moocar.ftb500.engine.routes.play-card
   (:require [datomic.api :as d]
             [me.moocar.ftb500.bid :as bids]
-            [me.moocar.ftb500.card :refer [card=]]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
@@ -23,13 +22,6 @@
         (d/q (d/history db) (:db/id game))
         (count)
         (not= 3))))
-
-(defn own-card?
-  [seat card]
-  {:pre [(seat? seat)
-         (card? card)]}
-  (some #(card= card %)
-        (:seat/cards seat)))
 
 (defn could-have-followed-lead-suit?
   [game seat card]
@@ -104,7 +96,7 @@
 
          (not (seat= seat (trick/next-seat game))) :not-your-go
 
-         (not (own-card? seat card)) :you-dont-own-that-card
+         (not (seats/has-card? seat card)) :you-dont-own-that-card
 
          (could-have-followed-lead-suit? game seat card) :could-have-followed-suit
 

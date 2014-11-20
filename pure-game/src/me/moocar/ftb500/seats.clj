@@ -1,5 +1,7 @@
 (ns me.moocar.ftb500.seats
-  (:require [me.moocar.ftb500.schema :refer [seat? player? game? uuid? suit?]])
+  (:require [me.moocar.ftb500.card :refer [card=]]
+            [me.moocar.ftb500.schema
+             :refer [seat? player? game? uuid? suit? card?]])
   (:refer-clojure :exclude [next find]))
 
 (defn seat=
@@ -62,3 +64,10 @@
   (seq (filter #(= suit (:card/suit %))
                (:seat/cards seat))))
 
+(defn has-card?
+  "Returns true if seat has the card in their hand"
+  [seat card]
+  {:pre [(seat? seat)
+         (card? card)]}
+  (some #(card= card %)
+        (:seat/cards seat)))
