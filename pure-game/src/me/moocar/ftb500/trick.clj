@@ -14,13 +14,6 @@
   {:pre [(card? card)]}
   (contains? (set (:trump-order trumps-contract)) card))
 
-(defn relevant-play?
-  "Returns true if the play follows suit, or is a trump"
-  [trumps-contract leading-suit play]
-  (let [{:keys [trick.play/card]} play]
-    (or (= (:card/suit card) leading-suit)
-        (trump? trumps-contract card))))
-
 (defn play>
   "Given 2 plays, returns the play that played the winning card"
   [trumps-contract play1 play2]
@@ -45,18 +38,22 @@
           card2-trump? (trump? this card2)]
       (or (and card1-trump? (not card2-trump?))
           (if (and card1-trump? card2-trump?)
-            (do (> (.indexOf trump-order card1)
-                   (.indexOf trump-order card2)))
+            (> (.indexOf trump-order card1)
+               (.indexOf trump-order card2))
             (if (and (not card1-trump?) (not card2-trump?))
               (> (:card.rank/no-trumps-order (:card/rank card1))
                  (:card.rank/no-trumps-order (:card/rank card2)))
               false)))))
+  (follows-suit? [this suit play]
+    (let [{:keys [trick.play/card]} play]
+      (or (= (:card/suit card) suit)
+          (trump? this card))))
   (-trick-winner [this plays]
     {:pre [(every? play? plays)]}
     (let [leading-play (first plays)
           leading-suit (find-leading-suit plays)
           plays-that-matter (->> (rest plays)
-                                 (filter #(relevant-play? this leading-suit %))
+                                 (filter #(protocols/follows-suit? this leading-suit %))
                                  (cons leading-play))]
       (reduce (partial play> this)
               plays-that-matter))))
@@ -103,6 +100,26 @@
 (defn new-trumps-contract
   [deck trump-suit]
   (->TrumpsContract trump-suit (trump-order deck trump-suit)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## No Trumps Contract
+
+#_(defrecord TrumpsContract []
+  protocols/ContractStyle
+  (card> [this card1 card2]
+    {:pre [(card? card1) (card? card2)]}
+    (> (:card.rank/no-trumps-order (:card/rank card1))
+       (:card.rank/no-trumps-order (:card/rank card2))))
+  (-trick-winner [this plays]
+    {:pre [(every? play? plays)]}
+    (let [leading-play (first plays)
+          leading-suit (find-leading-suit plays)
+          plays-that-matter (->> (rest plays)
+                                 (filter #(= (:card/suit card) leading-suit))
+                                 (filter #(relevant-play? this leading-suit %))
+                                 (cons leading-play))]
+      (reduce (partial play> this)
+              plays-that-matter))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General Trick
