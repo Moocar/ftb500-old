@@ -46,7 +46,6 @@
      :datomic
      :routes/add-game
      :routes/bid
-     :routes/bid-table
      :routes/game-info
      :routes/join-game
      :routes/login

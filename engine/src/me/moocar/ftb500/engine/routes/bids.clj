@@ -15,15 +15,6 @@
 (defn log [this msg]
   (log/log (:log this) msg))
 
-(defrecord BidTable [datomic log]
-  routes/Route
-  (serve [this db request]
-    (let [{:keys [callback]} request]
-      (callback
-       (->> (datomic/find db :bid/name)
-            (sort-by :bid/score)
-            (map db-schema/bid-ext-form))))))
-
 (defn find-bid [db bid-name]
   (-> '[:find ?bid
         :in $ ?bid-name
