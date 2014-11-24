@@ -96,6 +96,8 @@
             player (datomic/find db :user/id user-id)
             seat (get-seat player)
             msg {:route :deal-cards
-                 :body {:seat/cards (map db-schema/card-ext-form (:seat/cards seat))
-                        :game/first-seat (select-keys (:game/first-seat game) [:seat/id])}}]
+                 :body (merge (datomic/pull db [{:seat/cards db-schema/card-ext-pattern}]
+                                            (:db/id seat))
+                              (datomic/pull db [{:game/first-seat [:seat/id]}]
+                                            (:db/id game)))}]
         (transport/send! engine-transport user-id msg)))))
