@@ -47,23 +47,25 @@
 (defn start-and-shutdown-clients
   [clients engine-log]
   (async/thread
-    (let [clients (<!!all (map ai/start clients))
-          timeout (async/timeout 3000)
-          [clients port] (async/alts!! [(clients-thread clients) timeout])]
+    (try
+     (let [clients (<!!all (map ai/start clients))
+           timeout (async/timeout 3000)
+           [clients port] (async/alts!! [(clients-thread clients) timeout])]
 
-      (if-not (or (= timeout port)
-                  (instance? Throwable clients))
-        (do (log/log engine-log "Shutting down clients")
-            (let [timeout (async/timeout 2000)
-                  [clients port] (async/alts!! [(stop-clients clients) timeout])]
+       (if-not (or (= timeout port)
+                   (instance? Throwable clients))
+         (do (log/log engine-log "Shutting down clients")
+             (let [timeout (async/timeout 2000)
+                   [clients port] (async/alts!! [(stop-clients clients) timeout])]
 
-              (doseq [client clients]
-                (component/stop client))
-              (if (= timeout port)
-                (log/log engine-log "Failed to shutdown all clients")
-                (do (log/log engine-log "Successfully shutdown all clients")
-                    clients))))
-        clients))))
+               (doseq [client clients]
+                 (component/stop client))
+               (if (= timeout port)
+                 (log/log engine-log "Failed to shutdown all clients")
+                 (do (log/log engine-log "Successfully shutdown all clients")
+                     clients))))
+         clients))
+     (catch Throwable t t))))
 
 (defn print-client-log
   [client]
