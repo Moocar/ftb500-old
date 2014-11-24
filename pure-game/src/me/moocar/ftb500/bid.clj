@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.bid
   (:require [me.moocar.ftb500.game :as game]
-            [me.moocar.ftb500.schema :refer [player-bid? bid? seat? game?]]
+            [me.moocar.ftb500.schema :as schema :refer [player-bid? bid? seat? game?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]))
 
 (defn pass?
@@ -69,3 +69,11 @@
   [game]
   {:pre [(finished? game)]}
   (last-bid game))
+
+(defn find
+  "Finds the bid for the partial bid"
+  [partial-bid]
+  {:pre [(keyword? (:bid/name partial-bid))]}
+  (first (filter #(= (:bid/name partial-bid)
+                     (:bid/name %))
+                 schema/bids)))

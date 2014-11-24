@@ -27,14 +27,15 @@
   [ai]
   {:pre [(ai? ai)]}
   (let [my-bid (suggest-bid ai)]
-    (game-send! ai :bid {:bid/name (:bid/name my-bid)})))
+    (game-send! ai :bid (select-keys my-bid [:bid/name]))))
 
 (defn touch-bid
   [game player-bid]
   {:pre [(game? game)]}
-  (assert (= 4 (count (:game/seats game))))
   (-> player-bid
-      (update-in [:player-bid/seat] seats/find game)))
+      (update-in [:player-bid/seat] seats/find game)
+      (cond-> (:player-bid/bid player-bid)
+              (update-in [:player-bid/bid] bids/find))))
 
 (defn kitty-game
   "If this player won the bidding, waits for kitty to be handed over

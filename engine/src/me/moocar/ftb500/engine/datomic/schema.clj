@@ -141,14 +141,7 @@
       (update-in [:card/rank] select-keys [:card.rank/name])))
 
 (defn bid-ext-form [bid]
-  (-> bid
-      (select-keys [:bid/name
-                    :bid/tricks
-                    :bid/suit
-                    :bid/contract-style
-                    :bid/score])
-      (cond-> (:bid/suit bid)
-              (update-in [:bid/suit] suit-ext-form))))
+  (select-keys bid [:bid/name]))
 
 (defn deck-ext-form [deck]
   (-> deck
