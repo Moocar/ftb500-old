@@ -104,7 +104,7 @@
         @(d/transact conn tx)
         (let [kitty-cards (:game.kitty/cards game)
               msg {:route :kitty
-                   :body {:cards (map db-schema/card-ext-form kitty-cards)}}]
+                   :body {:game.kitty/cards (map db-schema/card-ext-form kitty-cards)}}]
           [[winning-seat-user-id msg]])))))
 
 (defrecord BidTxHandler [datomic engine-transport log]
