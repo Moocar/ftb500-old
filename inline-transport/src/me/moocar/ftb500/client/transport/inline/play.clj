@@ -20,13 +20,15 @@
   (component/start (merge engine (inline-client-system/new-system config))))
 
 (defn <!!all [s]
-  (let [responses (->> s
-                       (doall)
-                       (map <!!)
-                       (doall))]
-    (if-let [ex (first (filter #(instance? Throwable %) responses))]
-      (throw ex)
-      responses)))
+  (loop [[results ports] [[] (doall s)]]
+    (if (= (count results)
+           (count s))
+      results
+      (let [[v port] (async/alts!! ports)]
+        (if (instance? Throwable v)
+          (throw v)
+          (recur [(conj results v)
+                  (remove #(= port %) ports)]))))))
 
 (defn clients-thread [clients]
   (async/thread
