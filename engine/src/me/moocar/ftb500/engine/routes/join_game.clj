@@ -92,12 +92,12 @@
   (handle [this user-ids tx]
     (doseq [user-id user-ids]
       (let [db (:db-after tx)
-            game (datomic/get-attr tx :game/first-seat)
+            game-ent-id (datomic/get-ent-id-by-attr tx :game/first-seat)
             player (datomic/find db :user/id user-id)
             seat (get-seat player)
             msg {:route :deal-cards
                  :body (merge (datomic/pull db [{:seat/cards db-schema/card-ext-pattern}]
                                             (:db/id seat))
                               (datomic/pull db [{:game/first-seat [:seat/id]}]
-                                            (:db/id game)))}]
+                                            game-ent-id))}]
         (transport/send! engine-transport user-id msg)))))
