@@ -78,7 +78,7 @@
   {:pre [(ai? ai)]}
   (let [{:keys [game]} ai
         {:keys [body]} deal-cards
-        {:keys [cards]} body
+        {:keys [seat/cards]} body
         _ (assert (every? ext-card? cards))
         first-seat (seats/find (:game/first-seat body) game)
         hand (set (map schema/touch-card cards))]
