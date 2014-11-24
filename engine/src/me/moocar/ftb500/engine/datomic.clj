@@ -66,6 +66,20 @@
   (let [conn (:conn this)]
     (d/transact conn (concat tx (action-tx game-id action)))))
 
+(defn de-ident
+  [m]
+  (clojure.walk/prewalk
+   (fn [form]
+     (if (and (map? form)
+              (contains? form :db/ident))
+       (:db/ident form)
+       form))
+   m))
+
+(defn pull
+  ([db pattern db-id]
+     (de-ident (d/pull db pattern db-id))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Setup/Teardown
 

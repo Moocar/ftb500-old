@@ -20,4 +20,5 @@
 
         :else
         (let [game-ent-id (datomic/find-entity-id db :game/id game-id)]
-          [:success (db-schema/pull-game db game-ent-id)]))))))
+          [:success (-> (datomic/pull db db-schema/game-ext-pattern game-ent-id)
+                        (assoc :game/bids []))]))))))

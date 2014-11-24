@@ -103,21 +103,19 @@
             new-tx (add-kitty-to-hand-tx game winning-seat)]
         @(d/transact conn new-tx)
         (let [msg {:route :kitty
-                   :body (-> (d/pull (:db-after tx)
-                                     [{:game.kitty/cards db-schema/card-ext-pattern}]
-                                     (:db/id game))
-                             (update-in [:game.kitty/cards] db-schema/fix-cards))}]
+                   :body (datomic/pull (:db-after tx)
+                                       [{:game.kitty/cards db-schema/card-ext-pattern}]
+                                       (:db/id game))}]
           [[winning-seat-user-id msg]])))))
 
 (defrecord BidTxHandler [datomic engine-transport log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
-    (let [bid (datomic/get-attr tx :player-bid/seat)
+    (let [db (:db-after tx)
+          bid (datomic/get-attr tx :player-bid/seat)
           game (db-schema/touch-game (datomic/get-attr tx :game/bids))
-          {:keys [player-bid/bid player-bid/seat]} bid
           msg {:route :bid
-               :body  {:bid (cond-> {:player-bid/seat {:seat/id (:seat/id seat)}}
-                                    bid (assoc :player-bid/bid (db-schema/bid-ext-form bid)))}}
+               :body {:bid (datomic/pull db db-schema/player-bid-ext-pattern (:db/id bid))}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game)

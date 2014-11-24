@@ -108,26 +108,9 @@
    {:game/seats seat-ext-pattern}
    {:game/first-seat seat-ext-pattern}])
 
-(defn dissoc-card-ident
-  [card]
-  (-> card
-      (cond-> (contains? card :card/suit)
-              (update-in [:card/suit :card.suit/name] :db/ident))
-      (update-in [:card/rank :card.rank/name] :db/ident)))
-
-(defn fix-cards
-  [cards]
-  (map dissoc-card-ident cards))
-
-(defn update-pulled-game
-  [game]
-  (update-in game [:game/deck :deck/cards] fix-cards))
-
-(defn pull-game
-  [db game-ent-id]
-  (-> (d/pull db game-ext-pattern game-ent-id)
-      (update-pulled-game)
-      (assoc :game/bids [])))
+(def player-bid-ext-pattern
+  [{:player-bid/seat [:seat/id]}
+   {:player-bid/bid [{:bid/name [:db/ident]}]}])
 
 (defn suit-ext-form
   [suit]
