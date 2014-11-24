@@ -106,7 +106,7 @@
                    :body (-> (d/pull (:db-after tx)
                                      [{:game.kitty/cards db-schema/card-ext-pattern}]
                                      (:db/id game))
-                             (db-schema/fix-deck))}]
+                             (update-in [:game.kitty/cards] db-schema/fix-cards))}]
           [[winning-seat-user-id msg]])))))
 
 (defrecord BidTxHandler [datomic engine-transport log]
