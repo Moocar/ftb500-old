@@ -112,10 +112,10 @@
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [db (:db-after tx)
-          bid (datomic/get-attr tx :player-bid/seat)
+          bid-ent-id (datomic/get-ent-id-by-attr tx :player-bid/seat)
           game (db-schema/touch-game (datomic/get-attr tx :game/bids))
           msg {:route :bid
-               :body {:bid (datomic/pull db db-schema/player-bid-ext-pattern (:db/id bid))}}
+               :body {:bid (datomic/pull db db-schema/player-bid-ext-pattern bid-ent-id)}}
           user-msgs (-> user-ids
                         (->> (map #(vector % msg)))
                         (cond-> (bid/finished? game)
