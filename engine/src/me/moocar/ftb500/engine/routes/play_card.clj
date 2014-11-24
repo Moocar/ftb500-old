@@ -113,10 +113,11 @@
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [db (:db-after tx)
-          trick (datomic/get-attr tx :trick.play/card)
-          {:keys [trick.play/card trick.play/seat]} trick
+          trick-ent-id (datomic/get-ent-id-by-attr tx :trick.play/card)
           msg {:route :play-card
-               :body {:trick.play/card (db-schema/card-ext-form card)
-                      :trick.play/seat {:seat/id (:seat/id seat)}}}]
+               :body (datomic/pull db
+                                   [{:trick.play/card db-schema/card-ext-pattern}
+                                    {:trick.play/seat [:seat/id]}]
+                                   trick-ent-id)}]
       (doseq [user-id user-ids]
         (transport/send! engine-transport user-id msg)))))
