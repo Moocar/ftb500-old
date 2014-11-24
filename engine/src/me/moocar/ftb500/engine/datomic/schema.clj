@@ -108,6 +108,12 @@
    {:game/seats seat-ext-pattern}
    {:game/first-seat seat-ext-pattern}])
 
+(defn fix-deck
+  [game]
+  (update-in game
+             [:game/deck :deck/cards]
+             #(map dissoc-card-ident %)))
+
 (defn dissoc-card-ident
   [card]
   (-> card
@@ -117,9 +123,7 @@
 
 (defn update-pulled-game
   [game]
-  (update-in game
-             [:game/deck :deck/cards]
-             #(map dissoc-card-ident %)))
+  (fix-deck game))
 
 (defn pull-game
   [db game-ent-id]

@@ -100,11 +100,13 @@
     (assert winning-seat-user-id)
     (when (contains? (set connected-user-ids) winning-seat-user-id)
       (let [conn (:conn datomic)
-            tx (add-kitty-to-hand-tx game winning-seat)]
-        @(d/transact conn tx)
-        (let [kitty-cards (:game.kitty/cards game)
-              msg {:route :kitty
-                   :body {:game.kitty/cards (map db-schema/card-ext-form kitty-cards)}}]
+            new-tx (add-kitty-to-hand-tx game winning-seat)]
+        @(d/transact conn new-tx)
+        (let [msg {:route :kitty
+                   :body (-> (d/pull (:db-after tx)
+                                     [{:game.kitty/cards db-schema/card-ext-pattern}]
+                                     (:db/id game))
+                             (db-schema/fix-deck))}]
           [[winning-seat-user-id msg]])))))
 
 (defrecord BidTxHandler [datomic engine-transport log]
