@@ -15,7 +15,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
 
-(defn get-attr
+(defn get-ent-id-by-attr
   [tx attr-k]
   {:pre [tx (keyword? attr-k)]}
   (let [attribute (d/attribute (:db-after tx) attr-k)]
@@ -24,8 +24,13 @@
           :in $ ?attr-id
           :where [?eid ?attr-id]]
         (d/q (:tx-data tx) (:id attribute))
-        ffirst
-        (->> (d/entity (:db-after tx))))))
+        ffirst)))
+
+(defn get-attr
+  [tx attr-k]
+  {:pre [tx (keyword? attr-k)]}
+  (d/entity (:db-after tx)
+            (get-ent-id-by-attr tx attr-k)))
 
 (defn find-entity-id
   [db entity-id-key ext-id]
