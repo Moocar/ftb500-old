@@ -1,6 +1,7 @@
 (ns me.moocar.ftb500.client.ai.transport
   (:require [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.client :as client]
+            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.log :as log]))
 
 (defn log [ai msg]
@@ -8,6 +9,7 @@
 
 (defn send!
   [ai route msg]
+  {:pre [(:client-transport ai)]}
   (go-try
    (let [response (<? (client/send! ai route msg))]
      (if (keyword? response)

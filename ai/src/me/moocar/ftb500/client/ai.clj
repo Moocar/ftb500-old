@@ -89,7 +89,8 @@
 (defn ready-game
   "Initiates the ai map with the basic game information"
   [ai game-id]
-  {:pre [(uuid? game-id)]}
+  {:pre [(:client-transport ai)
+         (uuid? game-id)]}
   (let [{:keys [route-pub-ch]} ai]
     (go-try
      (-> ai
@@ -129,6 +130,7 @@
   "Join a game, wait for all players to join, run the bidding round,
   and then the tricks roundq"
   [ai game-id]
+  {:pre [(:client-transport ai)]}
   (go-try
    (-> (ready-game ai game-id)
        <?
