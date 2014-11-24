@@ -91,6 +91,42 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## External form
 
+(def card-ext-pattern
+  '[{:card/suit [{:card.suit/name [:db/ident]}]
+     :card/rank [{:card.rank/name [:db/ident]}]}])
+
+(def seat-ext-pattern
+  '[:seat/id
+    :seat/position
+    {:seat/player [:user/id :player/name]}
+    :seat/team])
+
+(def game-ext-pattern
+  [:game/id
+   {:game/deck [{:deck/cards card-ext-pattern}
+                :deck/num-players]}
+   {:game/seats seat-ext-pattern}
+   {:game/first-seat seat-ext-pattern}])
+
+(defn dissoc-card-ident
+  [card]
+  (-> card
+      (cond-> (contains? card :card/suit)
+              (update-in [:card/suit :card.suit/name] :db/ident))
+      (update-in [:card/rank :card.rank/name] :db/ident)))
+
+(defn update-pulled-game
+  [game]
+  (update-in game
+             [:game/deck :deck/cards]
+             #(map dissoc-card-ident %)))
+
+(defn pull-game
+  [db game-ent-id]
+  (-> (d/pull db game-ext-pattern game-ent-id)
+      (update-pulled-game)
+      (assoc :game/bids [])))
+
 (defn suit-ext-form
   [suit]
   suit)
