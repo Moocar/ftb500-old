@@ -51,7 +51,8 @@
           timeout (async/timeout 3000)
           [clients port] (async/alts!! [(clients-thread clients) timeout])]
 
-      (if-not (= timeout port)
+      (if-not (or (= timeout port)
+                  (instance? Throwable clients))
         (do (log/log engine-log "Shutting down clients")
             (let [timeout (async/timeout 2000)
                   [clients port] (async/alts!! [(stop-clients clients) timeout])]
@@ -61,7 +62,7 @@
               (if (= timeout port)
                 (log/log engine-log "Failed to shutdown all clients")
                 (do (log/log engine-log "Successfully shutdown all clients")
-                    true))))
+                    clients))))
         clients))))
 
 (defn print-client-log
@@ -105,7 +106,9 @@
             (do
               (log/log log "Shutting down engine after bad timeout")
               (component/stop engine))
-            (log/log log "Clients shut down successfully"))))
+            (let [clients v]
+              (log/log log "Clients shut down successfully")
+              (log/log log "Score")))))
       (finally
         (log/log log "Shutting down engine")
         (component/stop engine)))
