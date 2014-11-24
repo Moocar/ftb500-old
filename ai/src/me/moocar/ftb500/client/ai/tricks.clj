@@ -46,6 +46,14 @@
                        (update-in tricks [(dec (count tricks)) :trick/plays] conj play)))]
     (assoc game :game/tricks new-tricks)))
 
+(defn ext-card
+  [card]
+  {:pre [(card? card)]}
+  (-> card
+      (cond-> (:card/suit card)
+              (update :card/suit select-keys [:card.suit/name]))
+      (update :card/rank select-keys [:card.rank/name])))
+
 (defn play-if-go
   "If it is this player's turn, suggest and play a card"
   [{:keys [game seat] :as ai}]
@@ -53,7 +61,8 @@
   (go-try
    (let [next-seat (trick/next-seat game)]
      (when (seat= next-seat seat)
-       (<? (game-send! ai :play-card {:trick.play/card (suggest ai)}))))))
+       (let [card (ext-card (suggest ai))]
+         (<? (game-send! ai :play-card {:trick.play/card card})))))))
 
 (defn start
   "Waits until it is this player's turn and then plays a card, then
@@ -68,21 +77,21 @@
     (log ai "starting tricks ")
     (async/sub route-pub-ch :play-card play-card-ch)
     (go-try
-    (loop [ai ai]
-      (let [{:keys [game seat]} ai]
-        (<? (play-if-go ai))
-        (when-let [play (:body (<? play-card-ch))]
-          (let [play (touch-play game play)
-                played-card (:trick.play/card play)
-                hand (if (seat= seat (:trick.play/seat play))
-                       (disj (:seat/cards seat) played-card)
-                       (:seat/cards seat))
-                game (update-tricks game play)
-                ai (-> ai
-                       (assoc :game game)
-                       (assoc-in [:seat :seat/cards] hand))]
-            
-            (if (trick/all-finished? game)
-              (do (log ai "All tricks finished!")
-                  ai)
-              (recur ai)))))))))
+     (loop [ai ai]
+       (let [{:keys [game seat]} ai]
+         (<? (play-if-go ai))
+         (when-let [play (:body (<? play-card-ch))]
+           (let [play (touch-play game play)
+                 played-card (:trick.play/card play)
+                 hand (if (seat= seat (:trick.play/seat play))
+                        (disj (:seat/cards seat) played-card)
+                        (:seat/cards seat))
+                 game (update-tricks game play)
+                 ai (-> ai
+                        (assoc :game game)
+                        (assoc-in [:seat :seat/cards] hand))]
+             
+             (if (trick/all-finished? game)
+               (do (log ai "All tricks finished!")
+                   ai)
+               (recur ai)))))))))
