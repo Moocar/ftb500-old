@@ -56,6 +56,19 @@
     (first (filter #(= next-seat-position (:seat/position %))
                    seats))))
 
+(defn in-team?
+  [team seat]
+  (boolean
+   (some #(seat= % seat) team)))
+
+(defn teams
+  "Returns a set of teams, where a team is a set of seats"
+  [{:keys [game/seats] :as game}]
+  {:pre [(game? game)]}
+  (let [seats (sort-by :seat/position seats)]
+    #{(set (take-nth 2 seats))
+      (set (take-nth 2 (rest seats)))}))
+
 (defn get-follow-cards
   "Returns the cards from the seat's hand that follow suit"
   [seat suit]
