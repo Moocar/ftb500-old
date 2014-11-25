@@ -9,6 +9,7 @@
             [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
             [me.moocar.ftb500.engine.system :as engine-system]
             [me.moocar.ftb500.schema :as schema]
+            [me.moocar.ftb500.score :as score]
             [me.moocar.log :as log]))
 
 (defn dev-config
@@ -112,7 +113,8 @@
               (component/stop engine))
             (let [clients v]
               (log/log log "Clients shut down successfully")
-              (log/log log "Score")))))
+              (log/log log "Score")
+              (clojure.pprint/pprint {:score (score/summary (:game (first clients)))})))))
       (finally
         (log/log log "Shutting down engine")
         (component/stop engine)))
