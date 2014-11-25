@@ -47,6 +47,11 @@
   {:pre [(card? card)]}
   (contains? (set (:trump-order trumps-contract)) card))
 
+(defn jack?
+  [card]
+  (= :card.rank.name/jack
+     (:card.rank/name (:card/rank card))))
+
 (defrecord TrumpsContract [trump-suit trump-order]
   protocols/ContractStyle
   (card> [this card1 card2]
@@ -66,6 +71,8 @@
       (or (= (:card/suit card) suit)
           (trump? this card)))))
 
+;;; Trump order setup
+
 (defn find-trump-left-suit
   "Returns the left trump suit. E.g if trumps are hearts, the left
   trump suit it diamonds"
@@ -79,11 +86,6 @@
                (and (= (:card.suit/color suit) trump-color)
                     (not= suit trump-suit)))
              cards))))
-
-(defn jack?
-  [card]
-  (= :card.rank.name/jack
-     (:card.rank/name (:card/rank card))))
 
 (defn trump-order
   "Returns a sorted list of cards in trump order, which is 4-10, Q, K,
@@ -139,7 +141,7 @@
   (assoc game :contract-style (new-contract (:game/deck game)
                                             (bid/winner game))))
 
-(defn trick-winner
+(defn winner
   "Returns the winning play for a trick. Returns nil if trick is not
   finished"
   [{:keys [contract-style] :as game}
@@ -147,7 +149,7 @@
   {:pre [(trick-game? game)
          (trick? trick)]}
   (let [leading-play (first plays)
-        leading-suit (find-leading-suit plays)
+        leading-suit (find-leading-suit trick)
         plays-that-matter (->> (rest plays)
                                (filter #(protocols/follows-suit? contract-style
                                                                  leading-suit
@@ -179,6 +181,5 @@
     (if (empty? tricks)
       (:player-bid/seat (bid/winner game))
       (if (empty? (last tricks))
-        (trick-winner game (last tricks))
+        (winner game (last tricks))
         (seats/next seats (:trick.play/seat (last (:trick/plays (last tricks)))))))))
-

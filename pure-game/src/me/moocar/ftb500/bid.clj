@@ -1,7 +1,8 @@
 (ns me.moocar.ftb500.bid
   (:require [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema :refer [player-bid? bid? seat? game?]]
-            [me.moocar.ftb500.seats :as seats :refer [seat=]]))
+            [me.moocar.ftb500.seats :as seats :refer [seat=]])
+  (:refer-clojure :exclude [find]))
 
 (defn pass?
   "Returns true if the bid is a pass"
