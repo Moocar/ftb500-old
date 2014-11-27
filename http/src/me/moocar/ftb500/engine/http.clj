@@ -43,6 +43,6 @@
         (assoc this :server-atom nil))
       this)))
 
-(defn new-http-server []
-  (component/using (map->HttpServer {:port 8080})
+(defn new-http-server [config]
+  (component/using (map->HttpServer (get-in config [:engine :http :server]))
     [:http-handler]))

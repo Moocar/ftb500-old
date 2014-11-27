@@ -9,7 +9,7 @@
   [config]
   (component/system-map
    :http-handler (http/new-http-handler)
-   :http-server (http/new-http-server)
+   :http-server (http/new-http-server config)
    :sente-transport (sente-transport/new-sente-transport)
    :user-store (sente-transport/new-sente-user-store)
    :session-store (memory-session/memory-store)))

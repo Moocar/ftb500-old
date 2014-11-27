@@ -9,9 +9,6 @@
   (:import [java.io PushbackReader])
   (:refer-clojure :exclude [find]))
 
-(def ^:private mem-uri
-  "datomic:mem://ftb500")
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
 
@@ -115,10 +112,6 @@
   (when-not (ref-data-exists? conn)
     @(d/transact conn (db-schema/ref-data))))
 
-(defn del-db
-  []
-  (d/delete-database mem-uri))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 
@@ -145,6 +138,5 @@
 
 (defn new-datomic-database
   [config]
-  (component/using (map->DatomicDatabase (merge {:uri mem-uri}
-                                                (:datomic config)))
+  (component/using (map->DatomicDatabase (get-in config [:engine :datomic]))
     [:log]))

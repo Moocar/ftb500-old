@@ -12,10 +12,6 @@
             [me.moocar.ftb500.score :as score]
             [me.moocar.log :as log]))
 
-(defn dev-config
-  []
-  {:datomic {:uri "datomic:free://localhost:4334/ftb500"}})
-
 (defn new-ai-client
   [engine config]
   (component/start (merge engine (inline-client-system/new-system config))))
@@ -97,7 +93,7 @@
 
 (defn play
   []
-  (let [config (dev-config)
+  (let [config (read-string (slurp "../local_config.edn"))
         engine (component/start (engine-system/new-system config))
         clients (repeatedly 4 #(ai/new-client-ai (new-ai-client engine config)))
         log (:log engine)]
