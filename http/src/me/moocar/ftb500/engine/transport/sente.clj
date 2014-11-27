@@ -6,16 +6,21 @@
             [ring.middleware.session.store :as session-store]
             [taoensso.sente :as sente]))
 
-(defrecord SenteTransport [server-listener session-store
-
-                           ;; fns added from `sente/make-channel-socket!`
-                           send-fn ajax-post-fn ajax-get-or-ws-handshake-fn]
-
+(defrecord SenteUserStore [session-store]
   user-store/UserStore
   (write [this client-id user-id]
     (session-store/write-session session-store client-id {:uid user-id}))
   (delete [this client-id]
-    (session-store/write-session session-store client-id {}))
+    (session-store/write-session session-store client-id {})))
+
+(defn new-sente-user-store []
+  (component/using (map->SenteUserStore {})
+    [:session-store]))
+
+(defrecord SenteTransport [server-listener
+
+                           ;; fns added from `sente/make-channel-socket!`
+                           send-fn ajax-post-fn ajax-get-or-ws-handshake-fn]
 
   component/Lifecycle
   (start [this]
@@ -46,4 +51,4 @@
 
 (defn new-sente-transport []
   (component/using (map->SenteTransport {})
-    [:server-listener :session-store]))
+    [:server-listener]))

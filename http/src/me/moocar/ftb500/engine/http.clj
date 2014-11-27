@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.http
   (:require [com.stuartsierra.component :as component]
+            [org.httpkit.server :as http-kit]
             [ring.middleware.session :as session]))
 
 (defrecord HttpHandler [session-store sente-transport handler]
@@ -25,3 +26,23 @@
 (defn new-http-handler []
   (component/using (map->HttpHandler {})
     [:session-store :sente-transport]))
+
+(defrecord HttpServer [port server-atom http-handler]
+  component/Lifecycle
+  (start [this]
+    (if server-atom
+      this
+      (do (println "starging")
+       (assoc this
+         :server-atom (http-kit/run-server (:handler http-handler)
+                                           {:port port})))))
+  (stop [this]
+    (if server-atom
+      (do
+        (@server-atom :timeout 1000)
+        (assoc this :server-atom nil))
+      this)))
+
+(defn new-http-server []
+  (component/using (map->HttpServer {:port 8080})
+    [:http-handler]))
