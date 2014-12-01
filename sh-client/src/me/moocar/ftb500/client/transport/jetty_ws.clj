@@ -11,18 +11,17 @@
   []
   (reify WebSocketListener
     (onWebSocketBinary [this payload offset len]
-      )
+      (println "binary on client"))
     (onWebSocketClose [this status-code reason]
-      )
+      (println "close on client"))
     (onWebSocketConnect [this session]
-      )
+      (println "Client has connected!"))
     (onWebSocketError [this throwable]
-
-      (println "Error!" throwable))
+      (println "Client Error!" throwable))
     (onWebSocketText [this message]
-      )))
+      (println "Client text" message))))
 
-(defrecord JettyWSClientTransport [hostname port websockets]
+(defrecord JettyWSClientTransport [hostname port connect-timeout websockets]
 
   component/Lifecycle
   (start [this]
@@ -37,7 +36,10 @@
           uri (URI. uri-string)
           request (ClientUpgradeRequest.)
           _ (.start client)
-          session @(.connect client listener uri request)]
+          session (deref (.connect client listener uri request) connect-timeout nil)]
+      (when-not session
+        (throw (ex-info "Failed to connect"
+                        this)))
       (assoc this
         :session session)))
   (stop [this]
