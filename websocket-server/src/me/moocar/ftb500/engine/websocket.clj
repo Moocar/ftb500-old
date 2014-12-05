@@ -6,7 +6,7 @@
            (java.nio ByteBuffer)
            (java.io ByteArrayInputStream ByteArrayOutputStream)
            (org.eclipse.jetty.server Server ServerConnector)
-           (org.eclipse.jetty.websocket.api WebSocketAdapter Session WriteCallback)
+           (org.eclipse.jetty.websocket.api WebSocketListener Session WriteCallback)
            (org.eclipse.jetty.websocket.client WebSocketClient)
            (org.eclipse.jetty.websocket.server WebSocketHandler)
            (org.eclipse.jetty.websocket.servlet WebSocketCreator 
@@ -23,21 +23,21 @@
     (configure [factory]
       (.setCreator factory creator))))
 
-(defn- websocket-adapter 
-  "Returns a websocket adapter that does nothing but put connections,
+(defn- websocket-listener
+  "Returns a websocket listener that does nothing but put connections,
   reads or errors into the respective channels"
   [connect-ch read-ch error-ch]
-  (proxy [WebSocketAdapter] []
-    (onWebSocketConnect [session]
+  (reify WebSocketListener
+    (onWebSocketConnect [this session]
       (async/put! connect-ch session))
-    (onWebSocketText [message]
+    (onWebSocketText [this message]
       (throw (UnsupportedOperationException. "Text not supported")))
-    (onWebSocketBinary [bytes offset len]
+    (onWebSocketBinary [this bytes offset len]
       (async/put! read-ch [bytes offset len]))
-    (onWebSocketError [cause]
+    (onWebSocketError [this cause]
       (println "on server error" cause)
       (async/put! error-ch cause))
-    (onWebSocketClose [status-code reason]
+    (onWebSocketClose [this status-code reason]
       (async/put! connect-ch [status-code reason]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,7 +107,7 @@
   for a connection, and then passes all requests to `af`. af should be
   an async function of 2 arguments, the first a vector of [session
   bytes] and the second a channel to put to (ignored). Returns a
-  WebSocketAdapter"
+  WebSocketListener"
   [handler]
   (reify WebSocketCreator
     (createWebSocket [this request response]
@@ -118,7 +118,7 @@
             error-ch (async/chan 1024)]
         (connection-lifecycle connect-ch read-ch write-ch request-ch)
         (async/pipeline-async 1 write-ch handler request-ch)
-        (websocket-adapter connect-ch read-ch error-ch)))))
+        (websocket-listener connect-ch read-ch error-ch)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Component
@@ -175,7 +175,6 @@
   (start [this]
     (assoc this 
       :af (fn [[session bytes] out-ch]
-            (println "got bytes" bytes)
             (let [transit-ch (async/chan 1 (map transit-byte-buffer))]
               (async/pipe transit-ch out-ch)
               ((:af app-handler) [session (transit-bytes->clj bytes)]
@@ -196,6 +195,7 @@
   (start [this]
     (assoc this
       :af (fn [[session payload] out-ch]
+            (println "request:" payload)
             (async/put! out-ch payload)
             (async/close! out-ch))))
   (stop [this]
