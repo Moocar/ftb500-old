@@ -1,23 +1,28 @@
 (ns me.moocar.ftb500.client.sh.play
   (:require [clojure.tools.namespace.repl :refer [refresh refresh-all]]
+            [clojure.core.async :as async :refer [go <! <!!]]
             [com.stuartsierra.component :as component] 
-            [me.moocar.ftb500.engine.http.system :as http-system]
-            [me.moocar.ftb500.engine.http :as http]
             [me.moocar.ftb500.client.transport :as client-transport]
             [me.moocar.ftb500.client.sh.system :as sh-system]
-            [me.moocar.ftb500.engine.transport.jetty9-websocket :as jetty9-websocket]))
+            [me.moocar.ftb500.client.transport.jetty-ws :as jetty-ws]
+            [me.moocar.ftb500.engine.websocket :as websocket-server]
+            [me.moocar.ftb500.engine.websocket.system :as websocket-system]))
 
-(defn go []
+(defn play []
   (let [config (read-string (slurp "../local_config.edn")) 
-        http-system (component/start (http-system/new-system config))]
+        http-system (component/start (websocket-system/new-system config))]
     (try
       (let [client-system (component/start (sh-system/new-system config))]
         (try
-          (client-transport/send! (:client-transport client-system) "Hi there")
+          (let [result (<!! (jetty-ws/send! (:client-transport client-system) 
+                                            {:route :abc}))]
+            (Thread/sleep 100)
+            (if (instance? Throwable result)
+              (throw result)))
           (finally
             (component/stop client-system))))
       (finally
         (component/stop http-system)))))
 
 (defn reset []
-  (refresh :after 'me.moocar.ftb500.client.sh.play/go))
+  (refresh :after 'me.moocar.ftb500.client.sh.play/play))
