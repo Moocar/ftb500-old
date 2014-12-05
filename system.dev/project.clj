@@ -12,9 +12,9 @@
   [clj-stacktrace "0.2.8"]
   [org.clojure/core.cache "0.6.3"]
   [ch.qos.logback/logback-classic "1.1.2"]
+  [com.cognitect/transit-clj "0.8.259"]
   [com.stuartsierra/component "0.2.2"]
   [com.taoensso/sente "1.1.0"]
-  [info.sunng/ring-jetty9-adapter "0.7.2"]
   [me.moocar/lang "0.1.0-SNAPSHOT"]
   [me.moocar/log "0.1.0-SNAPSHOT"]
   [me.moocar.ftb500/client "0.1.0-SNAPSHOT"]
@@ -23,7 +23,8 @@
   [org.clojure/clojure "1.7.0-alpha4"]
   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
   [org.clojure/test.check "0.5.9"]
-  [org.eclipse.jetty.websocket/websocket-client "9.2.3.v20140905"]
+  [org.eclipse.jetty.websocket/websocket-client "9.3.0.M1"]
+  [org.eclipse.jetty.websocket/websocket-server "9.3.0.M1"]
   [com.datomic/datomic-free
    "0.9.5067"
    :exclusions
@@ -37,8 +38,7 @@
   [org.slf4j/log4j-over-slf4j
    "1.7.7"
    :exclusions
-   [org.slf4j/slf4j-api]]
-  [ring/ring-core "1.3.1" :exclusions [commons-codec]]]
+   [org.slf4j/slf4j-api]]]
  :source-paths
  ["src"
   "../ai/src"
@@ -46,21 +46,25 @@
   "../client/src"
   "../engine/src"
   "../generators/src"
-  "../http/src"
   "../inline-transport/src"
   "../lang/src"
   "../log/src"
   "../pure-game/src"
   "../sente-client/src"
-  "../sh-client/src"]
+  "../sh-client/src"
+  "../websocket-server/src"]
  :resource-paths
  ["resources"
   "../client/resources"
   "../engine/resources"
-  "../http/resources"
   "../sente-client/resources"
-  "../sh-client/resources"]
+  "../sh-client/resources"
+  "../websocket-server/resources"]
  :test-paths
- ["test" "../engine/test" "../pure-game/test" "../sh-client/test"]
+ ["test"
+  "../engine/test"
+  "../pure-game/test"
+  "../sh-client/test"
+  "../websocket-server/test"]
  :jvm-opts
  ["-Xmx1g" "-XX:MaxPermSize=256m" "-XX:-OmitStackTraceInFastThrow"])
