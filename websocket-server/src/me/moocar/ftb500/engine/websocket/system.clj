@@ -7,6 +7,7 @@
   [config]
   (component/system-map
    :transit-async-handler (websocket-server/new-transit-async-handler)
+   :app-handler (websocket-server/new-app-handler)
    :websocket-server (websocket-server/new-websocket-server config)))
 
 (defn new-system
