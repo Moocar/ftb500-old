@@ -29,7 +29,7 @@
           uri (make-uri this)
           conn (websocket/make-connection-map)
           listener (websocket/listener conn)]
-      (websocket/connection-lifecycle conn)
+      (websocket/start-connection conn listener handler-xf)
       (.start client)
       (if (deref (.connect client listener uri) 1000 nil)
         (assoc this :conn conn)
@@ -49,9 +49,12 @@
 (defn new-java-ws-client-transport
   [config]
   (let [http-config (get-in config [:engine :http :server])]
-    (map->JettyWSClientTransport (merge http-config
-                                        {:seq-atom (atom 0)}))))
+    (component/using
+      (map->JettyWSClientTransport (merge http-config
+                                          {:seq-atom (atom 0)}))
+      [:handler-xf])))
 
 (defn make-handler-xf
   []
-  (map #(println "hello" %)))
+  (comp (map ws-transit/request-read-bytes) 
+        (keep #(println "hello" (:body %)))))

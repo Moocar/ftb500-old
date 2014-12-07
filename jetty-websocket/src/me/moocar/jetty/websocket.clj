@@ -83,14 +83,6 @@
     (onWebSocketClose [this status-code reason]
       (async/put! connect-ch [status-code reason]))))
 
-(defn send-off!
-  [{:keys [write-ch] :as conn}
-   body-bytes]
-  (let [buf (ByteBuffer/allocate (inc (alength body-bytes)))]
-    (.put buf no-request-flag)
-    (.put buf body-bytes)
-    (async/put! write-ch buf)))
-
 (defn add-response-ch
   [{:keys [response-chans-atom] :as conn}
    request-id
@@ -100,6 +92,16 @@
                (fn [_]
                  (async/close! response-ch)
                  (swap! response-chans-atom dissoc request-id))))
+
+(defn send-off!
+  [{:keys [write-ch] :as conn}
+   body-bytes]
+  (println "send off!" body-bytes)
+  (let [buf (ByteBuffer/allocate (inc (alength body-bytes)))]
+    (.put buf no-request-flag)
+    (.put buf body-bytes)
+    (.rewind buf)
+    (async/put! write-ch buf)))
 
 (defn send!
   [{:keys [write-ch request-id-seq-atom] :as conn}
@@ -144,6 +146,7 @@
   (println "in read. response chans are" response-chans-atom)
   (let [buf (ByteBuffer/wrap bytes offset len)
         packet-type (.get buf)
+        _ (println "packet type is" packet-type)
         request-id (when-not (= no-request-flag packet-type)
                      (.getLong buf))
         body-bytes [bytes (+ offset (.position buf)) (- len (.position buf))]
@@ -188,3 +191,13 @@
           ([[status-code reason]]
              (println "closing because" status-code reason)
              (async/close! connect-ch)))))))
+
+(defn start-connection
+  [conn listener handler-xf]
+  (let [to-ch (async/chan 1 (map (fn [x] (println "out:" x))))]
+    (connection-lifecycle conn)
+    (async/pipeline-blocking 1
+                             to-ch
+                             handler-xf
+                             (:request-ch conn))))
+

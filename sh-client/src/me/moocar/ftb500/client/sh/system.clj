@@ -4,4 +4,5 @@
 
 (defn new-system [config]
   (component/system-map
-   :client-transport (jetty-ws-client-transport/new-java-ws-client-transport config)))
+   :client-transport (jetty-ws-client-transport/new-java-ws-client-transport config)
+   :handler-xf (jetty-ws-client-transport/make-handler-xf)))

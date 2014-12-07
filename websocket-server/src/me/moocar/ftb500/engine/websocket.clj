@@ -28,13 +28,9 @@
   [handler-xf]
   (fn [this request response]
     (let [conn (websocket/make-connection-map)
-          to-ch (async/chan 1 (map (fn [x] (println "out:" x))))]
-      (websocket/connection-lifecycle conn)
-      (async/pipeline-blocking 1
-                               to-ch
-                               handler-xf
-                               (:request-ch conn))
-      (websocket/listener conn))))
+          listener (websocket/listener conn)]
+      (websocket/start-connection conn listener handler-xf)
+      listener)))
 
 (defn- websocket-creator 
   "Creates a WebSocketCreator that when a websocket is opened, waits
@@ -82,8 +78,9 @@
 ;; Handler
 
 (defn echo
-  [{:keys [body] :as request}]
+  [{:keys [body conn] :as request}]
   (println "request:" body)
+  (websocket/send-off! conn (ws-transit/write-bytes "This is my broadcast. Muthafucker!!!!!!!!!"))
   (assoc request :response body))
 
 (defn make-handler-xf []
