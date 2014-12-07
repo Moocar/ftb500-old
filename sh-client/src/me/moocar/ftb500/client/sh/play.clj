@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.client.sh.play
   (:require [clojure.tools.namespace.repl :refer [refresh refresh-all]]
-            [clojure.core.async :as async :refer [go <! <!!]]
+            [clojure.core.async :as async :refer [go <! <!! alts!!]]
             [com.stuartsierra.component :as component] 
             [me.moocar.ftb500.client.transport :as client-transport]
             [me.moocar.ftb500.client.sh.system :as sh-system]
@@ -14,8 +14,10 @@
     (try
       (let [client-system (component/start (sh-system/new-system config))]
         (try
-          (let [result (<!! (jetty-ws/send! (:client-transport client-system) 
-                                            {:route :abc}))]
+          (let [result (first (alts!! [(jetty-ws/send! (:client-transport client-system)
+                                                       {:route :abc})
+                                       (async/timeout 1000)]))]
+            (println "got result from server" result)
             (Thread/sleep 100)
             (if (instance? Throwable result)
               (throw result)))

@@ -1,6 +1,6 @@
 (ns me.moocar.ftb500.engine.websocket
   (:require [clojure.core.async :as async :refer [go go-loop <! >!!]]
-            [cognitect.transit :as transit]
+            [me.moocar.jetty.websocket.transit :as ws-transit]
             [com.stuartsierra.component :as component]
             [me.moocar.jetty.websocket :as websocket])
   (:import (java.nio ByteBuffer)
@@ -24,33 +24,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Websocket connections
 
+(defn create-websocket
+  [handler-xf]
+  (fn [this request response]
+    (let [conn (websocket/make-connection-map)
+          to-ch (async/chan 1 (map (fn [x] (println "out:" x))))]
+      (websocket/connection-lifecycle conn)
+      (async/pipeline-blocking 1
+                               to-ch
+                               handler-xf
+                               (:request-ch conn))
+      (websocket/listener conn))))
+
 (defn- websocket-creator 
   "Creates a WebSocketCreator that when a websocket is opened, waits
   for a connection, and then passes all requests to `af`. af should be
   an async function of 2 arguments, the first a vector of [session
   bytes] and the second a channel to put to (ignored). Returns a
   WebSocketListener"
-  [handler]
+  [create-websocket-f]
   (reify WebSocketCreator
     (createWebSocket [this request response]
-      (let [connect-ch (async/chan 2)
-            request-ch (async/chan 1024)
-            read-ch (async/chan 1024)
-            write-ch (async/chan 1024)
-            error-ch (async/chan 1024)
-            connection {:connect-ch connect-ch
-                        :request-ch request-ch
-                        :read-ch read-ch
-                        :write-ch write-ch
-                        :error-ch error-ch}]
-        (websocket/connection-lifecycle connection)
-        (async/pipeline-async 1 write-ch handler request-ch)
-        (websocket/listener connection)))))
+      (create-websocket-f this request response))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Component
 
-(defrecord WebSocketServer [port server async-handler]
+(defrecord WebSocketServer [port handler-xf server]
   component/Lifecycle
   (start [this]
     (if server
@@ -58,7 +58,8 @@
       (let [server (Server.)
             connector (doto (ServerConnector. server)
                         (.setPort port))
-            creator (websocket-creator (:af async-handler))
+            create-websocket-f (create-websocket handler-xf)
+            creator (websocket-creator create-websocket-f)
             ws-handler (websocket-handler creator)]
         (.addConnector server connector)
         (.setHandler server ws-handler)
@@ -75,54 +76,19 @@
 (defn new-websocket-server [config]
   (component/using
     (map->WebSocketServer (get-in config [:engine :http :server]))
-    {:async-handler :transit-async-handler}))
+    [:handler-xf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Async Handler
+;; Handler
 
-(defn transit-byte-buffer
-  [packet]
-  (let [out (ByteArrayOutputStream.)
-        writer (transit/writer out :json)]
-    (transit/write writer packet)
-    (ByteBuffer/wrap (.toByteArray out))))
+(defn echo
+  [{:keys [body] :as request}]
+  (println "request:" body)
+  (assoc request :response body))
 
-(defn transit-bytes->clj
-  [bytes]
-  (let [reader (transit/reader (ByteArrayInputStream. bytes) :json)]
-    (transit/read reader)))
-
-(defrecord TransitAsyncHandler [app-handler]
-  component/Lifecycle
-  (start [this]
-    (assoc this 
-      :af (fn [[session bytes] out-ch]
-            (let [transit-ch (async/chan 1 (map transit-byte-buffer))]
-              (async/pipe transit-ch out-ch)
-              ((:af app-handler) [session (transit-bytes->clj bytes)]
-               transit-ch)))))
-  (stop [this]
-    this))
-
-(defn new-transit-async-handler []
-  (component/using 
-    (map->TransitAsyncHandler {})
-    [:app-handler]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; App Hanler
-
-(defrecord AppHandler []
-  component/Lifecycle
-  (start [this]
-    (assoc this
-      :af (fn [[session payload] out-ch]
-            (println "request:" payload)
-            (async/put! out-ch payload)
-            (async/put! out-ch payload)
-            (async/close! out-ch))))
-  (stop [this]
-    this))
-
-(defn new-app-handler []
-  (map->AppHandler {}))
+(defn make-handler-xf []
+  (comp (map ws-transit/request-read-bytes)
+        (keep echo)
+        (keep ws-transit/response-write-byte-buffer)
+        (keep websocket/response-cb)
+        (keep (constantly nil))))

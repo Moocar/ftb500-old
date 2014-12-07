@@ -47,6 +47,7 @@
   "../engine/src"
   "../generators/src"
   "../inline-transport/src"
+  "../jetty-websocket/src"
   "../lang/src"
   "../log/src"
   "../pure-game/src"
@@ -58,13 +59,8 @@
   "../client/resources"
   "../engine/resources"
   "../sente-client/resources"
-  "../sh-client/resources"
-  "../websocket-server/resources"]
+  "../sh-client/resources"]
  :test-paths
- ["test"
-  "../engine/test"
-  "../pure-game/test"
-  "../sh-client/test"
-  "../websocket-server/test"]
+ ["test" "../engine/test" "../pure-game/test" "../sh-client/test"]
  :jvm-opts
  ["-Xmx1g" "-XX:MaxPermSize=256m" "-XX:-OmitStackTraceInFastThrow"])
