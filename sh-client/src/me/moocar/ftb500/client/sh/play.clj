@@ -6,6 +6,7 @@
             [me.moocar.ftb500.client.sh.system :as sh-system]
             [me.moocar.ftb500.client.transport.jetty-ws :as jetty-ws]
             [me.moocar.ftb500.engine.websocket :as websocket-server]
+            [me.moocar.jetty.websocket.transit :as ws-transit]
             [me.moocar.ftb500.engine.websocket.system :as websocket-system]))
 
 (defn play []
@@ -14,7 +15,7 @@
     (try
       (let [client-system (component/start (sh-system/new-system config))]
         (try
-          (let [result (first (alts!! [(jetty-ws/send! (:client-transport client-system)
+          (let [result (first (alts!! [(ws-transit/send! (:conn (:client-transport client-system))
                                                        {:route :abc})
                                        (async/timeout 1000)]))]
             (println "got result from server" result)

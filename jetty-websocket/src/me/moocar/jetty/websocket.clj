@@ -34,13 +34,12 @@
     (writeFailed [this cause]
       (async/put! response-ch cause))))
 
-(defn send-bytes!
+(defn- send-bytes!
   "Sends bytes to remote-endpoint asynchronously and returns a channel
   that will close once successful or have an exception put onto it in
   the case of an error"
   [remote-endpoint byte-buffer]
   {:pre [remote-endpoint byte-buffer]}
-  (println "send bytes!" byte-buffer)
   (let [response-ch (async/chan)]
     (try
       (.sendBytes remote-endpoint 
@@ -51,6 +50,71 @@
         (async/put! response-ch t))
       (finally
         (async/close! response-ch)))
+    response-ch))
+
+(defn- add-response-ch
+  "Adds a response-ch for the request id. After 30 seconds, closes the
+  ch and removes it from the set"
+  [{:keys [response-chans-atom] :as conn}
+   request-id
+   response-ch]
+  (swap! response-chans-atom assoc request-id response-ch)
+  (async/take! (async/timeout 30000)
+               (fn [_]
+                 (async/close! response-ch)
+                 (swap! response-chans-atom dissoc request-id))))
+
+(defn send-response
+  "Sends a response for request-id on connection"
+  [{:keys [write-ch] :as conn}
+   request-id
+   body-bytes]
+  (let [buf (.. (ByteBuffer/allocate (+ 1 8 (alength body-bytes)))
+                (put response-flag)
+                (putLong request-id)
+                (put body-bytes)
+                (rewind))]
+    (async/put! write-ch buf)))
+
+(defn- make-response-cb
+  "Returns a function that takes bytes and sends them as a response
+  for request-id on connection"
+  [conn request-id]
+  (fn [body-bytes]
+    (send-response conn request-id body-bytes)))
+
+(defn response-cb
+  [{:keys [response-bytes response-cb] :as request}]
+  (response-cb response-bytes)
+  nil)
+
+(defn send-off!
+  "Sends a message on connection and doesn't wait for a response"
+  [{:keys [write-ch] :as conn}
+   body-bytes]
+  (let [buf (.. (ByteBuffer/allocate (inc (alength body-bytes)))
+                (put no-request-flag)
+                (put body-bytes)
+                (rewind))]
+    (async/put! write-ch buf)))
+
+(defn send!
+  "Sends a message on connection. The response will be put onto
+  response-ch"
+  [{:keys [write-ch request-id-seq-atom] :as conn}
+   body-bytes
+   response-ch]
+  (let [request-id (swap! request-id-seq-atom inc)
+        body-size (alength body-bytes)
+        request-id-size (+ 8 (/ (Long/SIZE) 8))
+        buffer-size (+ 1 request-id-size body-size)
+        buf (.. (ByteBuffer/allocate buffer-size)
+                (put request-flag)
+                (putLong request-id)
+                (put body-bytes)
+                (rewind))]
+    (add-response-ch conn request-id response-ch)
+    (async/put! write-ch buf)
     response-ch))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,70 +147,16 @@
     (onWebSocketClose [this status-code reason]
       (async/put! connect-ch [status-code reason]))))
 
-(defn add-response-ch
-  [{:keys [response-chans-atom] :as conn}
-   request-id
-   response-ch]
-  (swap! response-chans-atom assoc request-id response-ch)
-  (async/take! (async/timeout 30000)
-               (fn [_]
-                 (async/close! response-ch)
-                 (swap! response-chans-atom dissoc request-id))))
-
-(defn send-off!
-  [{:keys [write-ch] :as conn}
-   body-bytes]
-  (println "send off!" body-bytes)
-  (let [buf (ByteBuffer/allocate (inc (alength body-bytes)))]
-    (.put buf no-request-flag)
-    (.put buf body-bytes)
-    (.rewind buf)
-    (async/put! write-ch buf)))
-
-(defn send!
-  [{:keys [write-ch request-id-seq-atom] :as conn}
-   body-bytes
-   response-ch]
-  (println "sending")
-  (let [request-id (swap! request-id-seq-atom inc)
-        body-size (alength body-bytes)
-        request-id-size (+ 8 (/ (Long/SIZE) 8))
-        buffer-size (+ 1 request-id-size body-size)
-        buf (ByteBuffer/allocate buffer-size)]
-    (.put buf request-flag)
-    (.putLong buf request-id)
-    (.put buf body-bytes)
-    (.rewind buf)
-    (add-response-ch conn request-id response-ch)
-    (println "added to response ch" (:response-chans-atom conn) (get @(:response-chans-atom conn) 1))
-
-    (async/put! write-ch buf)
-    response-ch))
-
-(defn make-response-cb
-  [{:keys [write-ch] :as conn}
-   request-id]
-  (fn [body-bytes]
-    (println "in callback" body-bytes)
-    (let [buf (ByteBuffer/allocate (+ 1 8 (alength body-bytes)))]
-      (.put buf response-flag)
-      (.putLong buf request-id)
-      (.put buf body-bytes)
-      (.rewind buf)
-      (async/put! write-ch buf))))
-
-(defn response-cb
-  [{:keys [response-bytes response-cb] :as request}]
-  (response-cb response-bytes))
-
 (defn handle-read
+  "Handles new bytes coming in off connection and puts them onto
+  request-ch as a map of [:conn :body-bytes]. If the packet is a
+  request, a callback function that accepts bytes is assoc'd on
+  as :response-cb. If packet is a response to a request, the request
+  map is instead put onto the response-ch that was setup in `send!`"
   [{:keys [read-ch request-ch response-chans-atom] :as conn}
    [bytes offset len]]
-  (println "byte length" (alength bytes))
-  (println "in read. response chans are" response-chans-atom)
   (let [buf (ByteBuffer/wrap bytes offset len)
         packet-type (.get buf)
-        _ (println "packet type is" packet-type)
         request-id (when-not (= no-request-flag packet-type)
                      (.getLong buf))
         body-bytes [bytes (+ offset (.position buf)) (- len (.position buf))]
@@ -173,7 +183,6 @@
 
           read-ch
           ([v]
-             (println "read" v)
              (try
                (handle-read conn v)
                (catch Throwable t
@@ -183,7 +192,6 @@
 
           write-ch
           ([buf]
-             (println "writing" buf)
              (send-bytes! (.getRemote session) buf)
              (recur))
           
@@ -193,11 +201,18 @@
              (async/close! connect-ch)))))))
 
 (defn start-connection
-  [conn listener handler-xf]
-  (let [to-ch (async/chan 1 (map (fn [x] (println "out:" x))))]
-    (connection-lifecycle conn)
-    (async/pipeline-blocking 1
-                             to-ch
-                             handler-xf
-                             (:request-ch conn))))
+  "Starts listening on connection for connects, reads and writes. If
+  called with arity-1, a default connection and listener are created,
+  and the listener is returned"
+  ([conn handler-xf]
+     (let [listener (listener conn)]
+       (start-connection conn listener handler-xf)))
+  ([conn listener handler-xf]
+     (let [to-ch (async/chan 1 (map (fn [x] (println "out:" x))))]
+       (connection-lifecycle conn)
+       (async/pipeline-blocking 1
+                                to-ch
+                                handler-xf
+                                (:request-ch conn))
+       listener)))
 

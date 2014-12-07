@@ -1,5 +1,6 @@
 (ns me.moocar.jetty.websocket.transit
   (:require [clojure.core.async :as async :refer [go go-loop <! >!!]]
+            [me.moocar.jetty.websocket :as websocket]
             [cognitect.transit :as transit])
   (:import (java.io ByteArrayInputStream ByteArrayOutputStream)))
 
@@ -38,3 +39,13 @@
   (when response
     (update-copy request :response write-bytes :response-bytes)))
 
+(defn send-off!
+  [conn body]
+  (websocket/send-off! conn (write-bytes body)))
+
+(defn send!
+  [conn body]
+  (let [response-ch (async/chan 1 (comp (map request-read-bytes)
+                                        (map :body)))]
+    (websocket/send! conn (write-bytes body) response-ch)
+    response-ch))

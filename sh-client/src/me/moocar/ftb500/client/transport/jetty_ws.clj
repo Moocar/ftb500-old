@@ -21,30 +21,29 @@
                            path)]
     (URI. uri-string)))
 
-(defrecord JettyWSClientTransport [hostname port connect-timeout websockets handler-xf]
-
+(defrecord JettyWSClientTransport [hostname port connect-timeout websockets
+                                   client handler-xf]
   component/Lifecycle
   (start [this]
-    (let [client (WebSocketClient.)
-          uri (make-uri this)
-          conn (websocket/make-connection-map)
-          listener (websocket/listener conn)]
-      (websocket/start-connection conn listener handler-xf)
-      (.start client)
-      (if (deref (.connect client listener uri) 1000 nil)
-        (assoc this :conn conn)
-        (throw (ex-info "Failed to connect"
-                        this)))))
+    (if client
+      client
+      (let [client (WebSocketClient.)
+            uri (make-uri this)
+            conn (websocket/make-connection-map)
+            listener (websocket/start-connection conn handler-xf)]
+        (.start client)
+        (if (deref (.connect client listener uri) 1000 nil)
+          (assoc this
+            :client client
+            :conn conn)
+          (throw (ex-info "Failed to connect"
+                          this))))))
   (stop [this]
-    this))
-
-(defn send!
-  [client body]
-  (println "client send")
-  (let [response-ch (async/chan 1 (comp (map ws-transit/request-read-bytes)
-                                        (map :body)))]
-    (websocket/send! (:conn client) (ws-transit/write-bytes body) response-ch)
-    response-ch))
+    (if client
+      (do
+        (.stop client)
+        (assoc this :client nil :conn nil))
+      this)))
 
 (defn new-java-ws-client-transport
   [config]
