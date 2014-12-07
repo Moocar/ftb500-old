@@ -77,10 +77,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler
 
+(defn send-off!
+  [conn body]
+  (websocket/send-off! conn (ws-transit/write-bytes body)))
+
+(defn send!
+  [conn body]
+  (println "server send")
+  (let [response-ch (async/chan 1 (comp (map ws-transit/request-read-bytes)
+                                        (map :body)))]
+    (websocket/send! conn (ws-transit/write-bytes body) response-ch)
+    response-ch))
+
 (defn echo
   [{:keys [body conn] :as request}]
   (println "request:" body)
-  (websocket/send-off! conn (ws-transit/write-bytes "This is my broadcast. Muthafucker!!!!!!!!!"))
+  (send-off! conn "This is my broadcast. Muthafucker!!!!!!!!!")
+  (async/take! (send! conn {:route :answer-it})
+               #(println "server got response from client" %))
   (assoc request :response body))
 
 (defn make-handler-xf []

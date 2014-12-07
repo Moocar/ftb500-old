@@ -54,7 +54,16 @@
                                           {:seq-atom (atom 0)}))
       [:handler-xf])))
 
+(defn answer-it
+  [{:keys [body] :as request}]
+  (if (map? body)
+    (assoc request :response "My answer is fuck you!")
+    (println "hello" body)))
+
 (defn make-handler-xf
   []
   (comp (map ws-transit/request-read-bytes) 
-        (keep #(println "hello" (:body %)))))
+        (keep answer-it)
+        (keep ws-transit/response-write-byte-buffer)
+        (keep websocket/response-cb)
+        (keep (constantly nil))))
