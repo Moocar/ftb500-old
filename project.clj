@@ -10,5 +10,4 @@
         "sente-client"
         "ai"
         "sh-client"
-        "inline-transport"
-        "websocket-server"])
+        "inline-transport"])
