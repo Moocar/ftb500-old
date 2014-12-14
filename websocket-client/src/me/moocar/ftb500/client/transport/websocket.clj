@@ -1,4 +1,4 @@
-(ns me.moocar.ftb500.client.websocket
+(ns me.moocar.ftb500.client.transport.websocket
   (:require [clojure.core.async :as async] 
             [cognitect.transit :as transit]
             [com.stuartsierra.component :as component]
@@ -25,6 +25,12 @@
      (let [reader (transit/reader (ByteArrayInputStream. bytes offset len) :json)]
        (transit/read reader))))
 
+(defn request-read-bytes
+  [{:keys [body-bytes] :as request}]
+  (let [[bytes offset len] body-bytes]
+    (assoc request
+      :body (read-bytes bytes offset len))))
+
 (defn transitize
   [[body response-ch]]
   [(write-bytes body)
@@ -33,12 +39,6 @@
                                           (map :body)))]
        (async/pipe transit-ch response-ch)
        transit-ch))])
-
-(defn request-read-bytes
-  [{:keys [body-bytes] :as request}]
-  (let [[bytes offset len] body-bytes]
-    (assoc request
-      :body (read-bytes bytes offset len))))
 
 (defrecord WebSocketClient [websocket-client listener send-ch client-id log]
 

@@ -1,6 +1,6 @@
-(ns me.moocar.ftb500.websocket-client.system
+(ns me.moocar.ftb500.client.transport.websocket.system
   (:require [com.stuartsierra.component :as component]
-            [me.moocar.ftb500.websocket-client :as websocket-client]
+            [me.moocar.ftb500.client.transport.websocket :as websocket-client]
             [me.moocar.log :as log]))
 
 (defn new-system [config]

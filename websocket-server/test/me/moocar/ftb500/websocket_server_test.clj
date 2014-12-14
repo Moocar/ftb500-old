@@ -4,7 +4,7 @@
             [com.stuartsierra.component :as component]
             [me.moocar.async :as moo-async]
             [me.moocar.ftb500.engine.transport.websocket :as websocket-server]
-            [me.moocar.ftb500.client.websocket :as websocket-client]
+            [me.moocar.ftb500.client.transport.websocket :as websocket-client]
             [me.moocar.log :as log]
             [me.moocar.transport :as transport]))
 
