@@ -1,6 +1,9 @@
 (ns me.moocar.ftb500.engine.transport.websocket
-  (:require [com.stuartsierra.component :as component] 
+  (:require [clojure.core.async :as async]
+            [com.stuartsierra.component :as component]
             [cognitect.transit :as transit]
+            [me.moocar.lang :refer [uuid? uuid]]
+            [me.moocar.jetty.websocket :as websocket]
             [me.moocar.jetty.websocket.server :as websocket-server])
   (:import (java.io ByteArrayOutputStream ByteArrayInputStream)))
 
@@ -41,19 +44,44 @@
                    (let [bytes (write-bytes body)]
                      (response-cb [bytes 0 (count bytes)])))))
 
-(defn wrap-handler-xf
-  [xf]
+(defn transitize []
   (comp (map request-read-bytes)
-        (map wrap-response-cb)
-        xf))
+        (map wrap-response-cb)))
 
-(defrecord WebSocketServer [websocket-server handler-xf]
+(defn transitize-send
+  [[body response-ch]]
+  [(write-bytes body)
+   (when response-ch
+     (let [transit-ch (async/chan 1 (comp (map request-read-bytes)
+                                          (map :body)))]
+       (async/pipe transit-ch response-ch)
+       transit-ch))])
+
+(defn make-conn
+  [clients-atom]
+  (fn [request]
+    (println "in make conn" (.getLocalAddress request))
+    (let [send-ch (async/chan 1 (map transitize-send))
+          client-id (uuid)
+          conn (assoc (websocket/make-connection-map send-ch)
+                 :client/id client-id)]
+      (swap! clients-atom assoc client-id conn)
+      conn)))
+
+(defn get-client-conn
+  [{:keys [clients-atom] :as request}
+   client-id]
+  (get @clients-atom client-id))
+
+(defrecord WebSocketServer [websocket-server clients-atom handler-xf]
   component/Lifecycle
   (start [this]
     (assoc this
       :websocket-server (websocket-server/start 
                          (assoc websocket-server 
-                           :handler-xf (wrap-handler-xf handler-xf)))))
+                           :new-conn-f (make-conn clients-atom)
+                           :handler-xf (comp (transitize)
+                                             handler-xf)))))
   (stop [this]
     (assoc this 
       :websocket-server (websocket-server/stop websocket-server))))
@@ -63,5 +91,6 @@
   (component/using
     (map->WebSocketServer 
      {:websocket-server (websocket-server/new-websocket-server 
-                         (get-in config [:engine :websocket]) config)})
+                         (get-in config [:engine :websocket]))
+      :clients-atom (atom {})})
     {:handler-xf :engine-handler-xf}))

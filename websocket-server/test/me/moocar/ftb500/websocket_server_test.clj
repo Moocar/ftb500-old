@@ -9,16 +9,18 @@
             [me.moocar.transport :as transport]))
 
 (defn echo-handler
-  []
+  [client-id-ch]
   (keep (fn [{:keys [response-cb body] :as request}]
+          (println "handling the request" request)
+          (async/put! client-id-ch (:client/id (:conn request)))
           (response-cb body)
           nil)))
 
 (defn new-engine-system
-  [config]
+  [config client-id-ch]
   (component/system-map
    :websocket-server (websocket-server/new-websocket-server config)
-   :engine-handler-xf (echo-handler)))
+   :engine-handler-xf (echo-handler client-id-ch)))
 
 (defn new-client-system
   [config]
@@ -31,19 +33,25 @@
                           :hostname "localhost" 
                           :websockets {:scheme :ws
                                        :path "/ws"}}
+        client-id-ch (async/chan 1)
         engine-system (-> {:engine {:websocket websocket-config}}
-                          new-engine-system
-                          component/start)]
+                          (new-engine-system client-id-ch)
+                          component/start)
+        websocket-server (:websocket-server engine-system)]
     (try
       (let [client-system (-> {:engine {:websocket websocket-config}}
                               new-client-system
                               component/start)
             client (:websocket-client client-system)
+            client-recv-ch (:request-ch client)
             request {:route :moo/car :body "haha"}]
         (try
           (let [response (<!! (moo-async/request (:send-ch client) 
                                                  request))]
             (is (= response request)))
+          (let [client-id (<!! client-id-ch)
+                conn (websocket-server/get-client-conn websocket-server client-id)
+                send-off-msg "Booya!!!"])
           (finally
             (component/stop client-system))))
       (finally

@@ -50,14 +50,11 @@
           websocket-client (websocket-client/start 
                             (assoc websocket-client
                               :request-ch request-ch
-                              :send-ch send-ch))
-          conn (:conn websocket-client)
-          client-id (uuid)
-          this (assoc this
-                 :websocket-client websocket-client
-                 :listener listener
-                 :client-id client-id)]
-      this))
+                              :send-ch send-ch))]
+      (assoc this
+        :websocket-client websocket-client
+        :request-ch request-ch
+        :listener listener)))
   (stop [this]
     (client-listener/stop listener)
     (assoc this
