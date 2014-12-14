@@ -1,9 +1,11 @@
 (ns me.moocar.ftb500.engine.transport.websocket
   (:require [com.stuartsierra.component :as component] 
             [cognitect.transit :as transit]
-            [me.moocar.jetty.websocket.server :as websocket-server]
-            [me.moocar.transport :as transport])
+            [me.moocar.jetty.websocket.server :as websocket-server])
   (:import (java.io ByteArrayOutputStream ByteArrayInputStream)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Transit
 
 (defn write-bytes
   "Serializes a clojure datastructure using transit :json format.
@@ -28,6 +30,9 @@
   (let [[bytes offset len] body-bytes]
     (assoc request
       :body (read-bytes bytes offset len))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Server
 
 (defn wrap-response-cb
   [{:keys [response-cb] :as request}]

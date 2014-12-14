@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure.core.async :as async :refer [<!!]]
             [com.stuartsierra.component :as component]
+            [me.moocar.async :as moo-async]
             [me.moocar.ftb500.engine.transport.websocket :as websocket-server]
             [me.moocar.ftb500.client.websocket :as websocket-client]
             [me.moocar.log :as log]
@@ -37,12 +38,12 @@
       (let [client-system (-> {:engine {:websocket websocket-config}}
                               new-client-system
                               component/start)
-            request {:route :moo/car :body "haha"}
-            response-ch (async/chan)]
+            client (:websocket-client client-system)
+            request {:route :moo/car :body "haha"}]
         (try
-          (is (= (<!! (transport/-send! (:websocket-client client-system) request))
-                 request))
-          
+          (let [response (<!! (moo-async/request (:send-ch client) 
+                                                 request))]
+            (is (= response request)))
           (finally
             (component/stop client-system))))
       (finally
