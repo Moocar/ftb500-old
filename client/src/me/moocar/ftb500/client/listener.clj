@@ -2,35 +2,35 @@
   (:require [clojure.core.async :as async :refer [go-loop <!]]
             [me.moocar.log :as log]))
 
+(defn client-log
+  [this msg]
+  (log/log (:logger this)
+           (format "  CLIENT:%8.8s %s"
+                   (str (:client-id this))
+                   msg))
+  nil)
+
 (defn start
   [this]
-  (let [{:keys [receive-ch logger client-id]} this]
-    (if receive-ch
+  (let [{:keys [mult receive-ch]} this]
+    (if mult
       this
-      (let [receive-ch (async/chan)
-            mult (async/mult receive-ch)
-            log-ch (async/chan)]
+      (let [mult (async/mult receive-ch)
+            log-ch (async/chan 1 (keep #(client-log this %)))]
         (async/tap mult log-ch)
-        (go-loop []
-          (when-let [msg (<! log-ch)]
-            (log/log logger (format "  CLIENT:%8.8s %s"
-                                    (str client-id)
-                                    msg))
-            (recur)))
         (assoc this
           :mult mult
           :receive-ch receive-ch)))))
 
 (defn stop
   [this]
-  (let [{:keys [receive-ch mult]} this]
-    (if receive-ch
-      (do (async/close! receive-ch)
-          (assoc this
-            :mult nil
-            :receive-ch nil))
+  (let [{:keys [mult]} this]
+    (if mult
+      (assoc this
+        :mult nil)
       this)))
 
-(defn new-client-listener [logger client-id]
+(defn new-client-listener [logger receive-ch client-id]
   {:logger logger
-   :client-id client-id})
+   :client-id client-id
+   :receive-ch receive-ch})

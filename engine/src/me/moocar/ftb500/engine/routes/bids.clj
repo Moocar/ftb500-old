@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.routes.bids
   (:require [datomic.api :as d]
+            [me.moocar.async :as moo-async]
             [me.moocar.lang :refer [uuid?]]
             [me.moocar.log :as log]
             [me.moocar.ftb500.bid :as bid]
@@ -7,7 +8,7 @@
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.datomic.schema :as db-schema]
             [me.moocar.ftb500.engine.routes :as routes]
-            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.schema :refer [bid-names]]
             [me.moocar.ftb500.seats :refer [seat=]]))
@@ -25,17 +26,16 @@
 
 (defn implementation [this db request]
   (let [{:keys [datomic log]} this
-        {:keys [body logged-in-user-id callback]} request
+        {:keys [body logged-in-user-id]} request
         {bid-name :bid/name seat-id :seat/id} body]
-    (callback
-     (cond
+    (cond
 
       ;; Check basic inputs
 
-      (not logged-in-user-id) :must-be-logged-in
-      (and bid-name (not ((set bid-names) bid-name))) :unknown-bid
-      (not seat-id) :seat-id-required
-      (not (uuid? seat-id)) :seat-id-must-be-uuid
+      (not logged-in-user-id) [:must-be-logged-in]
+      (and bid-name (not ((set bid-names) bid-name))) [:unknown-bid]
+      (not seat-id) [:seat-id-required]
+      (not (uuid? seat-id)) [:seat-id-must-be-uuid]
 
       :else ;; Load entities
 
@@ -46,27 +46,27 @@
 
         (cond
 
-         ;; Make sure entities exist
+          ;; Make sure entities exist
 
-         (and bid-name (not bid)) :invalid-bid
-         (not seat) :seat-not-found
+          (and bid-name (not bid)) [:invalid-bid]
+          (not seat) [:seat-not-found]
 
-         ;; Game validations
+          ;; Game validations
 
-         (bid/passed? game seat) :you-have-already-passed
-         (not (seat= (bid/next-seat game) seat)) :its-not-your-go
-         (and bid-name (not (bid/valid? game bid))) :score-not-high-enough
+          (bid/passed? game seat) [:you-have-already-passed]
+          (not (seat= (bid/next-seat game) seat)) [:its-not-your-go]
+          (and bid-name (not (bid/valid? game bid))) [:score-not-high-enough]
 
-         :else ;; Perform actual transaction
+          :else ;; Perform actual transaction
 
-         (let [game-bid-id (d/tempid :db.part/user)
-               tx (concat
-                   (when bid-name
-                     [[:db/add game-bid-id :player-bid/bid (:db/id bid)]])
-                   [[:db/add game-bid-id :player-bid/seat (:db/id seat)]
-                    [:db/add (:db/id game) :game/bids game-bid-id]])]
-           @(datomic/transact-action datomic tx (:game/id game) :action/bid)
-           [:success])))))))
+          (let [game-bid-id (d/tempid :db.part/user)
+                tx (concat
+                    (when bid-name
+                      [[:db/add game-bid-id :player-bid/bid (:db/id bid)]])
+                    [[:db/add game-bid-id :player-bid/seat (:db/id seat)]
+                     [:db/add (:db/id game) :game/bids game-bid-id]])]
+            @(datomic/transact-action datomic tx (:game/id game) :action/bid)
+            [:success]))))))
 
 (defrecord Bid [datomic log]
   routes/Route
@@ -108,7 +108,7 @@
                                        (:db/id game))}]
           [[winning-seat-user-id msg]])))))
 
-(defrecord BidTxHandler [datomic engine-transport log]
+(defrecord BidTxHandler [datomic user-store log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [db (:db-after tx)
@@ -121,4 +121,5 @@
                         (cond-> (bid/finished? game)
                                 (concat (handle-last-bid datomic tx game user-ids))))]
       (doseq [[user-id msg] user-msgs]
-        (transport/send! engine-transport user-id msg)))))
+        (doseq [conn (user-store/user-conns user-store user-id)]
+          (moo-async/send-off! (:send-ch conn) msg))))))

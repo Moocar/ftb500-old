@@ -16,12 +16,12 @@
     :tx-handler/exchange-kitty (me.moocar.ftb500.engine.routes.kitty/map->ExchangeKittyTxHandler {})
     :tx-handler/play-card      (me.moocar.ftb500.engine.routes.play-card/map->PlayCardTxHandler {})
     :tx-handlers {})
-   {:tx-handler/create-game    [:engine-transport]
-    :tx-handler/join-game      [:engine-transport]
-    :tx-handler/deal-cards     [:engine-transport]
-    :tx-handler/bid            [:engine-transport :log :datomic]
-    :tx-handler/exchange-kitty [:engine-transport :log]
-    :tx-handler/play-card      [:engine-transport :log]
+   {:tx-handler/create-game    [:user-store]
+    :tx-handler/join-game      [:user-store]
+    :tx-handler/deal-cards     [:user-store]
+    :tx-handler/bid            [:user-store :log :datomic]
+    :tx-handler/exchange-kitty [:user-store :log]
+    :tx-handler/play-card      [:user-store :log]
     :tx-handlers [:tx-handler/create-game
                   :tx-handler/join-game
                   :tx-handler/deal-cards

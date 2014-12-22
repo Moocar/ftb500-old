@@ -16,17 +16,20 @@
   (let [reader (transit/reader (java.io.ByteArrayInputStream. bytes offset len) :json)]
     (transit/read reader)))
 
-(defn new-transit-conn [request]
-  (websocket/make-connection-map (map (comms/custom-send bytes->clj clj->bytes))))
+(defn new-transit-conn
+  [request]
+  (let [send-xf (comp (map (fn [m] (println "server-send-ch" m) m))
+                      (map (comms/custom-send bytes->clj clj->bytes)))]
+    (websocket/make-connection-map send-xf)))
 
-(defrecord WebSocketServer [websocket-server clients-atom handler-xf]
+(defrecord WebSocketServer [websocket-server clients-atom handler]
   component/Lifecycle
   (start [this]
     (let [websocket-server (websocket-server/start
                             (assoc websocket-server
                                    :new-conn-f new-transit-conn
                                    :handler-xf (comp (map (comms/custom-request bytes->clj))
-                                                     handler-xf
+                                                     (:xf handler)
                                                      (keep (comms/custom-response clj->bytes)))))]
       (assoc this
              :websocket-server websocket-server)))
@@ -41,4 +44,4 @@
     (map->WebSocketServer
      {:websocket-server (websocket-server/new-websocket-server
                          (get-in config [:engine :websocket :server]))})
-    {:handler-xf :engine-handler-xf}))
+    {:handler :engine-handler}))

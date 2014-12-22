@@ -4,17 +4,17 @@
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
             [me.moocar.async :refer [<? go-try]]
-            [me.moocar.ftb500.client :as client]
             [me.moocar.ftb500.client.ai :as ai]
-            [me.moocar.ftb500.client.transport.inline.system :as inline-client-system]
-            [me.moocar.ftb500.engine.system :as engine-system]
+            [me.moocar.ftb500.client.ai.transport :as ai-transport]
+            [me.moocar.ftb500.engine.transport.websocket.system :as engine-websocket-system]
+            [me.moocar.ftb500.client.transport.websocket.system :as client-websocket-system]
             [me.moocar.ftb500.schema :as schema]
             [me.moocar.ftb500.score :as score]
             [me.moocar.log :as log]))
 
 (defn new-ai-client
   [engine config]
-  (component/start (merge engine (inline-client-system/new-system config))))
+  (component/start (merge engine (client-websocket-system/new-system config))))
 
 (defn <!!all [s]
   (loop [[results ports] [[] (doall s)]]
@@ -30,7 +30,7 @@
 (defn clients-thread [clients]
   (async/thread
     (try
-      (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
+      (let [response (<!! (ai-transport/send! (first clients) :add-game {:num-players 4}))]
         (let [game-id (:game/id (second response))]
           (<!!all (map #(ai/start-playing % game-id) clients))))
       (catch Throwable t t))))
@@ -93,8 +93,8 @@
 
 (defn play
   []
-  (let [config (read-string (slurp "../local_config.edn"))
-        engine (component/start (engine-system/new-system config))
+  (let [config (read-string (slurp "local_config.edn"))
+        engine (component/start (engine-websocket-system/new-system config))
         clients (repeatedly 4 #(ai/new-client-ai (new-ai-client engine config)))
         log (:log engine)]
     (try

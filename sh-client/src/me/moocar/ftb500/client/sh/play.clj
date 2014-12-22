@@ -2,21 +2,21 @@
   (:require [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [clojure.core.async :as async :refer [go <! <!! alts!!]]
             [com.stuartsierra.component :as component] 
-            [me.moocar.ftb500.client.transport :as client-transport]
-            [me.moocar.ftb500.client.sh.system :as sh-system]
-            [me.moocar.ftb500.client.transport.jetty-ws :as jetty-ws]
-            [me.moocar.ftb500.engine.websocket :as websocket-server]
-            [me.moocar.jetty.websocket.transit :as ws-transit]
-            [me.moocar.ftb500.engine.websocket.system :as websocket-system]))
+            [me.moocar.async :as moo-async :refer [<!!?]]
+            [me.moocar.ftb500.client.transport.websocket.system :as client-websocket-system]
+            [me.moocar.ftb500.engine.transport.websocket.system :as engine-websocket-system]))
 
 (defn play []
-  (let [config (read-string (slurp "../local_config.edn")) 
-        http-system (component/start (websocket-system/new-system config))]
+  (let [config (read-string (slurp "local_config.edn")) 
+        engine-system (component/start (engine-websocket-system/new-system config))]
     (try
-      (let [client-system (component/start (sh-system/new-system config))]
+      (let [client-system (component/start (client-websocket-system/new-system config))
+            send-ch (:send-ch (:conn (:transport client-system)))]
         (try
-          (let [result (first (alts!! [(ws-transit/send! (:conn (:client-transport client-system))
-                                                       {:route :abc})
+          (let [result (<!!? (moo-async/timed-request send-ch {:route :abc}))]
+            (println "got result" result))
+          #_(let [result (<!! (moo-async/request )) (first (alts!! [(transport/send! (:conn (:client-transport client-system))
+                                                        {:route :abc})
                                        (async/timeout 1000)]))]
             (println "got result from server" result)
             (Thread/sleep 100)
@@ -25,7 +25,7 @@
           (finally
             (component/stop client-system))))
       (finally
-        (component/stop http-system)))))
+        (component/stop engine-system)))))
 
 (defn reset []
   (refresh :after 'me.moocar.ftb500.client.sh.play/play))

@@ -20,7 +20,7 @@
   `(throw-err (async/<! ~ch)))
 
 (defmacro <!!? [ch]
-  `(throw-err (async/<! ~ch)))
+  `(throw-err (async/<!! ~ch)))
 
 (defn send-off!
   [send-ch request]
@@ -31,6 +31,17 @@
   (let [response-ch (async/chan 1)]
     (async/put! send-ch [request response-ch])
     response-ch))
+
+(defn timed-request
+  ([send-ch request] (timed-request send-ch request 1000))
+  ([send-ch request timeout-msecs]
+   (let [response-ch (async/chan 1)
+         timeout (async/timeout timeout-msecs)]
+     (async/put! send-ch [request response-ch])
+     (async/go (async/alt! response-ch ([v] v)
+                           timeout (ex-info "Timed out" {:timeout-msecs timeout-msecs
+                                                         :request request
+                                                         :reason ::timeout}))))))
 
 (defn retry-request 
   [send-ch request]

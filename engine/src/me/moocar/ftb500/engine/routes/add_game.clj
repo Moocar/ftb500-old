@@ -1,10 +1,11 @@
 (ns me.moocar.ftb500.engine.routes.add-game
   (:require [datomic.api :as d]
             [me.moocar.log :as log]
+            [me.moocar.async :as moo-async]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
-            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]))
 
 (defn- new-seat-tx [game-db-id position]
@@ -25,23 +26,23 @@
 (defrecord AddGame [datomic log]
   routes/Route
   (serve [this db request]
-    (let [{:keys [body callback logged-in-user-id]} request
+    (let [{:keys [body logged-in-user-id]} request
           {:keys [num-players]} body]
-      (callback
-       (cond
-        (not num-players) :num-players-required
-        (not (number? num-players)) :num-players-must-be-number
-        (not logged-in-user-id) :must-be-logged-in
+      (cond
+        (not num-players) [:num-players-required]
+        (not (number? num-players)) [:num-players-must-be-number]
+        (not logged-in-user-id) [:must-be-logged-in]
         
         :else
         (let [deck (card/find-deck db num-players)
               game-id (d/squuid)
               tx (new-game-tx game-id deck)]
           @(datomic/transact-action datomic tx game-id :action/create-game)
-          [:success {:game/id game-id}]))))))
+          [:success {:game/id game-id}])))))
 
-(defrecord AddGameTxHandler [engine-transport]
+(defrecord AddGameTxHandler [user-store]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (doseq [user-id user-ids]
-      (transport/send! engine-transport user-id {:route :create-game}))))
+      (doseq [conn (user-store/user-conns user-store user-id)]
+        (moo-async/send-off! (:send-ch conn) {:route :create-game})))))

@@ -1,10 +1,14 @@
 (ns me.moocar.ftb500.engine.transport.websocket.system
   (:require [com.stuartsierra.component :as component]
+            [me.moocar.ftb500.engine.system :as engine-system]
             [me.moocar.ftb500.engine.transport.websocket]))
 
-(defn new-system [config]
+(defn- websocket-system [config]
   (component/system-map
-   :transport (me.moocar.ftb500.engine.transport.websocket/new-websocket-server config)
-   :engine-handler-xf (keep (fn [request] 
-                              (println "got request")))))
+   :transport (me.moocar.ftb500.engine.transport.websocket/new-websocket-server config)))
+
+(defn new-system [config]
+  (merge
+   (engine-system/new-system config)
+   (websocket-system config)))
 

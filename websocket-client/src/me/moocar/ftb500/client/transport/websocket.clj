@@ -26,22 +26,22 @@
 
   component/Lifecycle
   (start [this]
-    (let [request-ch (async/chan 1024 (map (comms/custom-request bytes->clj)))
+    (let [request-ch (async/chan 1024 (comp (map (comms/custom-request bytes->clj))
+                                            (map :body)))
           listener (client-listener/start
                     (client-listener/new-client-listener log request-ch client-id))
           websocket-client (websocket-client/start 
                             (assoc websocket-client
                               :request-ch request-ch
                               :new-conn-f new-transit-conn))]
-      (assoc this
-        :websocket-client websocket-client
-        :request-ch request-ch
-        :listener listener)))
+      (-> this
+          (merge websocket-client)
+          (assoc :listener listener))))
   (stop [this]
     (client-listener/stop listener)
-    (assoc this
-      :websocket-client (websocket-client/stop websocket-client)
-      :listener nil)))
+    (-> this
+        websocket-client/stop
+        (assoc :listener nil))))
 
 (defn new-websocket-client
   [config]

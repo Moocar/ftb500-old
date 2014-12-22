@@ -4,8 +4,7 @@
    [me.moocar.ftb500.engine.datomic :as datomic]
    [me.moocar.ftb500.engine.routes :as router]
    [me.moocar.ftb500.engine.routes.system :as route-system]
-   [me.moocar.ftb500.engine.transport :as engine-transport]
-   [me.moocar.ftb500.engine.transport.inline :as engine-inline-transport]
+   [me.moocar.ftb500.engine.transport.user-store :as user-store]
    [me.moocar.ftb500.engine.tx-handler.system :as tx-handler-system]
    [me.moocar.ftb500.engine.tx-listener :as tx-listener]
    [me.moocar.log :as log]))
@@ -14,12 +13,9 @@
   [config]
   (component/system-map
    :datomic (datomic/new-datomic-database config)
-   :engine-inline-transport (engine-inline-transport/new-engine-inline-transport)
-   :engine-inline-sender (engine-inline-transport/new-engine-inline-sender)
-   :engine-transport (engine-transport/new-engine-multi-transport [:engine-inline-sender])
-   :user-store (engine-inline-transport/new-inline-user-store)
+   :engine-handler (router/new-engine-handler)
    :log (log/new-logger config)
-   :server-listener (engine-transport/new-server-listener)
+   :user-store (user-store/default-user-store)
    :tx-listener (tx-listener/new-tx-listener)
    :router (router/new-router)))
 

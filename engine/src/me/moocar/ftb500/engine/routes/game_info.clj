@@ -11,14 +11,14 @@
 (defrecord GameInfo [datomic log]
   routes/Route
   (serve [this db request]
-    (let [{:keys [body callback]} request
+    (let [{:keys [body]} request
           {:keys [game-id]} body]
-      (callback
-       (cond
-        (not game-id) :game-id-required
-        (not (uuid? game-id)) :game-id-must-be-uuid
+      (cond
+        (not game-id) [:game-id-required]
+        (not (uuid? game-id)) [:game-id-must-be-uuid]
 
         :else
-        (let [game-ent-id (datomic/find-entity-id db :game/id game-id)]
-          [:success (-> (datomic/pull db db-schema/game-ext-pattern game-ent-id)
-                        (assoc :game/bids []))]))))))
+        (let [game-ent-id (datomic/find-entity-id db :game/id game-id)
+              game (-> (datomic/pull db db-schema/game-ext-pattern game-ent-id)
+                       (assoc :game/bids []))]
+          [:success game])))))

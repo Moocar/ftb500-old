@@ -2,9 +2,10 @@
   (:require [clojure.core.async :as async]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
+            [me.moocar.async :as moo-async]
             [me.moocar.log :as log]
             [me.moocar.ftb500.engine.datomic :as datomic]
-            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]))
 
 (defn- log
@@ -74,8 +75,16 @@
       (d/q (d/db conn) (d/log conn) game-id)
       (->> (sort-by first))))
 
+(defn send-request
+  [{:keys [user-store] :as tx-listener}
+   user-id
+   body]
+  (doseq [conn (user-store/user-conns user-store user-id)]
+    (moo-async/send-off! (:send-ch conn) body)))
+
 (defn register-user-for-game
   [this game-id user-id]
+  {:pre [game-id user-id]}
   (let [{:keys [datomic users-atom engine-transport]} this
         conn (:conn datomic)]
     (swap! users-atom
@@ -83,7 +92,7 @@
            [:games game-id]
            (fn [user-ids]
              (conj (set user-ids) user-id)))
-    (transport/send! engine-transport user-id {:route :registered})
+    (send-request this user-id {:route :registered})
     (doseq [tx (find-game-transactions conn game-id)]
       (let [tx (tx->datoms conn (first tx))
             tx {:tx-data tx
@@ -93,7 +102,7 @@
         (let [action-k (keyword (name action-k))]
           (handle-tx-event this [user-id] action-k tx))))))
 
-(defrecord TxListener [datomic engine-transport log users-atom tx-report-queue run-thread shutting-down?]
+(defrecord TxListener [datomic log users-atom tx-report-queue run-thread shutting-down?]
   component/Lifecycle
   (start [this]
     (if tx-report-queue
@@ -142,4 +151,4 @@
   []
   (component/using (map->TxListener {:users-atom (atom {:games {}})
                                      :shutting-down? (atom false)})
-    [:datomic :engine-transport :log :tx-handlers]))
+    [:datomic :log :tx-handlers :user-store]))

@@ -1,11 +1,12 @@
 (ns me.moocar.ftb500.engine.routes.play-card
   (:require [datomic.api :as d]
+            [me.moocar.async :as moo-async]
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.datomic.schema :as db-schema]
             [me.moocar.ftb500.engine.routes :as routes]
-            [me.moocar.ftb500.engine.transport :as transport]
+            [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]
             [me.moocar.ftb500.schema :as schema
              :refer [uuid? card? ext-card? trick? play? seat? suit? trick-game?]]
@@ -43,17 +44,16 @@
 
 (defn implementation [this db request]
   (let [{:keys [datomic log]} this
-        {:keys [logged-in-user-id body callback]} request
+        {:keys [logged-in-user-id body]} request
         {card :trick.play/card seat-id :seat/id} body]
-    (callback
-     (cond
+    (cond
 
       ;; Check basic inputs
 
-      (not logged-in-user-id) :must-be-logged-in
-      (not seat-id) :seat-id-required
-      (not (uuid? seat-id)) :seat-id-must-be-uuid
-      (not (ext-card? card)) :card-is-not-ext-card
+      (not logged-in-user-id) [:must-be-logged-in]
+      (not seat-id) [:seat-id-required]
+      (not (uuid? seat-id)) [:seat-id-must-be-uuid]
+      (not (ext-card? card)) [:card-is-not-ext-card]
 
       :else ;; Load entities
 
@@ -65,51 +65,51 @@
             game (trick/update-contract game)]
 
         (cond
-         
-         ;; Make sure entities exist
 
-         (not seat) :seat-not-found
-         (not card) :card-not-found
-         (not (card? card)) :card-is-not-card
-         
-         ;; Validations
+          ;; Make sure entities exist
 
-         (not (kitty-exchanged? db game)) :kitty-not-exchanged-yet
+          (not seat) [:seat-not-found]
+          (not card) [:card-not-found]
+          (not (card? card)) [:card-is-not-card]
 
-         (not (seat= seat (trick/next-seat game))) :not-your-go
+          ;; Validations
 
-         (not (seats/has-card? seat card)) :you-dont-own-that-card
+          (not (kitty-exchanged? db game)) [:kitty-not-exchanged-yet]
 
-         (could-have-followed-lead-suit? game seat card) :could-have-followed-suit
+          (not (seat= seat (trick/next-seat game))) [:not-your-go]
 
-         :main
+          (not (seats/has-card? seat card)) [:you-dont-own-that-card]
 
-         (let [new-trick? (or (empty? tricks)
-                              (trick/finished? game last-trick))
-               trick-id (if new-trick?
-                          (d/tempid :db.part/user)
-                          (:db/id last-trick))
-               trick-tx (when new-trick?
-                          [{:db/id (:db/id game)
-                            :game/tricks trick-id}])
-               play-id (d/tempid :db.part/user)
-               play-tx [{:db/id trick-id
-                         :trick/plays play-id}
-                        {:db/id play-id
-                         :trick.play/seat (:db/id seat)
-                         :trick.play/card (:db/id card)}
-                        [:db/retract (:db/id seat)
-                         :seat/cards (:db/id card)]]
-               tx (concat trick-tx play-tx)]
-           @(datomic/transact-action datomic tx (:game/id game) :action/play-card)
-           [:success])))))))
+          (could-have-followed-lead-suit? game seat card) [:could-have-followed-suit]
+
+          :main
+
+          (let [new-trick? (or (empty? tricks)
+                               (trick/finished? game last-trick))
+                trick-id (if new-trick?
+                           (d/tempid :db.part/user)
+                           (:db/id last-trick))
+                trick-tx (when new-trick?
+                           [{:db/id (:db/id game)
+                             :game/tricks trick-id}])
+                play-id (d/tempid :db.part/user)
+                play-tx [{:db/id trick-id
+                          :trick/plays play-id}
+                         {:db/id play-id
+                          :trick.play/seat (:db/id seat)
+                          :trick.play/card (:db/id card)}
+                         [:db/retract (:db/id seat)
+                          :seat/cards (:db/id card)]]
+                tx (concat trick-tx play-tx)]
+            @(datomic/transact-action datomic tx (:game/id game) :action/play-card)
+            [:success]))))))
 
 (defrecord PlayCard [datomic log]
   routes/Route
   (serve [this db request]
     (implementation this db request)))
 
-(defrecord PlayCardTxHandler [engine-transport log]
+(defrecord PlayCardTxHandler [user-store log]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [db (:db-after tx)
@@ -120,4 +120,5 @@
                                     {:trick.play/seat [:seat/id]}]
                                    trick-ent-id)}]
       (doseq [user-id user-ids]
-        (transport/send! engine-transport user-id msg)))))
+        (doseq [conn (user-store/user-conns user-store user-id)]
+          (moo-async/send-off! (:send-ch conn) msg))))))
