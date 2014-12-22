@@ -7,7 +7,8 @@
         "generators"
         "engine"
         "client"
-        "sente-client"
+        "websocket-client"
+        "websocket-server"
         "ai"
         "sh-client"
         "inline-transport"])

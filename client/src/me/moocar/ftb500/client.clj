@@ -1,22 +1,21 @@
-(ns me.moocar.ftb500.client.ai.transport
+(ns me.moocar.ftb500.client
   (:require [me.moocar.async :as moo-async :refer [<? go-try]]
-            [me.moocar.ftb500.client.ai.schema :refer [ai?]]
             [me.moocar.log :as log]))
 
-(defn log [ai msg]
-  (log/log (:log ai) msg))
+(defn log [client msg]
+  (log/log (:log client) msg))
 
 (defn send!
-  [ai route msg]
-  {:pre [(:transport ai)]}
-  (let [send-ch (:send-ch (:conn (:transport ai)))]
+  [client route msg]
+  {:pre [(:transport client)]}
+  (let [send-ch (:send-ch (:conn (:transport client)))]
     (go-try
      (let [response (<? (moo-async/request send-ch
                                            {:route route
                                             :body msg}))
            {:keys [body]} response]
        (if (or (keyword? body) (not= :success (first body)))
-         (do (log ai {:ERROR body})
+         (do (log client {:ERROR body})
              (throw (ex-info "Error in Send"
                              {:error body
                               :route route
@@ -24,8 +23,8 @@
          body)))))
 
 (defn game-send!
-  [ai route msg]
+  [client route msg]
   (let [new-msg (assoc msg
-                  :seat/id (:seat/id (:seat ai)))]
-    (log ai {:route route :msg new-msg})
-    (send! ai route new-msg)))
+                  :seat/id (:seat/id (:seat client)))]
+    (log client {:route route :msg new-msg})
+    (send! client route new-msg)))

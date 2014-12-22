@@ -2,7 +2,7 @@
   (:require [clojure.core.async :as async :refer [go <! go-loop]]
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
+            [me.moocar.ftb500.client :refer [game-send!]]
             [me.moocar.ftb500.schema :as schema
              :refer [game? trick-game? play? card? suit? seat?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]

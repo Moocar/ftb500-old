@@ -18,8 +18,7 @@
 
 (defn new-transit-conn
   [request]
-  (let [send-xf (comp (map (fn [m] (println "server-send-ch" m) m))
-                      (map (comms/custom-send bytes->clj clj->bytes)))]
+  (let [send-xf (comp (map (comms/custom-send bytes->clj clj->bytes)))]
     (websocket/make-connection-map send-xf)))
 
 (defrecord WebSocketServer [websocket-server clients-atom handler]

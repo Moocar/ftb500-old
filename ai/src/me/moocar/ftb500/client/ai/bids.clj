@@ -3,7 +3,7 @@
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bids]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.ftb500.client.ai.transport :refer [game-send!]]
+            [me.moocar.ftb500.client :refer [game-send!]]
             [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card?]]

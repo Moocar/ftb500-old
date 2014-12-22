@@ -3,7 +3,7 @@
             [clojure.set :refer [rename-keys]]
             [me.moocar.async :refer [<? go-try]]
             [me.moocar.ftb500.bid :as bid]
-            [me.moocar.ftb500.client.ai.transport :refer [game-send! send!]]
+            [me.moocar.ftb500.client :refer [game-send! send!]]
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.client.ai.tricks :as tricks]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
