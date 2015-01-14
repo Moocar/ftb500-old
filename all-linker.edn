@@ -1,0 +1,32 @@
+{:out-dir "/tmp/all"
+ :projects [{:dir "~/projects/fun/ftb500/log"}
+            {:dir "~/projects/fun/ftb500/client"}
+            {:dir "~/projects/fun/ftb500/ai"}
+            {:dir "~/projects/fun/ftb500/async"}
+            {:dir "~/projects/fun/ftb500/engine"}
+            {:dir "~/projects/fun/ftb500/lang"}
+            {:dir "~/projects/fun/ftb500/pure-game"}
+            {:dir "~/projects/fun/ftb500/sh-client"}
+            {:dir "~/projects/fun/ftb500/websocket-client"}
+            {:dir "~/projects/fun/ftb500/websocket-server"}
+            {:dir "~/projects/fun/ftb500/autoplay"}
+            {:dir "~/projects/fun/comms-async"}
+            {:dir "~/projects/fun/jetty-websocket/jetty-websocket"}
+            {:dir "~/projects/fun/jetty-websocket/websocket-client"}
+            {:dir "~/projects/fun/jetty-websocket/websocket-server"}
+            ]
+ :omit "{*.iml,*.idea,**.*~}"
+ :project-clj
+ {:project-name me.moocar/ftb500-sh-client
+  :version "0.1.0-SNAPSHOT"
+  :dependencies
+  [[org.clojure/java.classpath "0.2.2"]
+
+   ;; Other tools depend on clj-stacktrace; use latest to avoid
+   ;; NullPointerException
+   [clj-stacktrace "0.2.8"]
+
+   ;; Need latest version of core.cache to resolve dependency
+   ;; conflict with cemerick/friend
+   [org.clojure/core.cache "0.6.3"]]
+  :jvm-opts ["-Xmx1g" "-XX:MaxPermSize=256m" "-XX:-OmitStackTraceInFastThrow"]}}
