@@ -20,6 +20,14 @@
                      (:seat/id partial-seat))
                  (:game/seats game))))
 
+(defn find-by-position
+  "Find the full seat by its position in game"
+  [position game]
+  {:pre [(game? game)
+         (number? position)]}
+  (first (filter #(= position (:seat/position %))
+                 (:game/seats game))))
+
 (defn player=
   [player1 player2]
   {:pre [(player? player1)

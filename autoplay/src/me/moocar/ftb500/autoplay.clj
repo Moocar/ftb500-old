@@ -40,6 +40,7 @@
     (try
       (let [response (<!! (client/send! (first clients) :add-game {:num-players num-players}))]
         (let [game-id (:game/id (second response))]
+          (println "game-id" game-id)
           (<!!all (map #(ai/start-playing % game-id) clients))))
       (catch Throwable t t))))
 
@@ -99,31 +100,46 @@
     (println "-------------------------------")
     (print-out-client client)))
 
-(defn play
-  []
-  (let [config (read-string (slurp "local_config.edn"))
-        log (component/start (log/new-logger config))
+(defn new-system [config]
+  (let [log (component/start (log/new-logger config))
         engine (component/start (engine-websocket-system/new-system config))
         clients (repeatedly ai-players #(ai/new-client-ai (new-ai-client config)))]
+    {:engine engine
+     :clients clients
+     :log log}))
+
+(defn start-system
+  [{:keys [engine clients log] :as system}]
+  (let [timeout (async/timeout default-timeout)
+        [v port] (async/alts!! [(start-and-shutdown-clients clients log) timeout])]
+    (if (instance? Throwable v)
+      (do (log/log log v)
+          (throw v))
+      (if (= timeout port)
+        (do
+          (log/log log "Shutting down engine after bad timeout")
+          (component/stop engine))
+        (let [clients v]
+          (log/log log "Clients shut down successfully")
+          (log/log log "Score")
+          (pprint (score/summary (:game (first clients))))))))
+  system)
+
+(defn stop-system [system]
+  (update system :engine component/stop))
+
+(defn play
+  []
+  (let [system (new-system (read-string (slurp "local_config.edn")))
+        {:keys [engine clients log]} system]
     (try
-      (let [timeout (async/timeout default-timeout)
-            [v port] (async/alts!! [(start-and-shutdown-clients clients log) timeout])]
-        (if (instance? Throwable v)
-          (do (log/log log v)
-              (throw v))
-          (if (= timeout port)
-            (do
-              (log/log log "Shutting down engine after bad timeout")
-              (component/stop engine))
-            (let [clients v]
-              (log/log log "Clients shut down successfully")
-              (log/log log "Score")
-              (pprint (score/summary (:game (first clients))))))))
+      (-> system
+          start-system
+          stop-system)
+      (print-out-client-logs clients)
       (finally
         (log/log log "Shutting down engine")
-        (component/stop engine)))
-
-    (print-out-client-logs clients)))
+        (component/stop engine)))))
 
 (defn reset []
   (refresh :after 'me.moocar.ftb500.autoplay/play))
