@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.autoplay
   (:require [clojure.core.async :as async :refer [go <! <!! go-loop]]
+            [clojure.pprint :refer [pprint]]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
@@ -11,6 +12,13 @@
             [me.moocar.ftb500.schema :as schema]
             [me.moocar.ftb500.score :as score]
             [me.moocar.log :as log]))
+
+(def default-timeout 3000)
+
+(def num-players 4)
+
+(def ai-players 4)
+
 
 (defn new-ai-client
   [config]
@@ -30,7 +38,7 @@
 (defn clients-thread [clients]
   (async/thread
     (try
-      (let [response (<!! (client/send! (first clients) :add-game {:num-players 4}))]
+      (let [response (<!! (client/send! (first clients) :add-game {:num-players num-players}))]
         (let [game-id (:game/id (second response))]
           (<!!all (map #(ai/start-playing % game-id) clients))))
       (catch Throwable t t))))
@@ -48,7 +56,7 @@
   (async/thread
     (try
      (let [clients (<!!all (map ai/start clients))
-           timeout (async/timeout 3000)
+           timeout (async/timeout default-timeout)
            [clients port] (async/alts!! [(clients-thread clients) timeout])]
 
        (if-not (or (= timeout port)
@@ -76,7 +84,7 @@
        true))))
 
 (defn print-out-client [client]
-  (let [timeout (async/timeout 3000)
+  (let [timeout (async/timeout default-timeout)
         [v port] (async/alts!! [(print-client-log client) timeout])]
     (if (= timeout port)
       (println "Finished client logs. Timed out = " (= timeout port))
@@ -96,9 +104,9 @@
   (let [config (read-string (slurp "local_config.edn"))
         log (component/start (log/new-logger config))
         engine (component/start (engine-websocket-system/new-system config))
-        clients (repeatedly 4 #(ai/new-client-ai (new-ai-client config)))]
+        clients (repeatedly ai-players #(ai/new-client-ai (new-ai-client config)))]
     (try
-      (let [timeout (async/timeout 3000)
+      (let [timeout (async/timeout default-timeout)
             [v port] (async/alts!! [(start-and-shutdown-clients clients log) timeout])]
         (if (instance? Throwable v)
           (do (log/log log v)
@@ -110,7 +118,7 @@
             (let [clients v]
               (log/log log "Clients shut down successfully")
               (log/log log "Score")
-              (clojure.pprint/pprint {:score (score/summary (:game (first clients)))})))))
+              (pprint (score/summary (:game (first clients))))))))
       (finally
         (log/log log "Shutting down engine")
         (component/stop engine)))
