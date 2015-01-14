@@ -1,15 +1,20 @@
 (ns me.moocar.ftb500.client.sh.main
-  (:require [com.stuartsierra.component :as component] 
+  (:require [com.stuartsierra.component :as component]
+            [clojure.core.async :refer [<!!]]
+            [me.moocar.async :refer [<!!?]]
             [me.moocar.ftb500.client.sh.system :as sh-system])
   (:gen-class))
 
-(defn run [config]
-  (component/start (sh-system/new-system config)))
+(defn run [console config]
+  (let [system (component/start (sh-system/new-system console config))]
+    (<!!? (:ch (:sh-client system)))))
 
 (defn -main [& args]
   (try
-    (let [config (read-string (slurp "local_config.edn"))]
-      (run config)
+    (let [config (read-string (slurp "local_config.edn"))
+          console (System/console)]
+      (assert console "No Console found. If running from lein use `lein trampoline run`")
+      (run console config)
       (System/exit 0))
     (catch Throwable t
       (.printStackTrace t)
