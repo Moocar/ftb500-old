@@ -6,8 +6,13 @@
   (:gen-class))
 
 (defn run [console config]
-  (let [system (component/start (sh-system/new-system console config))]
-    (<!!? (:ch (:sh-client system)))))
+  (while true
+    (try
+      (let [system (component/start (sh-system/new-system console config))]
+        (<!!? (:ch (:sh-client system)))
+        (component/stop system))
+      (catch Throwable t
+        (.printStackTrace t)))))
 
 (defn -main [& args]
   (try

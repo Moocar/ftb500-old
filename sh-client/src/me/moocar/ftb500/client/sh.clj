@@ -1,12 +1,13 @@
 (ns me.moocar.ftb500.client.sh
   (:require [com.stuartsierra.component :as component]
             [clojure.pprint :refer [print-table]]
-            [clojure.core.async :as async :refer [thread <!]]
+            [clojure.core.async :as async :refer [thread <! go]]
             [me.moocar.async :refer [<? go-try <!!?]]
             [me.moocar.ftb500.client :as client :refer [game-send! send!]]
-            [me.moocar.ftb500.seats :as seats]
+            [me.moocar.ftb500.game :as game]
             [me.moocar.ftb500.schema :as schema
              :refer [game? seat? bid? player? uuid? ext-card? card?]]
+            [me.moocar.ftb500.seats :as seats]
             [me.moocar.lang :refer [uuid]]))
 
 (defn empty-array []
@@ -41,7 +42,8 @@
               (println "\nYou fucked up. seat-id should be a seat position number"))
             (recur))))))
 
-(defn prompt-seat [{:keys [console writer game] :as client}]
+(defn prompt-seat
+  [{:keys [console writer game] :as client}]
   (loop []
     (let [position (prompt-seat-position client)]
       (or (seats/find-by-position position game)
@@ -49,6 +51,22 @@
             (binding [*out* writer]
               (println "You fucked up. position not found in game"))
             (recur))))))
+
+(defn prompt-seat-loop
+  [{:keys [console writer] :as client}]
+  (go-try
+   (loop []
+     (let [seat (prompt-seat client)]
+       (println "seat" seat)
+       (let [assigned-seat (<! (client/join-game client seat))]
+         (if (= [:seat-taken] (:error (ex-data assigned-seat)))
+           (do
+             (binding [*out* writer]
+               (println "You fucked up. seat is already taken"))
+             (recur))
+           (if (ex-data assigned-seat)
+             (throw assigned-seat)
+             assigned-seat)))))))
 
 (def game
   {:game/bids [],
@@ -122,10 +140,11 @@
                (as-> this
                    (let [{:keys [game]} this]
                      (print-game writer game)
-                     (let [seat (prompt-seat this)]
-                       (println "seat" seat)
-                       (client/join-game-and-wait-for-others this
-                                                             (client/join-game this seat)))))
+                     (if (game/full? game)
+                       (go (println "Game is already full. Bad luck"))
+                       (client/join-game-and-wait-for-others
+                        this
+                        (prompt-seat-loop this)))))
                <?)))))))
   (stop [this]
     this))
