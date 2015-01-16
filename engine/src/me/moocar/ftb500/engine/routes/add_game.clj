@@ -1,6 +1,5 @@
 (ns me.moocar.ftb500.engine.routes.add-game
   (:require [datomic.api :as d]
-            [me.moocar.log :as log]
             [me.moocar.async :as moo-async]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
@@ -23,7 +22,7 @@
      [[:db/add game-db-id :game/id game-id]
       [:db/add game-db-id :game/deck (:db/id deck)]])))
 
-(defrecord AddGame [datomic log]
+(defrecord AddGame [datomic]
   routes/Route
   (serve [this db request]
     (let [{:keys [body logged-in-user-id]} request
@@ -32,7 +31,7 @@
         (not num-players) [:num-players-required]
         (not (number? num-players)) [:num-players-must-be-number]
         (not logged-in-user-id) [:must-be-logged-in]
-        
+
         :else
         (let [deck (card/find-deck db num-players)
               game-id (d/squuid)

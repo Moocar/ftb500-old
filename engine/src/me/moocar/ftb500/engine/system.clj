@@ -1,5 +1,6 @@
 (ns me.moocar.ftb500.engine.system
   (:require
+   [clojure.core.async :as async]
    [com.stuartsierra.component :as component]
    [me.moocar.ftb500.engine.datomic :as datomic]
    [me.moocar.ftb500.engine.routes :as router]
@@ -14,7 +15,7 @@
   (component/system-map
    :datomic (datomic/new-datomic-database config)
    :engine-handler (router/new-engine-handler)
-   :log (log/new-logger config)
+   :log-ch (async/chan 1 (keep (comp println log/format-log)))
    :user-store (user-store/default-user-store)
    :tx-listener (tx-listener/new-tx-listener)
    :router (router/new-router)))

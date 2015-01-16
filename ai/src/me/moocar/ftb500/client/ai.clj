@@ -7,11 +7,10 @@
             [me.moocar.ftb500.client.ai.bids :as bids]
             [me.moocar.ftb500.client.ai.tricks :as tricks]
             [me.moocar.ftb500.client.ai.schema :refer [ai?]]
-            [me.moocar.lang :refer [uuid]]
-            [me.moocar.log :as log]))
+            [me.moocar.lang :refer [uuid]]))
 
 (defn log [this msg]
-  (log/log (:log this) msg))
+  (async/put! (:log-ch this) msg))
 
 (defn start
   [this]
@@ -58,7 +57,7 @@
 
 (defn new-client-ai
   [this]
-  (let [{:keys [log transport]} this
+  (let [{:keys [transport]} this
         {:keys [listener]} transport
         {:keys [mult]} listener
         receive-ch (async/chan)]

@@ -1,10 +1,10 @@
 (ns me.moocar.ftb500.engine.datomic
-  (:require [clojure.edn :as edn]
+  (:require [clojure.core.async :as async]
+            [clojure.edn :as edn]
             [clojure.java.io :as jio]
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
             [me.moocar.lang :refer [uuid?]]
-            [me.moocar.log :as log]
             [me.moocar.ftb500.engine.datomic.schema :as db-schema])
   (:import [java.io PushbackReader])
   (:refer-clojure :exclude [find]))
@@ -115,13 +115,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 
-(defrecord DatomicDatabase [uri log]
+(defrecord DatomicDatabase [uri log-ch]
   component/Lifecycle
   (start [this]
     ;; Ensure database created
     (when (d/create-database uri)
-      (log/log log {:msg "Created database"
-                    :uri uri}))
+      (async/put! log-ch {:msg "Created database"
+                          :uri uri}))
     (let [conn (d/connect uri)]
       (ensure-schema conn)
       (ensure-ref-data conn)
@@ -139,4 +139,4 @@
 (defn new-datomic-database
   [config]
   (component/using (map->DatomicDatabase (get-in config [:engine :datomic]))
-    [:log]))
+    [:log-ch]))

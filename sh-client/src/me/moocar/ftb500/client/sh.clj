@@ -102,12 +102,10 @@
 
 (defn pr-join-game [{:keys [writer]}]
   (fn [body]
-    (println "in body")
     (binding [*out* writer]
-      (println "player joined" body))
-    nil))
+      (println "player joined" body))))
 
-(defrecord ShClient [console transport log]
+(defrecord ShClient [console transport log-ch]
   component/Lifecycle
   (start [this]
     (assoc
@@ -128,7 +126,7 @@
                          :route-pub-ch log-pub
                          :player {:player/name "Anthony"
                                   :user/id user-id})]
-         (async/sub log-pub :create-game (async/chan 1 (keep (pr-join-game this))))
+         (async/sub log-pub :create-game (async/chan 1 (keep (constantly nil))))
          (async/sub log-pub :join-game (async/chan 1 (keep (pr-join-game this))))
          (println "game id" game-id)
          (<!!?
@@ -141,7 +139,9 @@
                    (let [{:keys [game]} this]
                      (print-game writer game)
                      (if (game/full? game)
-                       (go (println "Game is already full. Bad luck"))
+                       (go
+                         (binding [*out* writer]
+                           (println "Game is already full. Bad luck")))
                        (client/join-game-and-wait-for-others
                         this
                         (prompt-seat-loop this)))))
@@ -151,4 +151,4 @@
 
 (defn new-sh-client [console config]
   (component/using (map->ShClient {:console console})
-    [:transport :log]))
+    [:transport :log-ch]))

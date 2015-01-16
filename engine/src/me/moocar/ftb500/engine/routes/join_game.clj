@@ -2,7 +2,6 @@
   (:require [datomic.api :as d]
             [me.moocar.async :as moo-async]
             [me.moocar.lang :refer [uuid?]]
-            [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.datomic.schema :as db-schema]
@@ -36,7 +35,7 @@
      (mapcat hand-cards-to-seat-tx seats hands)
      [[:db/add (:db/id game) :game/first-seat first-seat]])))
 
-(defrecord JoinGame [datomic log tx-listener deal-cards-delay]
+(defrecord JoinGame [datomic tx-listener deal-cards-delay]
   routes/Route
   (serve [this db request]
     (let [{:keys [logged-in-user-id body]} request
@@ -53,7 +52,7 @@
               seat (datomic/find db :seat/id seat-id)
               player (datomic/find db :user/id logged-in-user-id)]
 
-          (cond 
+          (cond
             (not game) [:game-does-not-exist]
             (not seat) [:seat-does-not-exist]
             (game/full? game) [:game-is-already-full]

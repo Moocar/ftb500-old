@@ -3,14 +3,9 @@
             [com.stuartsierra.component :as component]
             [datomic.api :as d]
             [me.moocar.async :as moo-async]
-            [me.moocar.log :as log]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [me.moocar.ftb500.engine.tx-handler :as tx-handler]))
-
-(defn- log
-  [this msg]
-  (log/log (:log this) msg))
 
 (defn handle-tx-event
   [this user-ids action-k tx]
@@ -102,7 +97,7 @@
         (let [action-k (keyword (name action-k))]
           (handle-tx-event this [user-id] action-k tx))))))
 
-(defrecord TxListener [datomic log users-atom tx-report-queue run-thread shutting-down?]
+(defrecord TxListener [datomic log-ch users-atom tx-report-queue run-thread shutting-down?]
   component/Lifecycle
   (start [this]
     (if tx-report-queue
@@ -120,9 +115,9 @@
                         (try
                           (handle-tx this tx)
                           (catch Throwable e
-                            (log/log log
-                                     {:msg "error in pubsub loop"
-                                      :ex e})))
+                            (async/put! log-ch
+                                        {:msg "error in pubsub loop"
+                                         :ex e})))
                         (recur)))))
                 (catch InterruptedException e
                   :finished)))]
@@ -133,15 +128,15 @@
     (if (and tx-report-queue (not @shutting-down?))
       (do
         (try
-          (log/log log "Shutting down tx listener")
+          (async/put! log-ch "Shutting down tx listener")
           (reset! shutting-down? true)
           (d/remove-tx-report-queue (:conn datomic))
           (.add tx-report-queue :finished)
           (let [timeout (async/timeout 10000)
                 [_ port] (async/alts!! [run-thread timeout])]
             (if (= timeout port)
-              (log/log log "Timed out waiting for tx listener thread to finish")
-              (log/log log "TxListener shutdown successfully: ")))
+              (async/put! log-ch "Timed out waiting for tx listener thread to finish")
+              (async/put! log-ch "TxListener shutdown successfully: ")))
           (finally
             (reset! shutting-down? false)))
         (assoc this :tx-report-queue nil))
@@ -151,4 +146,4 @@
   []
   (component/using (map->TxListener {:users-atom (atom {:games {}})
                                      :shutting-down? (atom false)})
-    [:datomic :log :tx-handlers :user-store]))
+    [:datomic :log-ch :tx-handlers :user-store]))

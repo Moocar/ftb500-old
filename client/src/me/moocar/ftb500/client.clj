@@ -4,11 +4,10 @@
             [me.moocar.ftb500.client.schema :refer [client?]]
             [me.moocar.ftb500.schema :as schema :refer [seat? ext-card?]]
             [me.moocar.ftb500.seats :as seats]
-            [me.moocar.lang :refer [uuid?]]
-            [me.moocar.log :as log]))
+            [me.moocar.lang :refer [uuid?]]))
 
 (defn log [client msg]
-  (log/log (:log client) msg))
+  (async/put! (:log-ch client) msg))
 
 (defn send!
   [client route msg]

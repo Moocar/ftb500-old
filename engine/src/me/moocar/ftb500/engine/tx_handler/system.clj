@@ -19,9 +19,9 @@
    {:tx-handler/create-game    [:user-store]
     :tx-handler/join-game      [:user-store]
     :tx-handler/deal-cards     [:user-store]
-    :tx-handler/bid            [:user-store :log :datomic]
-    :tx-handler/exchange-kitty [:user-store :log]
-    :tx-handler/play-card      [:user-store :log]
+    :tx-handler/bid            [:user-store :datomic]
+    :tx-handler/exchange-kitty [:user-store]
+    :tx-handler/play-card      [:user-store]
     :tx-handlers [:tx-handler/create-game
                   :tx-handler/join-game
                   :tx-handler/deal-cards

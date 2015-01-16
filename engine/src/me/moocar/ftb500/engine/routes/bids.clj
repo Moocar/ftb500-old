@@ -2,7 +2,6 @@
   (:require [datomic.api :as d]
             [me.moocar.async :as moo-async]
             [me.moocar.lang :refer [uuid?]]
-            [me.moocar.log :as log]
             [me.moocar.ftb500.bid :as bid]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
@@ -13,9 +12,6 @@
             [me.moocar.ftb500.schema :refer [bid-names]]
             [me.moocar.ftb500.seats :refer [seat=]]))
 
-(defn log [this msg]
-  (log/log (:log this) msg))
-
 (defn find-bid [db bid-name]
   (-> '[:find ?bid
         :in $ ?bid-name
@@ -25,7 +21,7 @@
       (->> (d/entity db))))
 
 (defn implementation [this db request]
-  (let [{:keys [datomic log]} this
+  (let [{:keys [datomic]} this
         {:keys [body logged-in-user-id]} request
         {bid-name :bid/name seat-id :seat/id} body]
     (cond
@@ -68,7 +64,7 @@
             @(datomic/transact-action datomic tx (:game/id game) :action/bid)
             [:success]))))))
 
-(defrecord Bid [datomic log]
+(defrecord Bid [datomic]
   routes/Route
   (serve [this db request]
     (implementation this db request)))
@@ -108,7 +104,7 @@
                                        (:db/id game))}]
           [[winning-seat-user-id msg]])))))
 
-(defrecord BidTxHandler [datomic user-store log]
+(defrecord BidTxHandler [datomic user-store]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [db (:db-after tx)

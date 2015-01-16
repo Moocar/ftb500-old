@@ -13,11 +13,11 @@
             [me.moocar.ftb500.score :as score]
             [me.moocar.log :as log]))
 
-(def default-timeout 3000)
+(def default-timeout 3000000)
 
 (def num-players 4)
 
-(def ai-players 4)
+(def ai-players 3)
 
 
 (defn new-ai-client
@@ -53,7 +53,7 @@
        (async/into [])))
 
 (defn start-and-shutdown-clients
-  [clients engine-log]
+  [clients log-ch]
   (async/thread
     (try
      (let [clients (<!!all (map ai/start clients))
@@ -62,15 +62,15 @@
 
        (if-not (or (= timeout port)
                    (instance? Throwable clients))
-         (do (log/log engine-log "Shutting down clients")
+         (do (async/put! log-ch "Shutting down clients")
              (let [timeout (async/timeout 2000)
                    [clients port] (async/alts!! [(stop-clients clients) timeout])]
 
                (doseq [client clients]
                  (component/stop client))
                (if (= timeout port)
-                 (log/log engine-log "Failed to shutdown all clients")
-                 (do (log/log engine-log "Successfully shutdown all clients")
+                 (async/put! log-ch "Failed to shutdown all clients")
+                 (do (async/put! log-ch "Successfully shutdown all clients")
                      clients))))
          clients))
      (catch Throwable t t))))
@@ -79,7 +79,7 @@
   [client]
   (go-try
    (loop []
-     (if-let [msg (<? (:output-ch (:log client)))]
+     (if-let [msg (<? (:log-ch client))]
        (do (println msg)
            (recur))
        true))))
@@ -101,27 +101,28 @@
     (print-out-client client)))
 
 (defn new-system [config]
-  (let [log (component/start (log/new-logger config))
+
+  (let [log-ch (async/chan 10000)
         engine (component/start (engine-websocket-system/new-system config))
         clients (repeatedly ai-players #(ai/new-client-ai (new-ai-client config)))]
     {:engine engine
      :clients clients
-     :log log}))
+     :log-ch log-ch}))
 
 (defn start-system
-  [{:keys [engine clients log] :as system}]
+  [{:keys [engine clients log-ch] :as system}]
   (let [timeout (async/timeout default-timeout)
-        [v port] (async/alts!! [(start-and-shutdown-clients clients log) timeout])]
+        [v port] (async/alts!! [(start-and-shutdown-clients clients log-ch) timeout])]
     (if (instance? Throwable v)
-      (do (log/log log v)
+      (do (async/put! log-ch v)
           (throw v))
       (if (= timeout port)
         (do
-          (log/log log "Shutting down engine after bad timeout")
+          (async/put! log-ch "Shutting down engine after bad timeout")
           (component/stop engine))
         (let [clients v]
-          (log/log log "Clients shut down successfully")
-          (log/log log "Score")
+          (async/put! log-ch "Clients shut down successfully")
+          (async/put! log-ch "Score")
           (pprint (score/summary (:game (first clients))))))))
   system)
 
@@ -131,14 +132,14 @@
 (defn play
   []
   (let [system (new-system (read-string (slurp "local_config.edn")))
-        {:keys [engine clients log]} system]
+        {:keys [engine clients log-ch]} system]
     (try
       (-> system
           start-system
           stop-system)
       (print-out-client-logs clients)
       (finally
-        (log/log log "Shutting down engine")
+        (async/put! log-ch "Shutting down engine")
         (component/stop engine)))))
 
 (defn reset []

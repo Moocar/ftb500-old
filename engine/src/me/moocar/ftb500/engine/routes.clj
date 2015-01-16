@@ -1,36 +1,37 @@
 (ns me.moocar.ftb500.engine.routes
-  (:require [datomic.api :as d]
+  (:require [clojure.core.async :as async]
             [com.stuartsierra.component :as component]
+            [datomic.api :as d]
             [me.moocar.ftb500.engine.datomic :as db]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.transport.user-store :as user-store]
             [me.moocar.ftb500.engine.user :as user-lookup]
-            [me.moocar.lang :refer [uuid]]
-            [me.moocar.log :as log]))
+            [me.moocar.lang :refer [uuid]]))
 
 (defprotocol Route
   (serve [this db request]))
 
 (defn route
-  [this
+  [{:keys [log-ch] :as this}
    {:keys [conn route body request-id logged-in-user-id] :as request}]
   {:pre [(keyword? route)
          (map? conn)]}
   (let [route-ns-keyword (keyword "routes" (name route))]
-    (log/log (:log this) (format "%8.8s %-10.10s %s"
-                                 (if logged-in-user-id
-                                   (str logged-in-user-id)
-                                   "ANON")
-                                 route
-                                 body))
+    (async/put! log-ch
+                (format "%8.8s %-10.10s %s"
+                        (if logged-in-user-id
+                          (str logged-in-user-id)
+                          "ANON")
+                        route
+                        body))
     (if-let [server (get this route-ns-keyword)]
       (let [{:keys [datomic]} this
             db-conn (:conn datomic)
             db (d/db db-conn)]
         (when-let [response (serve server db request)]
           (when (or (keyword? response) (not= :success (first response)))
-            (log/log (:log this) {:ERROR response
-                                  :request body}))
+            (async/put! log-ch {:ERROR response
+                                :request body}))
           (assoc request :response response)))
       (assoc request :response [:ftb500/no-route {:route route}]))))
 
@@ -63,7 +64,7 @@
 
 (defn new-router []
   (component/using {}
-    [:log
+    [:log-ch
      :datomic
      :routes/add-game
      :routes/bid

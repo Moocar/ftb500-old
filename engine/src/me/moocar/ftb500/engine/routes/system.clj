@@ -20,12 +20,12 @@
     :routes/signup         (me.moocar.ftb500.engine.routes.login/map->Signup {})
     :routes/exchange-kitty (me.moocar.ftb500.engine.routes.kitty/map->ExchangeKitty {})
     :routes/play-card      (me.moocar.ftb500.engine.routes.play-card/map->PlayCard {}))
-   {:routes/add-game       [:datomic :log]
-    :routes/bid            [:datomic :log]
-    :routes/game-info      [:datomic :log]
-    :routes/join-game      [:datomic :log :tx-listener]
+   {:routes/add-game       [:datomic]
+    :routes/bid            [:datomic]
+    :routes/game-info      [:datomic]
+    :routes/join-game      [:datomic :tx-listener]
     :routes/login          [:user-store]
     :routes/logout         [:user-store]
     :routes/signup         [:datomic]
-    :routes/exchange-kitty [:datomic :log]
-    :routes/play-card      [:datomic :log]}))
+    :routes/exchange-kitty [:datomic]
+    :routes/play-card      [:datomic]}))

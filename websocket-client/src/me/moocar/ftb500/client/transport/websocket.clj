@@ -1,5 +1,5 @@
 (ns me.moocar.ftb500.client.transport.websocket
-  (:require [clojure.core.async :as async] 
+  (:require [clojure.core.async :as async]
             [cognitect.transit :as transit]
             [com.stuartsierra.component :as component]
             [me.moocar.comms-async :as comms]
@@ -22,15 +22,15 @@
 (defn new-transit-conn []
   (websocket/make-connection-map (map (comms/custom-send bytes->clj clj->bytes))))
 
-(defrecord WebSocketClient [websocket-client listener send-ch client-id log]
+(defrecord WebSocketClient [websocket-client listener send-ch client-id log-ch]
 
   component/Lifecycle
   (start [this]
     (let [request-ch (async/chan 1024 (comp (map (comms/custom-request bytes->clj))
                                             (map :body)))
           listener (client-listener/start
-                    (client-listener/new-client-listener log request-ch client-id))
-          websocket-client (websocket-client/start 
+                    (client-listener/new-client-listener log-ch request-ch client-id))
+          websocket-client (websocket-client/start
                             (assoc websocket-client
                               :request-ch request-ch
                               :new-conn-f new-transit-conn))]
@@ -50,7 +50,4 @@
      {:websocket-client (websocket-client/new-websocket-client
                          (get-in config [:engine :websocket :server]))
       :client-id (uuid)})
-    [:log]))
-
-
-
+    [:log-ch]))

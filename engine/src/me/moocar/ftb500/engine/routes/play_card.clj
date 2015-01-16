@@ -11,8 +11,7 @@
             [me.moocar.ftb500.schema :as schema
              :refer [uuid? card? ext-card? trick? play? seat? suit? trick-game?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
-            [me.moocar.ftb500.trick :as trick]
-            [me.moocar.log :as log]))
+            [me.moocar.ftb500.trick :as trick]))
 
 (defn kitty-exchanged?
   [db game]
@@ -43,7 +42,7 @@
                  (not= (:card/suit card) leading-suit))))))))
 
 (defn implementation [this db request]
-  (let [{:keys [datomic log]} this
+  (let [{:keys [datomic]} this
         {:keys [logged-in-user-id body]} request
         {card :trick.play/card seat-id :seat/id} body]
     (cond
@@ -104,12 +103,12 @@
             @(datomic/transact-action datomic tx (:game/id game) :action/play-card)
             [:success]))))))
 
-(defrecord PlayCard [datomic log]
+(defrecord PlayCard [datomic]
   routes/Route
   (serve [this db request]
     (implementation this db request)))
 
-(defrecord PlayCardTxHandler [user-store log]
+(defrecord PlayCardTxHandler [user-store]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (let [db (:db-after tx)

@@ -8,11 +8,10 @@
             [me.moocar.ftb500.schema :as schema
              :refer [player-bid? game? bid? seat? card?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
-            [me.moocar.ftb500.trick :as trick]
-            [me.moocar.log :as log]))
+            [me.moocar.ftb500.trick :as trick]))
 
 (defn log [this msg]
-  (log/log (:log this) msg))
+  (async/put! (:log-ch this) msg))
 
 (defn suggest-bid
   "Determines the next bid to play"

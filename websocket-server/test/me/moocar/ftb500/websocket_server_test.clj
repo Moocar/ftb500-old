@@ -4,8 +4,7 @@
             [com.stuartsierra.component :as component]
             [me.moocar.async :as moo-async]
             [me.moocar.ftb500.engine.transport.websocket :as websocket-server]
-            [me.moocar.ftb500.client.transport.websocket :as websocket-client]
-            [me.moocar.log :as log]))
+            [me.moocar.ftb500.client.transport.websocket :as websocket-client]))
 
 (defn echo-handler
   [client-id-ch]
@@ -29,13 +28,13 @@
   [config]
   (component/system-map
    :websocket-client (websocket-client/new-websocket-client config)
-   :log (log/new-logger config)))
+   :log-ch (async/put! 1 (keep (constantly nil)))))
 
 (defn local-config []
   {:engine {:websocket {:server {:port 8083
                                  :hostname "localhost"}}}})
 
-(defmacro with-engines 
+(defmacro with-engines
   [[binding-form engine-system-map client-system-map] & body]
   `(let [engine-system# (component/start ~engine-system-map)]
      (try
@@ -60,8 +59,6 @@
                    (new-client-system config)]
       (let [{:keys [websocket-client]} client-system
             request {:route :moo/car :body "haha"}
-            response (<!! (moo-async/request (:send-ch (:conn websocket-client)) 
+            response (<!! (moo-async/request (:send-ch (:conn websocket-client))
                                              request))]
         (is (= (:body response) request))))))
-
-

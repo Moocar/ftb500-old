@@ -6,8 +6,7 @@
             [clojure.test :as t]
             [com.stuartsierra.component :as component]
             [me.moocar.ftb500.client.ai :as ai]
-            [me.moocar.ftb500.engine.system :as engine-system]
-            [me.moocar.log :as log]))
+            [me.moocar.ftb500.engine.system :as engine-system]))
 
 #_(defn new-ai-client
   [engine config]
@@ -67,4 +66,3 @@
         all-cards (flatten (map :hand clients))]
     (t/is (= (count (set all-cards))
              40))))
-

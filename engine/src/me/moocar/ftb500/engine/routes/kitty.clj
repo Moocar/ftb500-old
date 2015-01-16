@@ -1,7 +1,6 @@
 (ns me.moocar.ftb500.engine.routes.kitty
   (:require [datomic.api :as d]
             [me.moocar.async :as moo-async]
-            [me.moocar.log :as log]
             [me.moocar.ftb500.engine.card :as card]
             [me.moocar.ftb500.engine.datomic :as datomic]
             [me.moocar.ftb500.engine.routes :as routes]
@@ -13,11 +12,11 @@
   (map #(card/find db %) cards))
 
 (defn implementation [this db request]
-  (let [{:keys [datomic log]} this
+  (let [{:keys [datomic]} this
         {:keys [logged-in-user-id body]} request
         {cards :cards seat-id :seat/id} body]
     (cond
-      
+
       ;; Check basic inputs
 
       (not logged-in-user-id) [:must-be-logged-in]
@@ -26,7 +25,7 @@
       (not (= 3 (count cards))) [:three-cards-required]
 
       :else ;; Load entities
-      
+
       (let [seat (datomic/find db :seat/id seat-id)
             game (first (:game/_seats seat))
             cards (load-cards db cards)]
@@ -52,12 +51,12 @@
             @(datomic/transact-action datomic tx (:game/id game) :action/exchange-kitty)
             [:success]))))))
 
-(defrecord ExchangeKitty [datomic log]
+(defrecord ExchangeKitty [datomic]
   routes/Route
   (serve [this db request]
     (implementation this db request)))
 
-(defrecord ExchangeKittyTxHandler [user-store log]
+(defrecord ExchangeKittyTxHandler [user-store]
   tx-handler/TxHandler
   (handle [this user-ids tx]
     (doseq [user-id user-ids]

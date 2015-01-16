@@ -6,11 +6,10 @@
             [me.moocar.ftb500.schema :as schema
              :refer [game? trick-game? play? card? suit? seat?]]
             [me.moocar.ftb500.seats :as seats :refer [seat=]]
-            [me.moocar.ftb500.trick :as trick]
-            [me.moocar.log :as log]))
+            [me.moocar.ftb500.trick :as trick]))
 
 (defn log [this msg]
-  (log/log (:log this) msg))
+  (async/put! (:log-ch this) msg))
 
 (defn suggest
   "Suggest a card to play. Presumably based on amazing AI"
@@ -90,7 +89,7 @@
                  ai (-> ai
                         (assoc :game game)
                         (assoc-in [:seat :seat/cards] hand))]
-             
+
              (if (trick/all-finished? game)
                (do (log ai "All tricks finished!")
                    ai)
