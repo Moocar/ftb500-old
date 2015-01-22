@@ -5,7 +5,7 @@
   (when (:seat client)
     (schema/check-map client {:seat seat?}))
   (schema/check-map client {:game game?
-                            :transport map?
+                            :engine-transport map?
                             :game/num-players number?
                             :player player?
                             :route-pub-ch identity}))

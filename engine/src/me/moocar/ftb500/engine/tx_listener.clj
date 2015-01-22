@@ -80,7 +80,7 @@
 (defn register-user-for-game
   [this game-id user-id]
   {:pre [game-id user-id]}
-  (let [{:keys [datomic users-atom engine-transport]} this
+  (let [{:keys [datomic users-atom]} this
         conn (:conn datomic)]
     (swap! users-atom
            update-in

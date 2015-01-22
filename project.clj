@@ -10,5 +10,4 @@
         "websocket-client"
         "websocket-server"
         "ai"
-        "sh-client"
-        "inline-transport"])
+        "sh-client"])

@@ -43,7 +43,7 @@
   "Join a game, wait for all players to join, run the bidding round,
   and then the tricks round"
   [ai game-id]
-  {:pre [(:transport ai)]}
+  {:pre [(:engine-transport ai)]}
   (go-try
    (-> (client/ready-game ai game-id)
        <?
@@ -57,8 +57,8 @@
 
 (defn new-client-ai
   [this]
-  (let [{:keys [transport]} this
-        {:keys [listener]} transport
+  (let [{:keys [engine-transport]} this
+        {:keys [listener]} engine-transport
         {:keys [mult]} listener
         receive-ch (async/chan)]
     (async/tap mult receive-ch)

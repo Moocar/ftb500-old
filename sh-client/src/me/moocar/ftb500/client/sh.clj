@@ -105,7 +105,7 @@
     (binding [*out* writer]
       (println "player joined" body))))
 
-(defrecord ShClient [console transport log-ch]
+(defrecord ShClient [console engine-transport log-ch]
   component/Lifecycle
   (start [this]
     (assoc
@@ -113,7 +113,7 @@
      :ch
      (thread
        (let [writer (.writer console)
-             {:keys [listener]} transport
+             {:keys [listener]} engine-transport
              {:keys [mult]} listener
              tapped-log-ch (async/chan)
              _ (async/tap mult tapped-log-ch)
@@ -151,4 +151,4 @@
 
 (defn new-sh-client [console config]
   (component/using (map->ShClient {:console console})
-    [:transport :log-ch]))
+    [:engine-transport :log-ch]))

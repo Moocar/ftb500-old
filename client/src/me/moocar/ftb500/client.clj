@@ -9,10 +9,13 @@
 (defn log [client msg]
   (async/put! (:log-ch client) msg))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Transport
+
 (defn send!
   [client route msg]
-  {:pre [(:transport client)]}
-  (let [send-ch (:send-ch (:conn (:transport client)))]
+  {:pre [(:engine-transport client)]}
+  (let [send-ch (:send-ch (:conn (:engine-transport client)))]
     (go-try
      (let [response (<? (moo-async/request send-ch
                                            {:route route
@@ -32,6 +35,9 @@
                   :seat/id (:seat/id (:seat client)))]
     (log client {:route route :msg new-msg})
     (send! client route new-msg)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Game
 
 (defn touch-game
   [game]
@@ -106,7 +112,7 @@
 (defn ready-game
   "Initiates the ai map with the basic game information"
   [client game-id]
-  {:pre [(:transport client)
+  {:pre [(:engine-transport client)
          (uuid? game-id)]}
   (let [{:keys [route-pub-ch]} client]
     (go-try

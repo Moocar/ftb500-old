@@ -10,8 +10,7 @@
             [me.moocar.ftb500.engine.transport.websocket.system :as engine-websocket-system]
             [me.moocar.ftb500.client.transport.websocket.system :as client-websocket-system]
             [me.moocar.ftb500.schema :as schema]
-            [me.moocar.ftb500.score :as score]
-            [me.moocar.log :as log]))
+            [me.moocar.ftb500.score :as score]))
 
 (def default-timeout 3000000)
 

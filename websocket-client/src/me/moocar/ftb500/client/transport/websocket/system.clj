@@ -6,5 +6,5 @@
 
 (defn new-system [config]
   (component/system-map
-   :transport (websocket-client/new-websocket-client config)
+   :engine-transport (websocket-client/new-websocket-client config)
    :log-ch (async/chan 1 (keep (comp println log/format-log)))))
